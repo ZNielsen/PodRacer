@@ -1,4 +1,13 @@
 # PodRacer
+
+[![CodeFactor](https://www.codefactor.io/repository/github/znielsen/podracer/badge)](https://www.codefactor.io/repository/github/znielsen/podracer)
+[![Build Status](https://travis-ci.com/znielsen/podracer.svg?branch=main)](https://travis-ci.com/znielsen/podracer)
+![GitHub repo size](https://img.shields.io/github/repo-size/znielsen/podracer)
+![GitHub contributors](https://img.shields.io/github/contributors/znielsen/podracer)
+![GitHub stars](https://img.shields.io/github/stars/znielsen/podracer?style=social)
+![GitHub forks](https://img.shields.io/github/forks/znielsen/podracer?style=social)
+
+
 A podcast catch-up service
 
 ### License
