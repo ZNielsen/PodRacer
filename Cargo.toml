@@ -1,9 +1,10 @@
 [package]
 name = "PodRacer"
 version = "0.1.0"
-authors = ["Zach Nielsen <znielsen@amazon.com>"]
+authors = ["Zach Nielsen <zach@zachn.me>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+quick-xml = "0.20.0"
