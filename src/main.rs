@@ -7,11 +7,15 @@ enum CatchUpMode {
 }
 
 fn main() {
-    println!("What's the URL?: ");
+    print!("What's the URL?: ");
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer).unwrap();
-    let mut channel = get_rss_channel(&buffer)
-                        .unwrap();
+    println!("");
+    println!("Got buffer: {}", buffer);
+    let mut channel = match get_rss_channel(&buffer) {
+        Ok(val) => val,
+        Err(_) => panic!("Error in URL"),
+    };
     let num_episodes = channel.items().len();
     let weeks_behind = get_time_behind(&channel);
     println!("There are {} episodes, and you are {} weeks behind.",
@@ -19,7 +23,7 @@ fn main() {
     println!("How would you like to catch up?");
     println!("1) Catch up by certain date");
     println!("2) Consume episodes at an accelerated rate");
-    println!("Choose 1/2: ");
+    print!("Choose 1/2: ");
     let mode = match io::stdin().read_to_string(&mut buffer).unwrap() {
         1 => CatchUpMode::Interpolate,
         2 => CatchUpMode::Rate,
@@ -29,9 +33,12 @@ fn main() {
 
 fn get_rss_channel(url: &String) -> Result<Channel, Box<dyn Error>>
 {
+    println!("Getting content");
     let content = reqwest::blocking::get(url).unwrap()
                     .bytes().unwrap();
+    println!("Got content");
     let channel = Channel::read_from(&content[..])?;
+    println!("Got channel");
     Ok(channel)
 }
 
