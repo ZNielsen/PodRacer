@@ -1,20 +1,39 @@
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
+use std::fs::File;
+use serde::{Serialize, Deserialize};
 use serde_json::json;
+use chrono::{Duration, DateTime};
 
-const SCHEMA_VERSION: &'static str = "1.0.0";
-const PODRACER_DIR:   &'static str = "~/.podracer";
+const SCHEMA_VERSION:  &'static str = "1.0.0";
+const PODRACER_DIR:    &'static str = "~/.podracer";
+const RACER_FILE_NAME: &'static str = "racer.file";
+
 
 const SPACE_CHAR: u8 = 32;
 
 // JSON keys
-const KEY_SCHEMA_VERSION: &'static str = "schemaVersion";
-const KEY_SOURCE_URL: &'static str = "sourceUrl";
-const KEY_RACER_URL: &'static str = "podRacerUrl";
-const KEY_RELEASE_DATES: &'static str = "releaseDates";
-const KEY_EPISODE_NUMBER: &'static str = "epNum";
+const KEY_SCHEMA_VERSION: &'static str = "schema_version";
+const KEY_SOURCE_URL: &'static str = "source_url";
+const KEY_RACER_URL: &'static str = "podracer_url";
+const KEY_RELEASE_DATES: &'static str = "release_dates";
+const KEY_EPISODE_NUMBER: &'static str = "ep_num";
 const KEY_EPISODE_RACER_DATE: &'static str = "datestring";
 
-fn main() {
+#[derive(Serialize, Deserialize, Debug)]
+struct RacerEpisode {
+    ep_num: i64,
+    date: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RacerData {
+    schema_version: String,
+    source_url: String,
+    podracer_url: String,
+    release_dates: Vec<RacerEpisode>
+}
+
+fn main() -> std::io::Result<()> {
     print!("What's the URL?: ");
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer).unwrap();
@@ -45,12 +64,13 @@ fn main() {
     // Make directory
     let dir = create_feed_racer_dir(&channel);
     // Write out original rss feed to file in dir
-    let file = std::fs::File::create(dir+"/original.rss").unwrap();
+    let file = File::create(dir+"/original.rss")?;
     channel.pretty_write_to(file, SPACE_CHAR, 2).unwrap();
     // Make racer file
-    create_racer_file(&channel, &rate);
-    // Write out racer file
+    create_racer_file(&channel, &rate)?;
     // Run update() on this directory
+    // Give the user the url to subscribe to
+    Ok(())
 }
 
 fn get_rss_channel(url: &String) -> Result<rss::Channel, Box<dyn std::error::Error>>
@@ -88,34 +108,45 @@ fn create_feed_racer_dir(ch: &rss::Channel) -> String
     dir
 }
 
-fn create_racer_file(ch: &rss::Channel, rate: &f32)
+fn create_racer_file(ch: &rss::Channel, rate: &f32) -> std::io::Result<()>
 {
-    //
-    // Build the release date vector
-    //
+    // Reverse the items so the oldest entry is first
     let mut items = ch.items().to_owned();
     items.reverse();
     // Get anchor date
     let first_pub_date = items.first().unwrap()
                             .pub_date().unwrap();
-    let anchor_date = chrono::DateTime::parse_from_rfc2822(&first_pub_date).unwrap();
-    // let mut dates = Vec::new();
+    let anchor_date = DateTime::parse_from_rfc2822(&first_pub_date).unwrap();
+    let mut dates = Vec::new();
+    let mut item_counter = 0;
     for item in items {
         // Get diff from anchor date
         let pub_date = item.pub_date().unwrap();
-        let mut time_diff = chrono::DateTime::parse_from_rfc2822(pub_date).unwrap()
-                        .signed_duration_since(anchor_date).num_seconds();
+        let mut time_diff = DateTime::parse_from_rfc2822(pub_date).unwrap()
+                        .signed_duration_since(anchor_date)
+                        .num_seconds();
         // Scale that diff
         time_diff = ((time_diff as f32) / rate) as i64;
-        // Add back to anchor date to get new publish date
-        // Convert to date string
-        // dates.push()
+        // Add back to anchor date to get new publish date + convert to string
+        let racer_date = anchor_date.checked_add_signed(Duration::seconds(time_diff)).unwrap()
+                            .to_rfc2822();
+        // Add to json
+        dates.push( RacerEpisode {
+            ep_num: item_counter,
+            date: racer_date
+         });
+         item_counter += 1;
     }
 
-    let mut json = json!({
-        KEY_SCHEMA_VERSION: SCHEMA_VERSION,
-        KEY_SOURCE_URL: ch.link(),
-        KEY_RACER_URL: "xxx",
-        KEY_RELEASE_DATES: []
-    });
+    let racer_data = RacerData {
+        schema_version: SCHEMA_VERSION.to_owned(),
+        source_url: ch.link().to_owned(),
+        podracer_url: "xxx".to_owned(),
+        release_dates: dates
+    };
+    let json = serde_json::to_string_pretty(&racer_data)?;
+
+    let filename = String::from(PODRACER_DIR) +"/"+ RACER_FILE_NAME;
+    let mut fp = File::create(filename)?;
+    fp.write_all(json.as_bytes())
 }
