@@ -1,6 +1,8 @@
 use std::{error::Error, io::{self, Read}};
 use rss::Channel;
 
+static PODRACER_DIR: &str = "~/.podracer";
+
 fn main() {
     print!("What's the URL?: ");
     let mut buffer = String::new();
@@ -20,7 +22,9 @@ fn main() {
     io::stdin().read_to_string(&mut buffer).unwrap();
 
     // Make directory
-    // Write out original rss feed
+    let dir = create_feed_racer_dir(&channel);
+    // Write out original rss feed to file in dir
+    channel.pretty_write_to(writer: W, indent_char: u8, indent_size: usize)
     // Make racer file
     // Write out racer file
     // Run update() on this directory
@@ -45,4 +49,14 @@ fn get_time_behind(channel: &Channel) -> i64
     let diff = chrono::DateTime::parse_from_rfc2822(published).unwrap()
                 .signed_duration_since(chrono::Utc::now());
     diff.num_weeks()
+}
+
+fn create_feed_racer_dir(ch: &Channel) -> String
+{
+    // Create this feed's dir name
+    let mut dir = String::new();
+    dir.push_str(PODRACER_DIR);
+    dir.push_str("/test");
+    std::fs::create_dir_all(&dir);
+    dir
 }
