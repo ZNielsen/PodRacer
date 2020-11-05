@@ -1,11 +1,6 @@
 use std::{error::Error, io::{self, Read}};
 use rss::Channel;
 
-enum CatchUpMode {
-    Interpolate,
-    Rate
-}
-
 fn main() {
     print!("What's the URL?: ");
     let mut buffer = String::new();
@@ -20,15 +15,15 @@ fn main() {
     let weeks_behind = get_time_behind(&channel);
     println!("There are {} episodes, and you are {} weeks behind.",
         num_episodes, weeks_behind);
-    println!("How would you like to catch up?");
-    println!("1) Catch up by certain date");
-    println!("2) Consume episodes at an accelerated rate");
-    print!("Choose 1/2: ");
-    let mode = match io::stdin().read_to_string(&mut buffer).unwrap() {
-        1 => CatchUpMode::Interpolate,
-        2 => CatchUpMode::Rate,
-        _ => panic!("Invalid choice"),
-    };
+    println!("How fast would you like to catch up?");
+    print!("Enter a floating point number [defualt: 1.20]: ");
+    io::stdin().read_to_string(&mut buffer).unwrap();
+
+    // Make directory
+    // Write out original rss feed
+    // Make racer file
+    // Write out racer file
+    // Run update() on this directory
 }
 
 fn get_rss_channel(url: &String) -> Result<Channel, Box<dyn Error>>
