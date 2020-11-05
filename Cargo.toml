@@ -11,4 +11,5 @@ rss = "1.9.0"
 reqwest = { version = "0.10.8", features = ["blocking"] }
 chrono = "0.4.19"
 md5 = "0.7.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
