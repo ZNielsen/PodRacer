@@ -1,3 +1,7 @@
+#![feature(proc_macro_hygiene, decl_macro)]
+
+#[macro_use] extern crate rocket;
+
 use std::io::{self, Read, Write, BufReader};
 use std::fs::File;
 use serde::{Serialize, Deserialize};
@@ -99,6 +103,15 @@ impl RacerData {
         }
         ret
     }
+}
+
+#[get("/")]
+fn index() -> &'static str {
+    "Hello, world!"
+}
+
+fn launch_rocket() {
+    rocket::ignite().mount("/", routes![index]).launch();
 }
 
 fn main() -> std::io::Result<()> {
