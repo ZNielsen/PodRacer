@@ -64,13 +64,13 @@ impl RacerData {
     // TODO -> handle the case where the url is invalid/disappears
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
-    fn update_if_needed(&mut self)
+    fn get_updated_original_rss(&mut self) -> rss::Channel
     {
         // Re-download file
         let original_rss = get_rss_channel(&self.source_url).unwrap();
         // Compare
-        let mut stored_rss_file = File::open(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
-        let mut buf_reader = BufReader::new(stored_rss_file);
+        let stored_rss_file = File::open(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
+        let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
         let num_to_update = (original_rss.items().len() as i64 - stored_rss.items().len() as i64).abs();
         if num_to_update > 0 {
@@ -82,6 +82,7 @@ impl RacerData {
             new_items.truncate(num_to_update as usize);
             self.add_new_items(&new_items, stored_rss.items().len());
         }
+        original_rss
     }
 
     fn get_num_to_publish(&self) -> usize
@@ -134,9 +135,9 @@ fn main() -> std::io::Result<()> {
     let original_rss_file = File::create(String::from(&dir) +"/"+ ORIGINAL_RSS_FILE)?;
     channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2).unwrap();
     // Make racer file
-    create_racer_file(&channel, &rate)?;
+    create_racer_file(&mut channel.items().to_owned(), &rate, &channel.link())?;
     // Run update() on this directory
-    racer_update(&dir);
+    racer_update(&dir).unwrap();
     // Give the user the url to subscribe to
     Ok(())
 }
@@ -177,10 +178,9 @@ fn create_feed_racer_dir(ch: &rss::Channel) -> String
     dir
 }
 
-fn create_racer_file(ch: &rss::Channel, rate: &f32) -> std::io::Result<()>
+fn create_racer_file(items: &mut Vec<rss::Item>, rate: &f32, source_url: &str) -> std::io::Result<()>
 {
     // Reverse the items so the oldest entry is first
-    let mut items = ch.items().to_owned();
     items.reverse();
     // Get anchor date
     let first_pubdate = items.first().unwrap()
@@ -211,7 +211,7 @@ fn create_racer_file(ch: &rss::Channel, rate: &f32) -> std::io::Result<()>
     let racer_data = RacerData {
         schema_version: SCHEMA_VERSION.to_owned(),
         racer_path: PODRACER_DIR.to_owned(),
-        source_url: ch.link().to_owned(),
+        source_url: source_url.to_owned(),
         podracer_url: "xxx".to_owned(),
         rate: rate.to_owned(),
         anchor_date: anchor_date,
@@ -228,15 +228,17 @@ fn create_racer_file(ch: &rss::Channel, rate: &f32) -> std::io::Result<()>
 fn racer_update(path: &str) -> std::io::Result<()>
 {
     // Load in racer file
-    let mut racer_file = File::open(String::from(path) +"/"+ RACER_FILE)?;
+    let racer_file = File::open(String::from(path) +"/"+ RACER_FILE)?;
     let mut racer: RacerData = serde_json::from_reader(&racer_file)?;
 
-    // Check original rss feed for update, if required
-    racer.update_if_needed();
-
+    let original_rss = racer.get_updated_original_rss();
     // Check how many episodes we should publish at this point
     let num_to_pub = racer.get_num_to_publish();
     // Grab that many from the original rss file
+    let mut items_to_publish = original_rss.items().to_owned();
+    items_to_publish.truncate(num_to_pub);
+
     // Overwrite our racer.rss file, which includes the new content
+    create_racer_file(&mut items_to_publish, &racer.rate, &racer.source_url).unwrap();
     Ok(())
 }
