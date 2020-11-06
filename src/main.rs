@@ -37,6 +37,7 @@ struct RacerData {
     anchor_date: DateTime<chrono::Utc>,
     first_pubdate: DateTime<chrono::FixedOffset>,
     rate: f32,
+    integrate_new: bool,
     release_dates: Vec<RacerEpisode>
 }
 
@@ -115,45 +116,48 @@ fn launch_rocket() {
 }
 
 fn main() -> std::io::Result<()> {
-    print!("What's the URL?: ");
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).unwrap();
-    println!("");
-    println!("Got buffer: {}", buffer);
-    let mut channel = match get_rss_channel(&buffer) {
-        Ok(val) => val,
-        Err(_) => panic!("Error in URL"),
-    };
-    let num_episodes = channel.items().len();
-    let weeks_behind = get_time_behind(&channel);
-    println!("There are {} episodes, and you are {} weeks behind.",
-        num_episodes, weeks_behind);
-
-    // Get the rate
-    println!("How fast would you like to catch up?");
-    print!("Enter a floating point number [defualt: 1.20]: ");
-    let rate = match io::stdin().read_to_string(&mut buffer) {
-        _ => 1.20,
-    };
-
-    println!("Do you still want to get new episodes in your feed as they arrive?");
-    print!("[default: No]: ");
-    let integrate_new = match io::stdin().read_to_string(&mut buffer) {
-        _ => true,
-    };
-
-    // Make directory
-    let dir = create_feed_racer_dir(&channel);
-    // Write out original rss feed to file in dir
-    let original_rss_file = File::create(String::from(&dir) +"/"+ ORIGINAL_RSS_FILE)?;
-    channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2).unwrap();
-    // Make racer file
-    create_racer_file(&mut channel.items().to_owned(), &rate, &channel.link())?;
-    // Run update() on this directory
-    racer_update(&dir).unwrap();
-    // Give the user the url to subscribe to
-    println!("Subscribe to this URL in your pod catcher: {}", "www.example.com");
+    launch_rocket();
     Ok(())
+
+    // print!("What's the URL?: ");
+    // let mut buffer = String::new();
+    // io::stdin().read_to_string(&mut buffer).unwrap();
+    // println!("");
+    // println!("Got buffer: {}", buffer);
+    // let channel = match get_rss_channel(&buffer) {
+    //     Ok(val) => val,
+    //     Err(_) => panic!("Error in URL"),
+    // };
+    // let num_episodes = channel.items().len();
+    // let weeks_behind = get_time_behind(&channel);
+    // println!("There are {} episodes, and you are {} weeks behind.",
+    //     num_episodes, weeks_behind);
+
+    // // Get the rate
+    // println!("How fast would you like to catch up?");
+    // print!("Enter a floating point number [defualt: 1.20]: ");
+    // let rate = match io::stdin().read_to_string(&mut buffer) {
+    //     _ => 1.20,
+    // };
+
+    // println!("Do you still want to get new episodes in your feed as they arrive?");
+    // print!("[default: No]: ");
+    // let integrate_new = match io::stdin().read_to_string(&mut buffer) {
+    //     _ => false,
+    // };
+
+    // // Make directory
+    // let dir = create_feed_racer_dir(&channel);
+    // // Write out original rss feed to file in dir
+    // let original_rss_file = File::create(String::from(&dir) +"/"+ ORIGINAL_RSS_FILE)?;
+    // channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2).unwrap();
+    // // Make racer file
+    // create_racer_file(&mut channel.items().to_owned(), &rate, &channel.link(), &integrate_new)?;
+    // // Run update() on this directory
+    // racer_update(&dir).unwrap();
+    // // Give the user the url to subscribe to
+    // println!("Subscribe to this URL in your pod catcher: {}", "www.example.com");
+    // Ok(())
 }
 
 fn get_rss_channel(url: &String) -> Result<rss::Channel, Box<dyn std::error::Error>>
@@ -192,7 +196,10 @@ fn create_feed_racer_dir(ch: &rss::Channel) -> String
     dir
 }
 
-fn create_racer_file(items: &mut Vec<rss::Item>, rate: &f32, source_url: &str) -> std::io::Result<()>
+fn create_racer_file(items: &mut Vec<rss::Item>,
+                     rate: &f32,
+                     source_url: &str,
+                     integrate_new: &bool) -> std::io::Result<()>
 {
     // Reverse the items so the oldest entry is first
     items.reverse();
@@ -230,6 +237,7 @@ fn create_racer_file(items: &mut Vec<rss::Item>, rate: &f32, source_url: &str) -
         rate: rate.to_owned(),
         anchor_date: anchor_date,
         first_pubdate: first_pubdate,
+        integrate_new: integrate_new.to_owned(),
         release_dates: dates
     };
     let json = serde_json::to_string_pretty(&racer_data)?;
@@ -253,6 +261,9 @@ fn racer_update(path: &str) -> std::io::Result<()>
     items_to_publish.truncate(num_to_pub);
 
     // Overwrite our racer.rss file, which includes the new content
-    create_racer_file(&mut items_to_publish, &racer.rate, &racer.source_url).unwrap();
+    create_racer_file(&mut items_to_publish,
+                      &racer.rate,
+                      &racer.source_url,
+                      &racer.integrate_new).unwrap();
     Ok(())
 }
