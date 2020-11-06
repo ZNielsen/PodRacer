@@ -139,6 +139,7 @@ fn main() -> std::io::Result<()> {
     // Run update() on this directory
     racer_update(&dir).unwrap();
     // Give the user the url to subscribe to
+    println!("Subscribe to this URL in your pod catcher: {}", "www.example.com");
     Ok(())
 }
 
