@@ -5,7 +5,6 @@ extern crate rocket;
 
 mod racer;
 mod utils;
-use std::fs::File;
 
 // JSON keys
 const KEY_EPISODE_RACER_DATE: &'static str = "date_string";
@@ -62,7 +61,7 @@ fn list_feeds_handler() -> String {
 }
 
 fn launch_rocket() {
-    let mut rocket = rocket::ignite();
+    let rocket = rocket::ignite();
     rocket.mount("/", routes![index])
           .mount("/", routes![test_url_handler])
           .mount("/", routes![delete_feed_handler])
