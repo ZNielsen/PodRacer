@@ -31,6 +31,8 @@ Then start the server
 cargo run --release
 ```
 
+If you want to access the server remotely, set up port forwarding in your router.
+
 ## Usage
 
 You can make use of the included `create_feed.sh` bash script. It gets the options from you and makes a `curl` request to the proper address. You can communicate with the server via HTTP methods (mostly just `POST` and `GET`) at the following addresses (assuming your server is at `0.0.0.0`, listening on port `1234`)
