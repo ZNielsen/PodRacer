@@ -1,10 +1,11 @@
 use chrono::{DateTime, Duration};
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Write};
+use std::fmt;
 use std::fs::File;
 
 pub const SCHEMA_VERSION:    &'static str = "1.0.0";
-pub const PODRACER_DIR:      &'static str = "~/.podracer";
+pub const PODRACER_DIR:      &'static str = ".podracer";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
@@ -44,8 +45,13 @@ impl FeedRacer {
 }
 
 
+
 impl FeedRacer {
-    pub fn new(items: &mut Vec<rss::Item>, rate: &f32, source_url: &str, integrate_new: &bool) -> FeedRacer {
+    pub fn new(items: &mut Vec<rss::Item>,
+        rate: &f32,
+        source_url: &str,
+        integrate_new: &bool,
+        dir: &str) -> FeedRacer {
         // Reverse the items so the oldest entry is first
         items.reverse();
         // Get anchor date
@@ -75,9 +81,9 @@ impl FeedRacer {
 
         let racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
-            racer_path: PODRACER_DIR.to_owned(),
+            racer_path: dir.to_owned(),
             source_url: source_url.to_owned(),
-            podracer_url: "xxx".to_owned(),
+            podracer_url: "http://example.com".to_owned(),
             rate: rate.to_owned(),
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
@@ -95,7 +101,7 @@ impl FeedRacer {
     pub fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
 
-        let filename = String::from(PODRACER_DIR) +"/"+ RACER_FILE;
+        let filename = String::from(self.get_racer_path()) +"/"+ RACER_FILE;
         let mut fp = File::create(filename)?;
         fp.write_all(json.as_bytes())
     }
@@ -158,5 +164,39 @@ impl FeedRacer {
             }
         }
         ret
+    }
+}
+
+
+impl fmt::Display for RacerEpisode {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, "ep_num: {}, date: {}", self.ep_num, self.date)
+    }
+}
+impl fmt::Display for FeedRacer {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        writeln!(f, "schema_version: {}", self.schema_version)?;
+        writeln!(f, "racer_path: {}", self.racer_path )?;
+        writeln!(f, "source_url: {}", self.source_url)?;
+        writeln!(f, "podracer_url: {}", self.podracer_url)?;
+        writeln!(f, "anchor_date: {}", self.anchor_date)?;
+        writeln!(f, "first_pubdate: {}", self.first_pubdate)?;
+        writeln!(f, "rate: {}", self.rate)?;
+        writeln!(f, "integrate_new: {}", self.integrate_new)?;
+        writeln!(f, "release_dates {{")?;
+        for entry in self.release_dates.as_slice() {
+            writeln!(f, "\t{},", entry)?;
+        }
+        writeln!(f, "}}")
     }
 }
