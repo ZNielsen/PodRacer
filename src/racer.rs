@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Write};
 use std::fmt;
 use std::fs::File;
+use std::path::{Path, PathBuf};
 
 pub const SCHEMA_VERSION:    &'static str = "1.0.0";
 pub const PODRACER_DIR:      &'static str = ".podracer";
@@ -134,7 +135,7 @@ impl FeedRacer {
     // TODO -> handle the case where the url is invalid/disappears
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
-    pub fn get_original_rss(&mut self, mode: RssFile) -> rss::Channel {
+    pub fn get_original_rss(&mut self, mode: &RssFile) -> rss::Channel {
         let stored_rss_file = File::open(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
@@ -175,18 +176,19 @@ impl FeedRacer {
     }
 }
 
-pub fn update_racer_at_path(path: &str) -> std::io::Result<()> {
+pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     // Load in racer file
     let racer_file = File::open(String::from(path) +"/"+ crate::racer::RACER_FILE)?;
     let mut racer: FeedRacer = serde_json::from_reader(&racer_file)?;
 
     // Get original rss feed
-    let mut rss = racer.get_original_rss(RssFile::FromStorage);
+    let mut rss = racer.get_original_rss(mode);
 
     // Check how many episodes we should publish at this point
     let num_to_pub = racer.get_num_to_publish();
     // Pull out only the items we want published
     let mut items_to_publish = rss.items().to_owned();
+    items_to_publish.reverse();
     items_to_publish.truncate(num_to_pub);
     // Set the items to only contain what we want pubished
     rss.set_items(items_to_publish);
@@ -194,6 +196,19 @@ pub fn update_racer_at_path(path: &str) -> std::io::Result<()> {
     let racer_rss_file = File::create(racer.get_racer_path().to_owned() +"/"+ RACER_RSS_FILE)?;
     rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
     Ok(())
+}
+
+pub fn update_all() {
+    let mut dir = dirs::home_dir().unwrap();
+    dir.push(PODRACER_DIR);
+    for podcast_dir in Path::read_dir(dir.as_path()).unwrap() {
+        let path = podcast_dir.unwrap().path();
+        match update_racer_at_path(path.to_str().unwrap(), &RssFile::Download) {
+            Ok(()) => (),
+            Err(e) => println!("Could not update path {}. Error was: {}",
+                        path.to_str().unwrap(), e),
+        };
+    }
 }
 
 
