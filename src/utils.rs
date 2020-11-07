@@ -16,12 +16,20 @@ pub fn create_feed(url: String, rate: f32, integrate_new: bool) -> FeedRacer {
     let original_rss_file = File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE).unwrap();
     channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2).unwrap();
     // Make racer file
-    let racer = FeedRacer::new(&mut channel.items().to_owned(), &rate, &channel.link(), &integrate_new);
-    racer.write_to_file().unwrap();
+    let racer = FeedRacer::new(
+                    &mut channel.items().to_owned(),
+                    &rate,
+                    &url,
+                    &integrate_new,
+                    &dir);
+    match racer.write_to_file() {
+        Ok(_) => (),
+        Err(e) => panic!("failed with error: {}", e)
+    }
     // Run update() on this directory
     racer_update(&dir).unwrap();
     // Give the user the url to subscribe to
-    println!("Subscribe to this URL in your pod catcher: {}", "www.example.com");
+    println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url());
 
     racer
 }
@@ -44,13 +52,12 @@ pub fn get_time_behind(channel: &rss::Channel) -> i64 {
 
 fn create_feed_racer_dir(ch: &rss::Channel) -> String {
     // Create this feed's dir name
-    let mut dir = String::new();
+    let mut dir = String::from(dirs::home_dir().unwrap().to_str().unwrap());
+    dir.push_str("/");
     dir.push_str(crate::racer::PODRACER_DIR);
-    dir.push_str("_");
-    dir.push_str(ch.title());
-    dir.push_str("_");
-    let hash: Vec<u8> = md5::compute(ch.link()).to_vec();
-    dir.push_str(std::str::from_utf8(hash.as_slice()).unwrap());
+    dir.push_str("/");
+    dir.push_str(ch.title().to_lowercase().replace(" ", "-").as_str());
+    dir.push_str("_0");
     // TODO - support multiple copies of the same feed
     std::fs::create_dir_all(&dir).unwrap();
     dir
