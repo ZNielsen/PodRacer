@@ -3,36 +3,6 @@ use crate::racer::*;
 use std::io::{self, Read};
 use std::fs::File;
 
-pub fn get_params_cli() -> std::io::Result<()> {
-    print!("What's the URL?: ");
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).unwrap();
-    println!("");
-    println!("Got buffer: {}", buffer);
-    let channel = match download_rss_channel(&buffer) {
-        Ok(val) => val,
-        Err(_) => panic!("Error in URL"),
-    };
-    let num_episodes = channel.items().len();
-    let weeks_behind = get_time_behind(&channel);
-    println!("There are {} episodes, and you are {} weeks behind.", num_episodes, weeks_behind);
-
-    // Get the rate
-    println!("How fast would you like to catch up?");
-    print!("Enter a floating point number [defualt: 1.20]: ");
-    let rate = match io::stdin().read_to_string(&mut buffer) {
-        _ => 1.20,
-    };
-
-    println!("Do you still want to get new episodes in your feed as they arrive?");
-    print!("[default: No]: ");
-    let integrate_new = match io::stdin().read_to_string(&mut buffer) {
-        _ => false,
-    };
-
-    Ok(())
-}
-
 pub fn create_feed(url: String, rate: f32, integrate_new: bool) -> FeedRacer {
     let channel = match download_rss_channel(&url) {
         Ok(val) => val,
