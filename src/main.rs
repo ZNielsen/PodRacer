@@ -36,7 +36,8 @@ fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
 
     // Package up the return string
     let mut ret = format!("You have {} episodes to catch up on.\n", num_items);
-    ret += format!("You are {} weeks behind, it will take you about {} weeks to catch up (excluding new episodes).\n", weeks_behind, weeks_to_catch_up).as_str();
+    ret += format!("You are {} weeks behind, it will take you about {} weeks to catch up (excluding new episodes).\n",
+            weeks_behind, weeks_to_catch_up).as_str();
     ret += format!("You should catch up on {}.\n", catch_up_date.format("%d %m, %Y")).as_str();
     ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", feed_racer.get_podracer_url()).as_str();
     ret
