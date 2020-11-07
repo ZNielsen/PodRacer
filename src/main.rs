@@ -20,9 +20,9 @@ fn index() -> &'static str {
     "Hello, world!"
 }
 
-#[get("/hello?wave&<name>")]
-fn test_url_handler(name: &rocket::http::RawStr) -> String {
-    format!("Yes test: {}", name)
+#[post("/update")]
+fn update_all_handler() {
+    racer::update_all();
 }
 
 #[post("/create_feed?<url>&<rate>&<integrate_new>")]
@@ -63,13 +63,13 @@ fn list_feeds_handler() -> String {
 fn launch_rocket() {
     let rocket = rocket::ignite();
     rocket.mount("/", routes![index])
-          .mount("/", routes![test_url_handler])
+          .mount("/", routes![update_all_handler])
           .mount("/", routes![delete_feed_handler])
           .mount("/", routes![list_feeds_handler])
           .mount("/", routes![create_feed_handler]).launch();
 }
 
 fn main() {
-
+    racer::update_all();
     launch_rocket();
 }

@@ -12,7 +12,8 @@ slug="create_feed"
 
 # Debug defaults
 url="https://atp.fm/rss"
-rate=1.2
+# rate=1.2
+rate=60480 # ten seconds is one week
 integrate_new="false"
 
 # Get parameters

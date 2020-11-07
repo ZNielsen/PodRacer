@@ -25,8 +25,8 @@ pub fn create_feed(url: String, rate: f32, integrate_new: bool) -> FeedRacer {
         Ok(_) => (),
         Err(e) => panic!("failed with error: {}", e)
     }
-    // Run update() on this directory
-    update_racer_at_path(&dir).unwrap();
+    // Run update() on this directory. We just created it, so no need to refresh the rss file
+    update_racer_at_path(&dir, &RssFile::FromStorage).unwrap();
     // Give the user the url to subscribe to
     println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url());
 
