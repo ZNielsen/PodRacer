@@ -21,9 +21,9 @@ Grab the binary from the github releases
 wget https://github.com/znielsen/PodRacer/releases/newest
 ```
 
-or clone and build
+Alternatively, you can clone and build. You will need the rust nightly build for rocket
 ```
-cargo build --release
+rustup override set nightly && cargo build --release
 ```
 
 Then start the server
