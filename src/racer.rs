@@ -8,10 +8,16 @@ pub const SCHEMA_VERSION:    &'static str = "1.0.0";
 pub const PODRACER_DIR:      &'static str = ".podracer";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
+pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
+pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
 
+pub enum RssFile {
+    Download,
+    FromStorage,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RacerEpisode {
@@ -94,10 +100,6 @@ impl FeedRacer {
         racer_data
     }
 
-    pub fn update_published_items(&self, items: &mut std::vec::Vec<rss::Item>) {
-
-    }
-
     pub fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
 
@@ -132,23 +134,29 @@ impl FeedRacer {
     // TODO -> handle the case where the url is invalid/disappears
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
-    pub fn get_updated_original_rss(&mut self) -> rss::Channel {
-        // Re-download file
-        let original_rss = crate::utils::download_rss_channel(&self.source_url).unwrap();
-        // Compare
+    pub fn get_original_rss(&mut self, mode: RssFile) -> rss::Channel {
         let stored_rss_file = File::open(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
-        let num_to_update = (original_rss.items().len() as i64 - stored_rss.items().len() as i64).abs();
-        if num_to_update > 0 {
-            // Overwrite our stored original RSS file
-            let original_rss_file = File::create(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
-            original_rss.pretty_write_to(original_rss_file, SPACE_CHAR, 2).unwrap();
-            // Append new entries to our racer object
-            let mut new_items = original_rss.items().to_owned();
-            new_items.truncate(num_to_update as usize);
-            self.add_new_items(&new_items, stored_rss.items().len());
-        }
+        let original_rss = match mode {
+            RssFile::Download => {
+                let network_file = crate::utils::download_rss_channel(&self.source_url).unwrap();
+                // Compare to stored file - update if we need to
+                let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
+                if num_to_update > 0 {
+                    // Overwrite our stored original RSS file
+                    let stored_rss_file = File::create(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
+                    network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
+                    // Append new entries to our racer object
+                    let mut new_items = network_file.items().to_owned();
+                    new_items.truncate(num_to_update as usize);
+                    self.add_new_items(&new_items, stored_rss.items().len());
+                }
+                network_file
+            },
+            RssFile::FromStorage => stored_rss,
+        };
+
         original_rss
     }
 
@@ -165,6 +173,27 @@ impl FeedRacer {
         }
         ret
     }
+}
+
+pub fn update_racer_at_path(path: &str) -> std::io::Result<()> {
+    // Load in racer file
+    let racer_file = File::open(String::from(path) +"/"+ crate::racer::RACER_FILE)?;
+    let mut racer: FeedRacer = serde_json::from_reader(&racer_file)?;
+
+    // Get original rss feed
+    let mut rss = racer.get_original_rss(RssFile::FromStorage);
+
+    // Check how many episodes we should publish at this point
+    let num_to_pub = racer.get_num_to_publish();
+    // Pull out only the items we want published
+    let mut items_to_publish = rss.items().to_owned();
+    items_to_publish.truncate(num_to_pub);
+    // Set the items to only contain what we want pubished
+    rss.set_items(items_to_publish);
+    // Write out the racer.rss file
+    let racer_rss_file = File::create(racer.get_racer_path().to_owned() +"/"+ RACER_RSS_FILE)?;
+    rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
+    Ok(())
 }
 
 
