@@ -27,7 +27,7 @@ rustup override set nightly && cargo build --release
 ```
 It's going to take a very long time to build. That's Rust.
 
-Then start the server
+### Start the server
 ```
 cargo run --release
 ```
