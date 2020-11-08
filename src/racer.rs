@@ -214,14 +214,19 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
 pub fn update_all() {
     let mut dir = dirs::home_dir().unwrap();
     dir.push(PODRACER_DIR);
-    for podcast_dir in Path::read_dir(dir.as_path()).unwrap() {
-        let path = podcast_dir.unwrap().path();
-        match update_racer_at_path(path.to_str().unwrap(), &RssFile::Download) {
-            Ok(()) => (),
-            Err(e) => println!("Could not update path {}. Error was: {}",
-                        path.to_str().unwrap(), e),
-        };
-    }
+    match Path::read_dir(dir.as_path()) {
+        Ok(podcast_dirs) => {
+            for podcast_dir in podcast_dirs {
+                let path = podcast_dir.unwrap().path();
+                match update_racer_at_path(path.to_str().unwrap(), &RssFile::Download) {
+                    Ok(()) => (),
+                    Err(e) => println!("Could not update path {}. Error was: {}",
+                                path.to_str().unwrap(), e),
+                };
+            }
+        },
+        Err(_) => println!("Cannot access dir for updating: {}", dir.display()),
+    };
 }
 
 
