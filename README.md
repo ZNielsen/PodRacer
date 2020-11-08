@@ -21,10 +21,11 @@ Grab the binary from the github releases
 wget https://github.com/znielsen/PodRacer/releases/newest
 ```
 
-Alternatively, you can clone and build. You will need the rust nightly build for rocket
+Alternatively, you can clone and build. You will need the rust nightly build for rocket.
 ```
 rustup override set nightly && cargo build --release
 ```
+It's going to take a very long time to build. That's Rust.
 
 Then start the server
 ```
