@@ -186,11 +186,12 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
 
     // Check how many episodes we should publish at this point
     let num_to_pub = racer.get_num_to_publish();
-    // Pull out only the items we want published
+    let num_to_scrub = rss.items().len() - num_to_pub;
+    // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
     let mut items_to_publish = rss.items().to_owned();
-    items_to_publish.reverse();
-    items_to_publish.truncate(num_to_pub);
-    // Set the items to only contain what we want pubished
+    items_to_publish.drain(0..num_to_scrub);
+
+    // Now that we have the items we want, overwrite the objects items.
     rss.set_items(items_to_publish);
     // Write out the racer.rss file
     let racer_rss_file = File::create(racer.get_racer_path().to_owned() +"/"+ RACER_RSS_FILE)?;
