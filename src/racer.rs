@@ -19,7 +19,6 @@ pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
 
-
 pub enum RssFile {
     Download,
     FromStorage,
@@ -71,7 +70,7 @@ impl FeedRacer {
         let first_pubdate = DateTime::parse_from_rfc2822(first_pubdate).unwrap();
         let anchor_date = chrono::Utc::now();
         let mut dates = Vec::new();
-        let mut item_counter = 0;
+        let mut item_counter = 1;
         for item in items {
             // Get diff from first published date
             let pub_date = item.pub_date().unwrap();
