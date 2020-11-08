@@ -34,20 +34,21 @@ cargo run --release
 
 If you want to access the server remotely, set up port forwarding in your router.
 
-## Usage
+## Configuration
 
+## Usage
 You can make use of the included `create_feed.sh` bash script. It gets the options from you and makes a `curl` request to the proper address. You can communicate with the server via HTTP methods (mostly just `POST` and `GET`) at the following addresses (assuming your server is at `0.0.0.0`, listening on port `1234`)
 
-- POST to 0.0.0.0:1234/create_feed - Create a new PodRacer feed
+### Create a new PodRacer feed
+- POST to 0.0.0.0:1234/create_feed
   - parameters:
     - url [string] -The actual RSS feed for the podcast.
     - rate [float] - Used to scale the time between episodes.
         For a weekly podcast, a rate of 2.0 will give episodes every 3.5 days. A rate of 1.2 will give episodes roughly every 6 days. A rate of 1.0 will just time shift the podcast as if the first episode was published today.
-    - integrate_new [bool] - Should PodRacer check the actual RSS feed for
-        updates, or should it just stick with the current backlog?
+    - integrate_new [bool] - Should PodRacer check the actual RSS feed for updates, or should it just stick with the current backlog?
         Set to false if you plan on listening contemporaneously, but also want to work through the backlog.
         Set to true if you want to listen to all the episodes in order, eventually catching up to real time. Once you are caught up, you can either unsubscribe from the PodRacer feed and subscribe to the 'real' feed, or just leave it - as long as PodRacer is running, it will continue to update the feed.
-  - example calls:
+  - example call:
     ```bash
     curl -X POST -G \
         --data-urlencode "url=http://example.com" \
@@ -56,23 +57,29 @@ You can make use of the included `create_feed.sh` bash script. It gets the optio
         ${hostname}:${port}/${slug}
     ```
 
-- POST to 0.0.0.0:1234/update/<url> - Force update of the specified podcast.
+### Force update of the specified podcast
+- POST to 0.0.0.0:1234/update/<url>
   - parameters:
     - url [string] -
 
-- POST to 0.0.0.0:1234/update- Force update of all podcasts on this server.
+### Force update of all podcasts on this server
+- POST to 0.0.0.0:1234/update
   - parameters: none
 
-- POST to 0.0.0.0:1234/delete_feed - Delete an existing PodRacer feed
+### Delete an existing PodRacer feed
+- POST to 0.0.0.0:1234/delete_feed
   - parameters:
     - url [string] - The PodRacer RSS feed to delete from the server.
         This will permanently delete the PodRacer feed, so use with caution.
     - example call:
         TODO - add example call
 
-- GET to 0.0.0.0:1234/list_feeds - List all the PodRacer feeds on this server
+### List all the PodRacer feeds on this server
+- GET to 0.0.0.0:1234/list_feeds
   - parameters: none
   - example call:
+
+## Contributing
 
 ### License
 
