@@ -61,3 +61,8 @@ fn create_feed_racer_dir(ch: &rss::Channel) -> String {
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
+
+pub fn get_hostname_and_port() -> Option<String> {
+    // std::process::Command::new("").output()
+    Some(String::from(HOSTNAME) + ":" + PORT)
+}

@@ -6,6 +6,9 @@ extern crate rocket;
 mod racer;
 mod utils;
 
+use std::path::PathBuf;
+use std::fs::File;
+
 // JSON keys
 const KEY_EPISODE_RACER_DATE: &'static str = "date_string";
 const KEY_SCHEMA_VERSION:     &'static str = "schema_version";
@@ -18,6 +21,11 @@ const KEY_RACER_URL:          &'static str = "podracer_url";
 #[get("/")]
 fn index() -> &'static str {
     "Hello, world!"
+}
+
+#[post("/update/<podcast>")]
+fn update_one_handler(podcast: String) {
+    // Update the specified podcast
 }
 
 #[post("/update")]
@@ -60,15 +68,21 @@ fn list_feeds_handler() -> String {
     "".to_owned()
 }
 
-#[get("/podcasts/<url>")]
-fn serve_rss_handler(url: String) -> Option<std::fs::File> {
+#[get("/podcasts/<podcast>")]
+fn serve_rss_handler(podcast: String) -> Option<File> {
     // Serve the rss file
-    None
+    let home = dirs::home_dir()?;
+    let path: PathBuf = [home.to_str()?, racer::PODRACER_DIR, &podcast, racer::RACER_RSS_FILE].iter().collect();
+    match std::fs::File::open(path) {
+        Ok(file) => Some(file),
+        Err(_) => None,
+    }
 }
 
 fn launch_rocket() {
     let rocket = rocket::ignite();
     rocket.mount("/", routes![index])
+          .mount("/", routes![update_one_handler])
           .mount("/", routes![update_all_handler])
           .mount("/", routes![delete_feed_handler])
           .mount("/", routes![list_feeds_handler])
