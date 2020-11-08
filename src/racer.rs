@@ -13,8 +13,8 @@ pub const PODRACER_DIR:      &'static str = ".podracer";
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
-pub const HOSTNAME:          &'static str = "PodRacer.zachn.me";
-pub const PORT:              &'static str = "42069";
+pub const HOSTNAME:          &'static str = "home.zachn.me";
+pub const PORT:              &'static str = "8000";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
