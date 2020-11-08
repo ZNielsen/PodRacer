@@ -1,3 +1,5 @@
+use crate::utils::get_hostname_and_port;
+
 use chrono::{DateTime, Duration};
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Write};
@@ -11,8 +13,11 @@ pub const PODRACER_DIR:      &'static str = ".podracer";
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
+pub const HOSTNAME:          &'static str = "PodRacer.zachn.me";
+pub const PORT:              &'static str = "42069";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
+
 
 
 pub enum RssFile {
@@ -86,11 +91,14 @@ impl FeedRacer {
             item_counter += 1;
         }
 
+        let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
+        let podracer_url: PathBuf = [&get_hostname_and_port().unwrap(), "podcasts", podcast_dir_name].iter().collect();
+
         let racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
             racer_path: dir.to_owned(),
             source_url: source_url.to_owned(),
-            podracer_url: "http://example.com".to_owned(),
+            podracer_url: podracer_url.to_str().unwrap().to_owned(),
             rate: rate.to_owned(),
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
