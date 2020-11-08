@@ -98,7 +98,7 @@ fn main() {
     // Create update thread - update every hour
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
         loop {
-            std::thread::sleep(std::time::Duration::from_secs(59 * (60*60)));
+            std::thread::sleep(std::time::Duration::from_secs(60));
             racer::update_all();
         }
     });
