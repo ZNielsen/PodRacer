@@ -60,12 +60,19 @@ fn list_feeds_handler() -> String {
     "".to_owned()
 }
 
+#[get("/podcasts/<url>")]
+fn serve_rss_handler(url: String) -> Option<std::fs::File> {
+    // Serve the rss file
+    None
+}
+
 fn launch_rocket() {
     let rocket = rocket::ignite();
     rocket.mount("/", routes![index])
           .mount("/", routes![update_all_handler])
           .mount("/", routes![delete_feed_handler])
           .mount("/", routes![list_feeds_handler])
+          .mount("/", routes![serve_rss_handler])
           .mount("/", routes![create_feed_handler]).launch();
 }
 
