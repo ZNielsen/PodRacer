@@ -14,7 +14,7 @@ pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
 pub const HOSTNAME:          &'static str = "home.zachn.me";
-pub const PORT:              &'static str = "8000";
+pub const PORT:              &'static str = "42069";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
@@ -91,7 +91,10 @@ impl FeedRacer {
         }
 
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
-        let podracer_url: PathBuf = [&get_hostname_and_port().unwrap(), "podcasts", podcast_dir_name].iter().collect();
+        let podracer_url: PathBuf = [&get_hostname_and_port().unwrap(),
+                            "podcasts",
+                            podcast_dir_name,
+                            RACER_RSS_FILE].iter().collect();
 
         let racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),

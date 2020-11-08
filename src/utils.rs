@@ -34,11 +34,8 @@ pub fn create_feed(url: String, rate: f32, integrate_new: bool) -> FeedRacer {
 }
 
 pub fn download_rss_channel(url: &String) -> Result<rss::Channel, Box<dyn std::error::Error>> {
-    println!("Getting content");
     let content = reqwest::blocking::get(url).unwrap().bytes().unwrap();
-    println!("Got content");
     let channel = rss::Channel::read_from(&content[..])?;
-    println!("Got channel");
     Ok(channel)
 }
 

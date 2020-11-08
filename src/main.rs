@@ -70,7 +70,7 @@ fn list_feeds_handler() -> String {
     "".to_owned()
 }
 
-#[get("/podcasts/<podcast>")]
+#[get("/podcasts/<podcast>/racer.rss")]
 fn serve_rss_handler(podcast: String) -> Option<File> {
     // Serve the rss file
     let home = dirs::home_dir()?;
@@ -99,7 +99,9 @@ fn main() {
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(60));
+            print!("Updating all feeds... ");
             racer::update_all();
+            println!("Done")
         }
     });
     launch_rocket();
