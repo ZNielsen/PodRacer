@@ -6,9 +6,12 @@ function dprint() {
 }
 dprint "debugging is on"
 
-hostname="http://localhost"
-port="8000"
+hostname="http://PodRacer.zachn.me"
+port="80"
 slug="create_feed"
+# hostname="http://localhost"
+# port="8000"
+# slug="create_feed"
 
 # Debug defaults
 url="https://atp.fm/rss"
