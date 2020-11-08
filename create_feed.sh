@@ -19,9 +19,6 @@ integrate_new="false"
 
 
 request="POST"
-args="--data-urlencode \"url=${url}\"" \
-    "--data-urlencode \"rate=${rate}\"" \
-    "--data-urlencode \"integrate_new=${integrate_new}\""
 # Parse out command line args
 shopt -s extglob
 while test $# -gt 0; do
@@ -30,6 +27,13 @@ while test $# -gt 0; do
         -l|--list-feeds)
             dprint "In list feeds"
             slug="list_feeds"
+            request="GET"
+            args=""
+            shift 1
+        ;;
+        --get)
+            dprint "In get"
+            slug="podcasts"
             request="GET"
             args=""
             shift 1
@@ -97,8 +101,16 @@ while test $# -gt 0; do
     esac
 done
 
-dprint "curl -v -X ${request} -G ${args} ${hostname}:${port}/${slug}"
-curl -v -X ${request} -G ${args} ${hostname}:${port}/${slug}
+# dprint "curl -v -X ${request} -G ${args} ${hostname}:${port}/${slug}"
+# if [[ "$pass_args" == "true" ]]; then
+    curl -v -X ${request} -G \
+        --data-urlencode "url=${url}" \
+        --data-urlencode "rate=${rate}" \
+        --data-urlencode "integrate_new=${integrate_new}" \
+        ${hostname}:${port}/${slug}
+# else
+#     curl -v -X ${request} -G ${hostname}:${port}/${slug}
+# fi
 
 
 function get_parameters() {
