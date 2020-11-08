@@ -34,7 +34,7 @@ pub struct RacerEpisode {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
-    racer_path: String,
+    racer_path: PathBuf,
     source_url: String,
     podracer_url: String,
     anchor_date: DateTime<chrono::Utc>,
@@ -46,7 +46,7 @@ pub struct FeedRacer {
 // Basic getter functions
 impl FeedRacer {
     pub fn get_schema_version(&self) -> &str { &self.schema_version }
-    pub fn get_racer_path(&self) -> &str { &self.racer_path }
+    pub fn get_racer_path(&self) -> &Path { &self.racer_path }
     pub fn get_source_url(&self) -> &str { &self.source_url }
     pub fn get_podracer_url(&self) -> &str { &self.podracer_url }
     pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
@@ -96,7 +96,7 @@ impl FeedRacer {
 
         let racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
-            racer_path: dir.to_owned(),
+            racer_path: PathBuf::from(dir),
             source_url: source_url.to_owned(),
             podracer_url: podracer_url.to_str().unwrap().to_owned(),
             rate: rate.to_owned(),
@@ -112,7 +112,7 @@ impl FeedRacer {
     pub fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
 
-        let filename = String::from(self.get_racer_path()) +"/"+ RACER_FILE;
+        let filename: PathBuf = [self.get_racer_path().to_str().unwrap(), RACER_FILE].iter().collect();
         let mut fp = File::create(filename)?;
         fp.write_all(json.as_bytes())
     }
@@ -144,7 +144,9 @@ impl FeedRacer {
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
     pub fn get_original_rss(&mut self, mode: &RssFile) -> rss::Channel {
-        let stored_rss_file = File::open(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
+        let mut stored_rss_path = self.racer_path.clone();
+        stored_rss_path.push(ORIGINAL_RSS_FILE);
+        let stored_rss_file = File::open(&stored_rss_path).unwrap();
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
         let original_rss = match mode {
@@ -154,7 +156,7 @@ impl FeedRacer {
                 let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
                 if num_to_update > 0 {
                     // Overwrite our stored original RSS file
-                    let stored_rss_file = File::create(String::from(&self.racer_path) +"/"+ ORIGINAL_RSS_FILE).unwrap();
+                    let stored_rss_file = File::create(stored_rss_path).unwrap();
                     network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
                     // Append new entries to our racer object
                     let mut new_items = network_file.items().to_owned();
@@ -186,7 +188,8 @@ impl FeedRacer {
 
 pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     // Load in racer file
-    let racer_file = File::open(String::from(path) +"/"+ crate::racer::RACER_FILE)?;
+    let racer_file_path: PathBuf = [path, RACER_FILE].iter().collect();
+    let racer_file = File::open(racer_file_path)?;
     let mut racer: FeedRacer = serde_json::from_reader(&racer_file)?;
 
     // Get original rss feed
@@ -202,7 +205,8 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     // Now that we have the items we want, overwrite the objects items.
     rss.set_items(items_to_publish);
     // Write out the racer.rss file
-    let racer_rss_file = File::create(racer.get_racer_path().to_owned() +"/"+ RACER_RSS_FILE)?;
+    let racer_rss_path: PathBuf = [racer.get_racer_path().to_str().unwrap(), RACER_RSS_FILE].iter().collect();
+    let racer_rss_file = File::create(racer_rss_path)?;
     rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
     Ok(())
 }
@@ -239,7 +243,7 @@ impl fmt::Display for FeedRacer {
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
         writeln!(f, "schema_version: {}", self.schema_version)?;
-        writeln!(f, "racer_path: {}", self.racer_path )?;
+        writeln!(f, "racer_path: {}", self.racer_path.display() )?;
         writeln!(f, "source_url: {}", self.source_url)?;
         writeln!(f, "podracer_url: {}", self.podracer_url)?;
         writeln!(f, "anchor_date: {}", self.anchor_date)?;
