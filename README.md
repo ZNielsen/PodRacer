@@ -44,12 +44,15 @@ You can make use of the included `create_feed.sh` bash script. It gets the optio
 ### Create a new PodRacer feed
 - POST to 0.0.0.0:1234/create_feed
   - parameters:
-    - url [string] -The actual RSS feed for the podcast.
+    - url [string] - The actual RSS feed for the podcast.
     - rate [float] - Used to scale the time between episodes.
         For a weekly podcast, a rate of 2.0 will give episodes every 3.5 days. A rate of 1.2 will give episodes roughly every 6 days. A rate of 1.0 will just time shift the podcast as if the first episode was published today.
     - integrate_new [bool] - Should PodRacer check the actual RSS feed for updates, or should it just stick with the current backlog?
         Set to false if you plan on listening contemporaneously, but also want to work through the backlog.
         Set to true if you want to listen to all the episodes in order, eventually catching up to real time. Once you are caught up, you can either unsubscribe from the PodRacer feed and subscribe to the 'real' feed, or just leave it - as long as PodRacer is running, it will continue to update the feed.
+    - start_ep [int] - The episode number to start on.
+        This episode will appear to come out the day you create the feed. All previous episodes will appear published as well.
+        Note this argument selects from the number of episodes published in the feed, and may not match the publisher's self reported numbering.
   - example call:
     ```bash
     curl -X POST -G \
