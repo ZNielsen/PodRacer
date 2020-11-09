@@ -37,6 +37,8 @@ while test $# -gt 0; do
             request="GET"
             args=""
             shift 1
+            url="$1/racer.rss"
+            shift 1
         ;;
         --update)
             dprint "In update"
@@ -101,15 +103,15 @@ while test $# -gt 0; do
     esac
 done
 
-# dprint "curl -v -X ${request} -G ${args} ${hostname}:${port}/${slug}"
 # if [[ "$pass_args" == "true" ]]; then
-    curl -v -X ${request} -G \
-        --data-urlencode "url=${url}" \
-        --data-urlencode "rate=${rate}" \
-        --data-urlencode "integrate_new=${integrate_new}" \
-        ${hostname}:${port}/${slug}
+    # curl -X ${request} -G \
+    #     --data-urlencode "url=${url}" \
+    #     --data-urlencode "rate=${rate}" \
+    #     --data-urlencode "integrate_new=${integrate_new}" \
+    #     ${hostname}:${port}/${slug}
 # else
-#     curl -v -X ${request} -G ${hostname}:${port}/${slug}
+    dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
+    curl -v -X ${request} -G ${hostname}:${port}/${slug}
 # fi
 
 
