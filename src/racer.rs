@@ -1,4 +1,4 @@
-use crate::utils::get_hostname_and_port;
+use crate::utils::*;
 
 use chrono::{DateTime, Duration};
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,13 @@ pub const PORT:              &'static str = "42069";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
+
+pub struct RacerCreationParams {
+    pub url: String,
+    pub rate: f32,
+    pub integrate_new: bool,
+    pub start_ep: usize,
+}
 
 pub enum RssFile {
     Download,
@@ -59,15 +66,21 @@ impl FeedRacer {
 
 impl FeedRacer {
     pub fn new(items: &mut Vec<rss::Item>,
-        rate: &f32,
-        source_url: &str,
-        integrate_new: &bool,
+        params: &RacerCreationParams,
         dir: &str) -> FeedRacer {
         // Reverse the items so the oldest entry is first
         items.reverse();
         // Get anchor date
-        let first_pubdate = items.first().unwrap().pub_date().unwrap();
-        let first_pubdate = DateTime::parse_from_rfc2822(first_pubdate).unwrap();
+        let start_idx = match items.len() >= params.start_ep {
+            true => params.start_ep - 1,
+            false => {
+                println!("Invalid index for parameter start_ep.");
+                println!("Given start_ep {}, but feed only has {} items.", params.start_ep, items.len());
+                0
+            },
+        };
+        let start_date = items[start_idx].pub_date().unwrap();
+        let first_pubdate = DateTime::parse_from_rfc2822(start_date).unwrap();
         let anchor_date = chrono::Utc::now();
         let mut dates = Vec::new();
         let mut item_counter = 1;
@@ -78,7 +91,7 @@ impl FeedRacer {
                                 .signed_duration_since(first_pubdate)
                                 .num_seconds();
             // Scale that diff
-            time_diff = ((time_diff as f32) / rate) as i64;
+            time_diff = ((time_diff as f32) / params.rate) as i64;
             // Add back to anchor date to get new publish date + convert to string
             let racer_date = anchor_date.checked_add_signed(Duration::seconds(time_diff)).unwrap()
                                 .to_rfc2822();
@@ -99,12 +112,12 @@ impl FeedRacer {
         let racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
             racer_path: PathBuf::from(dir),
-            source_url: source_url.to_owned(),
+            source_url: params.url.to_owned(),
             podracer_url: podracer_url.to_str().unwrap().to_owned(),
-            rate: rate.to_owned(),
+            rate: params.rate.to_owned(),
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
-            integrate_new: integrate_new.to_owned(),
+            integrate_new: params.integrate_new.to_owned(),
             release_dates: dates,
         };
 
@@ -232,6 +245,35 @@ pub fn update_all() {
         },
         Err(_) => println!("Cannot access dir for updating: {}", dir.display()),
     };
+}
+
+pub fn create_feed(params: RacerCreationParams) -> FeedRacer {
+    let channel = match download_rss_channel(&params.url) {
+        Ok(val) => val,
+        Err(_) => panic!("Error in URL"),
+    };
+    // let num_episodes = channel.items().len();
+    // let weeks_behind = get_time_behind(&channel);
+    // Make directory
+    let dir = create_feed_racer_dir(&channel);
+    // Write out original rss feed to file in dir
+    let original_rss_file = File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE).unwrap();
+    channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2).unwrap();
+    // Make racer file
+    let racer = FeedRacer::new(
+                    &mut channel.items().to_owned(),
+                    &params,
+                    &dir);
+    match racer.write_to_file() {
+        Ok(_) => (),
+        Err(e) => panic!("failed with error: {}", e)
+    }
+    // Run update() on this directory. We just created it, so no need to refresh the rss file
+    update_racer_at_path(&dir, &RssFile::FromStorage).unwrap();
+    // Give the user the url to subscribe to
+    println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url());
+
+    racer
 }
 
 

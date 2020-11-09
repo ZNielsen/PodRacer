@@ -12,10 +12,12 @@ port="42069"
 slug="create_feed"
 
 # Debug defaults
-url="https://atp.fm/rss"
+# url="https://atp.fm/rss"
+url="https://rss.acast.com/dungeons-and-daddies"
 # rate=1.2
-rate=300
+rate=1.2
 integrate_new="false"
+start_ep="33"
 
 
 request="POST"
@@ -104,12 +106,13 @@ while test $# -gt 0; do
 done
 
 # if [[ "$pass_args" == "true" ]]; then
-    # curl -X ${request} -G \
-    #     --data-urlencode "url=${url}" \
-    #     --data-urlencode "rate=${rate}" \
-    #     --data-urlencode "integrate_new=${integrate_new}" \
-    #     ${hostname}:${port}/${slug}
+    curl -X ${request} -G \
+        --data-urlencode "url=${url}" \
+        --data-urlencode "rate=${rate}" \
+        --data-urlencode "integrate_new=${integrate_new}" \
+        --data-urlencode "start_ep=${start_ep}" \
+        ${hostname}:${port}/${slug}
 # else
-    dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
-    curl -v -X ${request} -G ${hostname}:${port}/${slug}
+    # dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
+    # curl -v -X ${request} -G ${hostname}:${port}/${slug}
 # fi
