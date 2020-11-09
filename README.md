@@ -10,7 +10,7 @@
 
 A podcast catch-up service
 
-# WORK IN PROGRESS, NOT FUNCTIONAL YET
+# WORK IN PROGRESS - still very buggy. It's functional but not polished yet
 
 ## Installation
 
