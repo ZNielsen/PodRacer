@@ -32,9 +32,16 @@ fn update_one_handler(podcast: String) {
 fn update_all_handler() {
     racer::update_all();
 }
-
 #[post("/create_feed?<url>&<rate>&<integrate_new>")]
 fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
+    create_feed(url, rate, integrate_new, 1)
+}
+#[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>")]
+fn create_feed_handler_ep(url: String, rate: f32, integrate_new: bool, start_ep: i32) -> String {
+    create_feed(url, rate, integrate_new, start_ep)
+}
+
+fn create_feed(url: String, rate: f32, integrate_new: bool, start_ep: i32) -> String {
     let feed_racer = utils::create_feed(url, rate, integrate_new);
     println!("{}", feed_racer);
     // String::from("Success!!!")
@@ -89,7 +96,9 @@ fn launch_rocket() {
           .mount("/", routes![delete_feed_handler])
           .mount("/", routes![list_feeds_handler])
           .mount("/", routes![serve_rss_handler])
-          .mount("/", routes![create_feed_handler]).launch();
+          .mount("/", routes![create_feed_handler])
+          .mount("/", routes![create_feed_handler_ep])
+          .launch();
 }
 
 fn main() {

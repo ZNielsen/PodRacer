@@ -197,6 +197,9 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     // Get original rss feed
     let mut rss = racer.get_original_rss(mode);
 
+    // Tack on a `- PodRacer` to the title
+    rss.set_title(String::from(rss.title()) + " - PodRacer");
+
     // Check how many episodes we should publish at this point
     let num_to_pub = racer.get_num_to_publish();
     let num_to_scrub = rss.items().len() - num_to_pub;

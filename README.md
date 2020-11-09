@@ -34,6 +34,8 @@ cargo run --release
 
 If you want to access the server remotely, set up port forwarding in your router.
 
+### Keeping the process alive
+
 ## Configuration
 
 ## Usage
