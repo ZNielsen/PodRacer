@@ -32,17 +32,27 @@ fn update_one_handler(podcast: String) {
 fn update_all_handler() {
     racer::update_all();
 }
-#[post("/create_feed?<url>&<rate>&<integrate_new>")]
+#[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
 fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
-    create_feed(url, rate, integrate_new, 1)
+    create_feed( racer::RacerCreationParams {
+        url: url,
+        rate:rate,
+        integrate_new: integrate_new,
+        start_ep: 1
+    })
 }
-#[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>")]
-fn create_feed_handler_ep(url: String, rate: f32, integrate_new: bool, start_ep: i32) -> String {
-    create_feed(url, rate, integrate_new, start_ep)
+#[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
+fn create_feed_handler_ep(url: String, rate: f32, integrate_new: bool, start_ep: usize) -> String {
+    create_feed( racer::RacerCreationParams {
+        url: url,
+        rate:rate,
+        integrate_new: integrate_new,
+        start_ep: start_ep
+    })
 }
 
-fn create_feed(url: String, rate: f32, integrate_new: bool, start_ep: i32) -> String {
-    let feed_racer = utils::create_feed(url, rate, integrate_new);
+fn create_feed(params: racer::RacerCreationParams) -> String {
+    let feed_racer = racer::create_feed(params);
     println!("{}", feed_racer);
     // String::from("Success!!!")
 
