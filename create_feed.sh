@@ -17,7 +17,7 @@ url="https://rss.acast.com/dungeons-and-daddies"
 # rate=1.2
 rate=1.2
 integrate_new="false"
-start_ep="33"
+start_ep="36"
 
 
 request="POST"
