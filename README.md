@@ -8,9 +8,16 @@
 ![GitHub forks](https://img.shields.io/github/forks/znielsen/podracer?style=social)
 
 
-A podcast catch-up service
+A podcast catch-up service running on your very own server!
+
+## Features
+- *Self hosted* - complete autonomy over your feeds
+- *Time shift podcasts* - Have a favorite show that died out and want to relive it? PodRacer lets you relive the podcast by creating a feed where the first episode was published _today_.
+- *Variable publishing rate* - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time.
 
 # WORK IN PROGRESS - still very buggy. It's functional but not polished yet
+
+Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have issues I didn't see, feel free to file a github issue and I'll do what I can to fix it up.
 
 ## Installation
 
@@ -105,7 +112,8 @@ additional terms or conditions.
 ### Donating
 If you like it then you shoulda thrown a dollar at it.
 
-If you found PodRacer useful, a donation would be great! Recommended $1/podcast.
+If you found PodRacer useful, a donation would be great! Recommended $1/podcast (as in per feed run through the service, not per episode). No pressure, but supporting software you like is cool.
+![Paypal Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Y8HPAAJZTVT8E&item_name=Developer+Tip&currency_code=USD)
 
 ### Maintainers
 [Zach Nielsen](https://github.com/ZNielsen) - @ZNielsen
