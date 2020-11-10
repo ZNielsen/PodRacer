@@ -99,6 +99,7 @@ fn list_feeds_handler() -> String {
 
 #[get("/podcasts/<podcast>/racer.rss")]
 fn serve_rss_handler(podcast: String) -> Option<File> {
+    println!("Serving at {}", chrono::Utc::now().to_rfc3339());
     // Serve the rss file
     let home = dirs::home_dir()?;
     let path: PathBuf = [home.to_str()?, racer::PODRACER_DIR, &podcast, racer::RACER_RSS_FILE].iter().collect();
