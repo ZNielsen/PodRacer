@@ -229,22 +229,31 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn update_all() {
-    let mut dir = dirs::home_dir().unwrap();
-    dir.push(PODRACER_DIR);
-    match Path::read_dir(dir.as_path()) {
-        Ok(podcast_dirs) => {
-            for podcast_dir in podcast_dirs {
-                let path = podcast_dir.unwrap().path();
-                match update_racer_at_path(path.to_str().unwrap(), &RssFile::Download) {
-                    Ok(()) => (),
-                    Err(e) => println!("Could not update path {}. Error was: {}",
-                                path.to_str().unwrap(), e),
-                };
-            }
-        },
-        Err(_) => println!("Cannot access dir for updating: {}", dir.display()),
+pub fn update_all() -> Result<(), String> {
+    let mut dir = match dirs::home_dir() {
+        Some(val) => val,
+        None => return Err(format!("Error retrieving home dir")),
     };
+    dir.push(PODRACER_DIR);
+    let podcast_dirs = match Path::read_dir(dir.as_path()) {
+        Ok(val) => val,
+        Err(e) => return Err(format!("Cannot access dir for updating: {:?}.\nError: {}", dir, e)),
+    };
+    for podcast_dir in podcast_dirs {
+        let path = match podcast_dir {
+            Ok(val) => val.path(),
+            Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
+        };
+        let path_str = match path.to_str() {
+            Some(val) => val,
+            None => return Err(format!("Tried to open empty path")),
+        };
+        match update_racer_at_path(path_str, &RssFile::Download) {
+            Ok(()) => (),
+            Err(e) => return Err(println!("Could not update path {}. Error was: {}", path_str, e)),
+        };
+    };
+    Ok(())
 }
 
 pub fn create_feed(params: RacerCreationParams) -> FeedRacer {

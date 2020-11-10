@@ -30,7 +30,10 @@ fn update_one_handler(podcast: String) {
 
 #[post("/update")]
 fn update_all_handler() {
-    racer::update_all();
+    match racer::update_all() {
+        Ok(_) => (),
+        Err(string) => println!("Error in update_all_handler: {}", string),
+    };
 }
 #[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
 fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
@@ -98,9 +101,8 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
     }
 }
 
-fn prep_rocket() ->  {
-    let rocket = rocket::ignite();
-    rocket
+fn main() {
+    let rocket = rocket::ignite()
         .mount("/", routes![index])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
@@ -109,20 +111,28 @@ fn prep_rocket() ->  {
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_handler_ep]);
-    rocket
-}
 
-fn main() {
-    let rocket = prep_rocket();
     // Manually update on start
-    racer::update_all();
+    match racer::update_all() {
+        Ok(_) => (),
+        Err(string) => println!("Error in update_all on boot: {}", string),
+    };
+
+    // Parse out custom config values
+    let factor: u64 = rocket.config()
+                            .get_str("update_factor").unwrap()
+                            .parse().unwrap();
+
     // Create update thread - update every hour
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
-        let duration = 59 * rocket.config().get_str("update_factor").unwrap();
+        let duration = 59 * factor;
         loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");
-            racer::update_all();
+            match racer::update_all() {
+                Ok(_) => (),
+                Err(string) => println!("Error in update_all in update thread: {}", string),
+            };
             println!("Done")
         }
     });
