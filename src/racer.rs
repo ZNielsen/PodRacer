@@ -13,13 +13,12 @@ pub const PODRACER_DIR:      &'static str = ".podracer";
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
-pub const HOSTNAME:          &'static str = "home.zachn.me";
-pub const PORT:              &'static str = "42069";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
-
 pub struct RacerCreationParams {
+    pub address: String,
+    pub port: u64,
     pub url: String,
     pub rate: f32,
     pub integrate_new: bool,
@@ -104,7 +103,8 @@ impl FeedRacer {
         }
 
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
-        let podracer_url: PathBuf = [&get_hostname_and_port().unwrap(),
+        let podracer_url: PathBuf = [
+                            (String::from(&params.address) +":"+ &params.address).as_str(),
                             "podcasts",
                             podcast_dir_name,
                             RACER_RSS_FILE].iter().collect();
@@ -256,7 +256,7 @@ pub fn update_all() -> Result<(), String> {
     Ok(())
 }
 
-pub fn create_feed(params: RacerCreationParams) -> FeedRacer {
+pub fn create_feed(params: &RacerCreationParams) -> FeedRacer {
     let channel = match download_rss_channel(&params.url) {
         Ok(val) => val,
         Err(_) => panic!("Error in URL"),
