@@ -71,7 +71,7 @@ impl FeedRacer {
         // Reverse the items so the oldest entry is first
         items.reverse();
         // Get anchor date
-        let start_idx = match items.len() >= params.start_ep {
+        let start_idx = match items.len() >= params.start_ep && params.start_ep > 0 {
             true => params.start_ep - 1,
             false => {
                 println!("Invalid index for parameter start_ep.");
