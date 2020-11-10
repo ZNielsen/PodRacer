@@ -15,7 +15,7 @@ port = 42069
 keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
-update_factor = 59
+update_factor = 45
 
 [production]
 address = "0.0.0.0"
@@ -23,4 +23,4 @@ port = 42069
 keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
-update_factor = 59
+update_factor = 45
