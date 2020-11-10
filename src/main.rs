@@ -114,7 +114,7 @@ fn main() {
 
     // Manually update on start
     match racer::update_all() {
-        Ok(_) => (),
+        Ok(_) => println!("Updated all racer feeds on server"),
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
