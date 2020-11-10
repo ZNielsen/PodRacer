@@ -23,7 +23,7 @@ wget https://github.com/znielsen/PodRacer/releases/newest
 
 Alternatively, you can clone and build. You will need the rust nightly build for rocket.
 ```
-rustup override set nightly && cargo build --release
+rustup override set nightly && rustup update && cargo update && cargo build --release
 ```
 It's going to take a very long time to build. That's Rust.
 
@@ -35,6 +35,7 @@ cargo run --release
 If you want to access the server remotely, set up port forwarding in your router.
 
 ### Keeping the process alive
+You can either run in a tmux instance or use `nohup` and send it to the background.
 
 ## Configuration
 
