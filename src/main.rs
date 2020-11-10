@@ -3,20 +3,20 @@
 #[macro_use]
 extern crate rocket;
 
+use rocket::fairing::AdHoc;
+use rocket::State;
+
 mod racer;
 mod utils;
 
 use std::path::PathBuf;
 use std::fs::File;
 
-// JSON keys
-const KEY_EPISODE_RACER_DATE: &'static str = "date_string";
-const KEY_SCHEMA_VERSION:     &'static str = "schema_version";
-const KEY_EPISODE_NUMBER:     &'static str = "ep_num";
-const KEY_RELEASE_DATES:      &'static str = "release_dates";
-const KEY_SOURCE_URL:         &'static str = "source_url";
-const KEY_RACER_PATH:         &'static str = "racer_path";
-const KEY_RACER_URL:          &'static str = "podracer_url";
+struct RocketConfig {
+    pub address: String,
+    pub port: u64,
+}
+struct UpdateFactor(u64);
 
 #[get("/")]
 fn index() -> &'static str {
@@ -36,8 +36,14 @@ fn update_all_handler() {
     };
 }
 #[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
-fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
+fn create_feed_handler( config: State<RocketConfig>,
+                        url: String,
+                        rate: f32,
+                        integrate_new: bool
+                    ) -> String {
     create_feed( racer::RacerCreationParams {
+        address: config.address.clone(),
+        port: config.port,
         url: url,
         rate:rate,
         integrate_new: integrate_new,
@@ -45,8 +51,10 @@ fn create_feed_handler(url: String, rate: f32, integrate_new: bool) -> String {
     })
 }
 #[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
-fn create_feed_handler_ep(url: String, rate: f32, integrate_new: bool, start_ep: usize) -> String {
+fn create_feed_handler_ep(config: State<RocketConfig>, url: String, rate: f32, integrate_new: bool, start_ep: usize) -> String {
     create_feed( racer::RacerCreationParams {
+        address: config.address.clone(),
+        port: config.port,
         url: url,
         rate:rate,
         integrate_new: integrate_new,
@@ -55,16 +63,15 @@ fn create_feed_handler_ep(url: String, rate: f32, integrate_new: bool, start_ep:
 }
 
 fn create_feed(params: racer::RacerCreationParams) -> String {
-    let feed_racer = racer::create_feed(params);
+    let feed_racer = racer::create_feed(&params);
     println!("{}", feed_racer);
-    // String::from("Success!!!")
 
     // Grab some info to return
-    let path: PathBuf = [feed_racer.get_racer_path().to_str().unwrap() ,racer::ORIGINAL_RSS_FILE].iter().collect();
+    let path: PathBuf = [feed_racer.get_racer_path().to_str().unwrap(), racer::ORIGINAL_RSS_FILE].iter().collect();
     let file = File::open(path).unwrap();
     let mut buf = std::io::BufReader::new(&file);
     let feed = rss::Channel::read_from(&mut buf).unwrap();
-    let num_items = feed.items().len();
+    let num_items = feed.items().len() - &params.start_ep;
     let weeks_behind = feed_racer.get_first_pubdate().signed_duration_since(chrono::Utc::now()).num_weeks().abs();
     let weeks_to_catch_up = ((weeks_behind as f32) / feed_racer.get_rate()) as u32;
     let days_to_catch_up = (((weeks_behind*7) as f32) / feed_racer.get_rate()) as u32;
@@ -101,6 +108,7 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
     }
 }
 
+
 fn main() {
     let rocket = rocket::ignite()
         .mount("/", routes![index])
@@ -110,7 +118,21 @@ fn main() {
         .mount("/", routes![list_feeds_handler])
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
-        .mount("/", routes![create_feed_handler_ep]);
+        .mount("/", routes![create_feed_handler_ep])
+        .attach(AdHoc::on_attach("Asset Config", |rocket| {
+            // Parse out custom config values
+            let rocket_config = RocketConfig {
+                address: rocket.config().get_str("host").unwrap().to_owned(),
+                port: rocket.config().port as u64,
+            };
+            let update_factor = rocket.config().get_int("update_factor").unwrap() as u64;
+
+            // Add custom configs to the State manager - only one of each type is allowed
+            Ok(rocket
+                .manage(rocket_config)
+                .manage(UpdateFactor(update_factor))
+            )
+        }));
 
     // Manually update on start
     match racer::update_all() {
@@ -118,13 +140,13 @@ fn main() {
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
-    // Parse out custom config values
-    let factor: u64 = rocket.config()
-                            .get_int("update_factor").unwrap() as u64;
+    let duration: u64 = match rocket.state::<u64>() {
+        Some(val) => val.clone(),
+        None => (59 * 60),
+    };
 
     // Create update thread - update every hour
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
-        let duration = 59 * factor;
         loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");

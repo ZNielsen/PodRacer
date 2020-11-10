@@ -41,7 +41,7 @@ You can either run in a tmux instance or use `nohup` and send it to the backgrou
 ## Configuration
 
 ## Usage
-You can make use of the included `create_feed.sh` bash script. It gets the options from you and makes a `curl` request to the proper address. You can communicate with the server via HTTP methods (mostly just `POST` and `GET`) at the following addresses (assuming your server is at `0.0.0.0`, listening on port `1234`)
+You can communicate with the server via HTTP methods (mostly just `POST` and `GET`). The included `create_feed.sh` bash script makes a `curl` request to the server, you can customize the arguments via command line, or change up the following examples (assuming your server is at `0.0.0.0`, listening on port `1234`)
 
 ### Create a new PodRacer feed
 - POST to 0.0.0.0:1234/create_feed
