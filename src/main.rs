@@ -98,30 +98,33 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
     }
 }
 
-fn launch_rocket() {
+fn prep_rocket() ->  {
     let rocket = rocket::ignite();
-    rocket.mount("/", routes![index])
-          .mount("/", routes![update_one_handler])
-          .mount("/", routes![update_all_handler])
-          .mount("/", routes![delete_feed_handler])
-          .mount("/", routes![list_feeds_handler])
-          .mount("/", routes![serve_rss_handler])
-          .mount("/", routes![create_feed_handler])
-          .mount("/", routes![create_feed_handler_ep])
-          .launch();
+    rocket
+        .mount("/", routes![index])
+        .mount("/", routes![update_one_handler])
+        .mount("/", routes![update_all_handler])
+        .mount("/", routes![delete_feed_handler])
+        .mount("/", routes![list_feeds_handler])
+        .mount("/", routes![serve_rss_handler])
+        .mount("/", routes![create_feed_handler])
+        .mount("/", routes![create_feed_handler_ep]);
+    rocket
 }
 
 fn main() {
+    let rocket = prep_rocket();
     // Manually update on start
     racer::update_all();
     // Create update thread - update every hour
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
+        let duration = 59 * rocket.config().get_str("update_factor").unwrap();
         loop {
-            std::thread::sleep(std::time::Duration::from_secs(60));
+            std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");
             racer::update_all();
             println!("Done")
         }
     });
-    launch_rocket();
+    rocket.launch();
 }
