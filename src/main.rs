@@ -120,8 +120,7 @@ fn main() {
 
     // Parse out custom config values
     let factor: u64 = rocket.config()
-                            .get_str("update_factor").unwrap()
-                            .parse().unwrap();
+                            .get_int("update_factor").unwrap() as u64;
 
     // Create update thread - update every hour
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
