@@ -250,7 +250,7 @@ pub fn update_all() -> Result<(), String> {
         };
         match update_racer_at_path(path_str, &RssFile::Download) {
             Ok(()) => (),
-            Err(e) => return Err(println!("Could not update path {}. Error was: {}", path_str, e)),
+            Err(e) => return Err(format!("Could not update path {}. Error was: {}", path_str, e)),
         };
     };
     Ok(())
