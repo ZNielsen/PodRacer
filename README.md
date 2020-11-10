@@ -31,6 +31,7 @@ It's going to take a very long time to build. That's Rust.
 ```
 cargo run --release
 ```
+Sometimes (not quite sure why only sometimes) my Pi3 struggles to build when multiple threads are enabled (the default). You can `cargo clean && cargo build -j 1` to force building with only one thread. This will take way longer, but you don't run out of memory.
 
 If you want to access the server remotely, set up port forwarding in your router.
 
