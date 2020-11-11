@@ -12,14 +12,15 @@ A podcast catch-up service running on your very own server!
 
 ## Features
 - **Self hosted** - complete autonomy over your feeds
-- **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you relive the podcast by creating a feed where the first episode was published _today_.
-- **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time.
+- **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
+- **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
+- **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transfering you over to the "normal" listening experience. 
 
 PodRacer is most useful if you like to listen to your podcasts as they are published. It lets legacy content seamlessly fit into the stream of contemporary content.
 
 # WORK IN PROGRESS - still very buggy. It's functional but not polished yet
 
-Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have issues I didn't see, feel free to file a github issue and I'll do what I can to fix it up.
+Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have quirks I didn't see. Feel free to file a github issue and I'll do what I can to fix it up.
 
 ## Installation
 
