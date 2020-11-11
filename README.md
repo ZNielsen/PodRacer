@@ -11,9 +11,9 @@
 A podcast catch-up service running on your very own server!
 
 ## Features
-- *Self hosted* - complete autonomy over your feeds
-- *Time shift podcasts* - Have a favorite show that died out and want to relive it? PodRacer lets you relive the podcast by creating a feed where the first episode was published _today_.
-- *Variable publishing rate* - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time.
+- **Self hosted** - complete autonomy over your feeds
+- **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you relive the podcast by creating a feed where the first episode was published _today_.
+- **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time.
 
 # WORK IN PROGRESS - still very buggy. It's functional but not polished yet
 
