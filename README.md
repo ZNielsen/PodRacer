@@ -117,14 +117,7 @@ If you like it then you shoulda thrown a dollar at it.
 
 If you found PodRacer useful, a donation would be great! Recommended $1/podcast (as in per feed run through the service, not per episode). No pressure, but supporting software you like is cool.
 
-<form action="https://www.paypal.com/donate" method="post" target="_top">
-<input type="hidden" name="cmd" value="_donations" />
-<input type="hidden" name="business" value="Y8HPAAJZTVT8E" />
-<input type="hidden" name="item_name" value="Developer Tip" />
-<input type="hidden" name="currency_code" value="USD" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
-</form>
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Y8HPAAJZTVT8E&currency_code=USD)
 
 
 
