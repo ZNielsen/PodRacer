@@ -12,8 +12,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use crate::utils::*;
-
 use chrono::{DateTime, Duration};
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Write};
@@ -190,7 +188,7 @@ impl FeedRacer {
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
         let original_rss = match mode {
             RssFile::Download => {
-                let network_file = crate::utils::download_rss_channel(&self.source_url).unwrap();
+                let network_file = download_rss_channel(&self.source_url).unwrap();
                 // Compare to stored file - update if we need to
                 let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
                 if num_to_update > 0 {
@@ -288,7 +286,7 @@ pub fn create_feed(params: &RacerCreationParams) -> FeedRacer {
     // let num_episodes = channel.items().len();
     // let weeks_behind = get_time_behind(&channel);
     // Make directory
-    let dir = create_feed_racer_dir(&channel);
+    let dir = create_feed_racer_dir(&channel, &params);
     // Write out original rss feed to file in dir
     let original_rss_file = File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE).unwrap();
     channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2).unwrap();
@@ -310,6 +308,39 @@ pub fn create_feed(params: &RacerCreationParams) -> FeedRacer {
 }
 
 
+fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> String {
+    let day = chrono::Utc::today();
+    // Create this feed's dir name
+    let mut dir = String::from(dirs::home_dir().unwrap().to_str().unwrap());
+    dir.push_str("/");
+    dir.push_str(PODRACER_DIR);
+    dir.push_str("/");
+    dir.push_str(&ch.title().to_lowercase().replace(" ", "-"));
+    dir.push_str("_");
+    dir.push_str(&params.rate.to_string());
+    dir.push_str("_");
+    dir.push_str(&day.format("%Y-%m-%d").to_string());
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
+
+fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
+    let content = reqwest::blocking::get(url).unwrap().bytes().unwrap();
+    let channel = rss::Channel::read_from(&content[..])?;
+    Ok(channel)
+}
+
+fn get_time_behind(channel: &rss::Channel) -> i64 {
+    let published = channel.items().last().unwrap().pub_date().unwrap();
+    let diff = chrono::DateTime::parse_from_rfc2822(published).unwrap()
+                .signed_duration_since(chrono::Utc::now());
+    diff.num_weeks()
+}
+
+
+//
+// Display implementation
+//
 impl fmt::Display for RacerEpisode {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

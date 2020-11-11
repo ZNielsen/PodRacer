@@ -7,7 +7,6 @@ use rocket::fairing::AdHoc;
 use rocket::State;
 
 mod racer;
-mod utils;
 
 use std::path::PathBuf;
 use std::fs::File;
