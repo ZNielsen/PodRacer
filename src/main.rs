@@ -1,15 +1,28 @@
+////////////////////////////////////////////////////////////////////////////////
+//  File:   main.rs
+//
+//  © Zach Nielsen 2020
+//  Main server code
+//
 #![feature(proc_macro_hygiene, decl_macro)]
-
+////////////////////////////////////////////////////////////////////////////////
+//  Included Modules
+////////////////////////////////////////////////////////////////////////////////
 #[macro_use]
 extern crate rocket;
-
-use rocket::fairing::AdHoc;
-use rocket::State;
-
 mod racer;
 
+////////////////////////////////////////////////////////////////////////////////
+//  Namespaces
+////////////////////////////////////////////////////////////////////////////////
+use rocket::fairing::AdHoc;
+use rocket::State;
 use std::path::PathBuf;
 use std::fs::File;
+
+////////////////////////////////////////////////////////////////////////////////
+//  Code
+////////////////////////////////////////////////////////////////////////////////
 
 struct RocketConfig {
     pub address: String,
@@ -18,8 +31,8 @@ struct RocketConfig {
 struct UpdateFactor(u64);
 
 #[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+fn show_form_handler() -> File {
+    File::open("static/form.html").expect("form file to exist")
 }
 
 #[post("/update/<podcast>")]
@@ -62,7 +75,10 @@ fn create_feed_handler_ep(config: State<RocketConfig>, url: String, rate: f32, i
 }
 
 fn create_feed(params: racer::RacerCreationParams) -> String {
-    let feed_racer = racer::create_feed(&params);
+    let feed_racer = match racer::create_feed(&params) {
+        Ok(val) => val,
+        Err(e) => return e,
+    };
     println!("{}", feed_racer);
 
     // Grab some info to return
@@ -108,10 +124,16 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   [name]
+ //
+ // NOTES:
+ // ARGS:
+ // RETURN:
+ //
 fn main() {
     let rocket = rocket::ignite()
-        .mount("/", routes![index])
+        .mount("/", routes![show_form_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
         .mount("/", routes![delete_feed_handler])
