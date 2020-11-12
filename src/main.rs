@@ -41,11 +41,11 @@ fn update_one_handler(podcast: String) {
 }
 
 #[post("/update")]
-fn update_all_handler() {
+fn update_all_handler() -> Result<(), String> {
     match racer::update_all() {
-        Ok(_) => (),
-        Err(string) => println!("Error in update_all_handler: {}", string),
-    };
+        Ok(_) => Ok(()),
+        Err(string) => Err(format!("Error in update_all_handler: {}", string)),
+    }
 }
 #[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
 fn create_feed_handler( config: State<RocketConfig>,
@@ -125,15 +125,50 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     Ok(ret)
 }
 
-#[post("/delete_feed?<url>")]
-fn delete_feed_handler(url: String) {
-    // Search for a FeedRacer that has this URL
+// Accept URL or dir name
+#[post("/delete_feed?<podcast>")]
+fn delete_feed_handler(podcast: String) -> Result<String, String> {
+    // Try dir name first
+    let mut dir = dirs::home_dir().unwrap();
+    dir.push(racer::PODRACER_DIR);
+    dir.push(&podcast);
+    if dir.is_dir() {
+        // Delete it and return Ok
+        match std::fs::remove_dir_all(dir.as_path()) {
+            Ok(_) => return Ok(format!("Podcast deleted from server: {}", &podcast)),
+            Err(e) => {
+                println!("Error removing podcast {} from sever: {}", &podcast, e);
+                return Err(format!("Error removing podcast from server."));
+            },
+        };
+    }
+
+    // Not a dir, search for a FeedRacer that has this URL
+    Err(format!("TODO: search racers for this url: {}", podcast))
 }
 
+// List all feeds on this server
 #[get("/list_feeds")]
-fn list_feeds_handler() -> String {
-    // Search for a FeedRacer that has this URL
-    "".to_owned()
+fn list_feeds_handler() -> Result<String, String> {
+    let mut ret = String::new();
+    // Get all folders in the podracer dir
+    let podcast_dirs = match racer::get_all_podcast_dirs() {
+        Ok(val) => val,
+        Err(str) => {
+            println!("Error in list_feeds_handler: {}", str);
+            return Err(format!("Error getting feeds, check logs"));
+        },
+    };
+    for podcast_dir in podcast_dirs {
+        let path = match podcast_dir {
+            Ok(val) => val.path(),
+            Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
+        };
+        let this_dir_name = path.file_name().unwrap();
+        ret.push_str(this_dir_name.to_str().unwrap());
+        ret.push_str("\n");
+    }
+    Ok(ret)
 }
 
 #[get("/podcasts/<podcast>/racer.rss")]
