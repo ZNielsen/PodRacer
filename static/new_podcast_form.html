@@ -5,13 +5,17 @@
 </head>
 <body>
 <form action="/create_feed_form">
-    <label for="fname">First name:</label><br>
-    <input type="text" id="fname" name="fname" value="John"><br>
-    <label for="lname">Last name:</label><br>
-    <input type="text" id="lname" name="lname" placeholder="Doe"><br><br>
-    <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike">
-    <label for="vehicle1"> I have a bike</label><br>
+    <label for="fname">URL:</label><br>
+    <input type="text" id="url" name="url" value="https://atp.fm/rss"><br>
+    <label for="rate">Rate:</label>
+    <input type="text" id="rate" name="rate" placeholder="1.2"><br>
+    <label for="start_ep">Starting Episode:</label>
+    <input type="text" id="start_ep" name="start_ep" placeholder="1"><br>
+    <input type="checkbox" id="integrate_new" name="integrate_new" value="integrate_new">
+    <label for="integrate_new"> Integrate New Episodes</label><br>
     <input type="submit" value="Submit">
 </form>
+<br><br>
+Some test text
 </body>
 </html>
