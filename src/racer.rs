@@ -223,11 +223,16 @@ impl FeedRacer {
     }
 }
 
-pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
-    // Load in racer file
+pub fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
     let racer_file_path: PathBuf = [path, RACER_FILE].iter().collect();
     let racer_file = File::open(racer_file_path)?;
-    let mut racer: FeedRacer = serde_json::from_reader(&racer_file)?;
+    let racer: FeedRacer = serde_json::from_reader(&racer_file)?;
+    Ok(racer)
+}
+
+pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
+    // Load in racer file
+    let mut racer = get_racer_at_path(path)?;
 
     // Get original rss feed
     let mut rss = racer.get_original_rss(mode);
@@ -251,15 +256,24 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn update_all() -> Result<(), String> {
+// Must not panic
+pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
     let mut dir = match dirs::home_dir() {
         Some(val) => val,
         None => return Err(format!("Error retrieving home dir")),
     };
     dir.push(PODRACER_DIR);
-    let podcast_dirs = match Path::read_dir(dir.as_path()) {
+    match Path::read_dir(dir.as_path()) {
+        Ok(val) => Ok(val),
+        Err(e) => return Err(format!("Cannot access dir: {:?}.\nError: {}", dir, e)),
+    }
+}
+
+// Must not panic
+pub fn update_all() -> Result<(), String> {
+    let podcast_dirs = match get_all_podcast_dirs() {
         Ok(val) => val,
-        Err(e) => return Err(format!("Cannot access dir for updating: {:?}.\nError: {}", dir, e)),
+        Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
     for podcast_dir in podcast_dirs {
         let path = match podcast_dir {
