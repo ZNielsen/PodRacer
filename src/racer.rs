@@ -186,21 +186,28 @@ impl FeedRacer {
         let stored_rss_file = File::open(&stored_rss_path).unwrap();
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
+
         let original_rss = match mode {
             RssFile::Download => {
-                let network_file = download_rss_channel(&self.source_url).unwrap();
-                // Compare to stored file - update if we need to
-                let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
-                if num_to_update > 0 {
-                    // Overwrite our stored original RSS file
-                    let stored_rss_file = File::create(stored_rss_path).unwrap();
-                    network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
-                    // Append new entries to our racer object
-                    let mut new_items = network_file.items().to_owned();
-                    new_items.truncate(num_to_update as usize);
-                    self.add_new_items(&new_items, stored_rss.items().len());
+                // Only download if this feed integrates new
+                if self.integrate_new {
+                    let network_file = download_rss_channel(&self.source_url).unwrap();
+                    // Compare to stored file - update if we need to
+                    let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
+                    if num_to_update > 0 {
+                        // Overwrite our stored original RSS file
+                        let stored_rss_file = File::create(stored_rss_path).unwrap();
+                        network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
+                        // Append new entries to our racer object
+                        let mut new_items = network_file.items().to_owned();
+                        new_items.truncate(num_to_update as usize);
+                        self.add_new_items(&new_items, stored_rss.items().len());
+                    }
+                    network_file
                 }
-                network_file
+                else {
+                    stored_rss
+                }
             },
             RssFile::FromStorage => stored_rss,
         };
