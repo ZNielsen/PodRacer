@@ -278,18 +278,24 @@ pub fn update_all() -> Result<(), String> {
     Ok(())
 }
 
-pub fn create_feed(params: &RacerCreationParams) -> FeedRacer {
+pub fn create_feed(params: &RacerCreationParams) -> Result<FeedRacer, String> {
     let channel = match download_rss_channel(&params.url) {
         Ok(val) => val,
-        Err(_) => panic!("Error in URL"),
+        Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
     };
     // let num_episodes = channel.items().len();
     // let weeks_behind = get_time_behind(&channel);
     // Make directory
     let dir = create_feed_racer_dir(&channel, &params);
     // Write out original rss feed to file in dir
-    let original_rss_file = File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE).unwrap();
-    channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2).unwrap();
+    let original_rss_file = match File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE) {
+        Ok(val) => val,
+        Err(e) => return Err(format!("Unable to create file: {}", e)),
+    };
+    match channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2) {
+        Ok(_) => (),
+        Err(e) => return Err(format!("unable to write original rss file: {}", e)),
+    };
     // Make racer file
     let racer = FeedRacer::new(
                     &mut channel.items().to_owned(),
@@ -297,14 +303,15 @@ pub fn create_feed(params: &RacerCreationParams) -> FeedRacer {
                     &dir);
     match racer.write_to_file() {
         Ok(_) => (),
-        Err(e) => panic!("failed with error: {}", e)
-    }
+        Err(e) => return Err(format!("failed with error: {}", e))
+    };
     // Run update() on this directory. We just created it, so no need to refresh the rss file
-    update_racer_at_path(&dir, &RssFile::FromStorage).unwrap();
-    // Give the user the url to subscribe to
-    println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url());
+    match update_racer_at_path(&dir, &RssFile::FromStorage) {
+        Ok(_) => println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url()),
+        Err(e) => return Err(format!("Error writing file: {}", e)),
+    };
 
-    racer
+    Ok(racer)
 }
 
 
