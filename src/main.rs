@@ -52,7 +52,7 @@ fn create_feed_handler( config: State<RocketConfig>,
                         url: String,
                         rate: f32,
                         integrate_new: bool
-                    ) -> String {
+                    ) -> Result<String, String> {
     create_feed( racer::RacerCreationParams {
         address: config.address.clone(),
         port: config.port,
@@ -63,7 +63,31 @@ fn create_feed_handler( config: State<RocketConfig>,
     })
 }
 #[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
-fn create_feed_handler_ep(config: State<RocketConfig>, url: String, rate: f32, integrate_new: bool, start_ep: usize) -> String {
+fn create_feed_handler_ep(config: State<RocketConfig>,
+                          url: String,
+                          rate: f32,
+                          integrate_new: bool,
+                          start_ep: usize
+                        ) -> Result<File, File> {
+    match create_feed( racer::RacerCreationParams {
+        address: config.address.clone(),
+        port: config.port,
+        url: url,
+        rate:rate,
+        integrate_new: integrate_new,
+        start_ep: start_ep
+    }) {
+        Ok(_) => Ok(File::open("static/submit_success.html").unwrap()),
+        Err(_) => Err(File::open("static/submit_failure.html").unwrap()),
+    }
+}
+#[get("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
+fn create_feed_from_form_handler(config: State<RocketConfig>,
+                                 url: String,
+                                 rate: f32,
+                                 integrate_new: bool,
+                                 start_ep: usize
+                                ) -> Result<String, String> {
     create_feed( racer::RacerCreationParams {
         address: config.address.clone(),
         port: config.port,
@@ -74,10 +98,10 @@ fn create_feed_handler_ep(config: State<RocketConfig>, url: String, rate: f32, i
     })
 }
 
-fn create_feed(params: racer::RacerCreationParams) -> String {
+fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     let feed_racer = match racer::create_feed(&params) {
         Ok(val) => val,
-        Err(e) => return e,
+        Err(e) => return Err(e),
     };
     println!("{}", feed_racer);
 
@@ -98,7 +122,7 @@ fn create_feed(params: racer::RacerCreationParams) -> String {
             weeks_behind, weeks_to_catch_up, days_to_catch_up).as_str();
     ret += format!("You should catch up on {}.\n", catch_up_date.format("%d %b, %Y")).as_str();
     ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", feed_racer.get_podracer_url()).as_str();
-    ret
+    Ok(ret)
 }
 
 #[post("/delete_feed?<url>")]
@@ -141,6 +165,7 @@ fn main() {
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_handler_ep])
+        .mount("/", routes![create_feed_from_form_handler])
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out custom config values
             let rocket_config = RocketConfig {
