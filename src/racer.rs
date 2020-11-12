@@ -283,8 +283,7 @@ pub fn create_feed(params: &RacerCreationParams) -> Result<FeedRacer, String> {
         Ok(val) => val,
         Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
     };
-    // let num_episodes = channel.items().len();
-    // let weeks_behind = get_time_behind(&channel);
+
     // Make directory
     let dir = create_feed_racer_dir(&channel, &params);
     // Write out original rss feed to file in dir
@@ -335,13 +334,6 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
     let content = reqwest::blocking::get(url).unwrap().bytes().unwrap();
     let channel = rss::Channel::read_from(&content[..])?;
     Ok(channel)
-}
-
-fn get_time_behind(channel: &rss::Channel) -> i64 {
-    let published = channel.items().last().unwrap().pub_date().unwrap();
-    let diff = chrono::DateTime::parse_from_rfc2822(published).unwrap()
-                .signed_duration_since(chrono::Utc::now());
-    diff.num_weeks()
 }
 
 
