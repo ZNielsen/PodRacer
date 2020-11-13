@@ -24,22 +24,53 @@ use std::fs::File;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 
+//
+// Structs for Rocket config
+//
 struct RocketConfig {
     pub address: String,
     pub port: u64,
 }
 struct UpdateFactor(u64);
 
+//
+// Rocket Routes
+//
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   show_form_handler
+ //
+ // NOTES:  Give the default form when requesting the root
+ // ARGS:   None
+ // RETURN: The new podcast form file
+ //
 #[get("/")]
 fn show_form_handler() -> File {
     File::open("static/form.html").expect("form file to exist")
 }
 
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   update_one_handler
+ //
+ // NOTES:  Update one podcast, specified by folder name or subscribe url
+ // ARGS:
+ //     podcast - The podcast to update. Specified by the folder name or
+ //               the PodRacer subscribe url.
+ // RETURN:
+ //
 #[post("/update/<podcast>")]
 fn update_one_handler(podcast: String) {
     // Update the specified podcast
+//    let racer = get_racer_by_url(&podcast);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   update_all_handler
+ //
+ // NOTES:  Forces update of all podcast feeds on this server
+ // ARGS:   None
+ // RETURN: A result. If errored, a string containing some error info
+ //
 #[post("/update")]
 fn update_all_handler() -> Result<(), String> {
     match racer::update_all() {
@@ -47,6 +78,19 @@ fn update_all_handler() -> Result<(), String> {
         Err(string) => Err(format!("Error in update_all_handler: {}", string)),
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   create_feed_handler
+ //
+ // NOTES:  Creates a new PodRacer feed. This is probably from the curl script
+ //     This can probably safely be deleted
+ // ARGS:
+ //     config -
+ //     url -
+ //     rate -
+ //     integrate_new -
+ // RETURN: A result with string information either way. Tailored for a curl response
+ //
 #[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
 fn create_feed_handler( config: State<RocketConfig>,
                         url: String,
@@ -62,6 +106,23 @@ fn create_feed_handler( config: State<RocketConfig>,
         start_ep: 1
     })
 }
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   create_feed_handler_ep
+ //
+ // NOTES:
+ //     Creatse a new PodRacer feed, but includes a start episode. This is
+ //     probably from the form.
+ // ARGS:
+ //     config -
+ //     url -
+ //     rate -
+ //     integrate_new -
+ //     start_ep -
+ // RETURN:
+ //     A result containing either a success file or a failure file.
+ //     If Ok(), the File will have the subscribe url to display to the user
+ //
 #[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
 fn create_feed_handler_ep(config: State<RocketConfig>,
                           url: String,
@@ -81,23 +142,20 @@ fn create_feed_handler_ep(config: State<RocketConfig>,
         Err(_) => Err(File::open("static/submit_failure.html").unwrap()),
     }
 }
-#[get("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
-fn create_feed_from_form_handler(config: State<RocketConfig>,
-                                 url: String,
-                                 rate: f32,
-                                 integrate_new: bool,
-                                 start_ep: usize
-                                ) -> Result<String, String> {
-    create_feed( racer::RacerCreationParams {
-        address: config.address.clone(),
-        port: config.port,
-        url: url,
-        rate:rate,
-        integrate_new: integrate_new,
-        start_ep: start_ep
-    })
-}
 
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   create_feed
+ //
+ // NOTES:
+ //     Crates a PodRacer feed for given parameters. Prints some stats for the
+ //     user for display over curl. Might need to make another version to handle
+ //     displaying info over web UI
+ // ARGS:   params - All the parameters required to put together a feed. See
+ //                  the struct for more info.
+ // RETURN:
+ //     A result. If Ok(), contains a bunch of stats for the user. If Err(),
+ //     contains info for why it failed
+ //
 fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     let feed_racer = match racer::create_feed(&params) {
         Ok(val) => val,
@@ -125,7 +183,16 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     Ok(ret)
 }
 
-// Accept URL or dir name
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   delete_feed_handler
+ //
+ // NOTES:
+ //     Deletes the sepecified feed. No authentication required, so anyone can
+ //     get in there and cause havoc. Probs should change that.
+ // ARGS:   podcast - the podcast to delete. Can be a dir name or PodRacer URL
+ // RETURN: Result - strings with info either way
+ //
+ // Eventually want to expand this to be a button on the web UI after listing all podcasts
 #[post("/delete_feed?<podcast>")]
 fn delete_feed_handler(podcast: String) -> Result<String, String> {
     // Try dir name first
@@ -147,7 +214,15 @@ fn delete_feed_handler(podcast: String) -> Result<String, String> {
     Err(format!("TODO: search racers for this url: {}", podcast))
 }
 
-// List all feeds on this server
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   list_feeds_handler
+ //
+ // NOTES:
+ //     List all the feeds on this server. Gives a list of podcasts by the
+ //     directory names: <podcast_name>_<rate>_<feed creation date>
+ // ARGS:   None
+ // RETURN: Result string - either the feeds or info on what failed
+ //
 #[get("/list_feeds")]
 fn list_feeds_handler() -> Result<String, String> {
     let mut ret = String::new();
@@ -171,6 +246,17 @@ fn list_feeds_handler() -> Result<String, String> {
     Ok(ret)
 }
 
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   serve_rss_handler
+ //
+ // NOTES:
+ //     Serves the racer.rss file for the specified podcast. This is almost
+ //     certainly called by a podcast player to check for new episodes.
+ //     TODO: Should we not serve the file if nothing changed? Is there a safe
+ //         way to do that?
+ // ARGS:   podcast - The podcast to serve. Format is the folder name
+ // RETURN: Our PodRacer RSS file
+ //
 #[get("/podcasts/<podcast>/racer.rss")]
 fn serve_rss_handler(podcast: String) -> Option<File> {
     println!("Serving at {}", chrono::Utc::now().to_rfc3339());
@@ -184,11 +270,14 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
- // NAME:   [name]
+ // NAME:   main
  //
  // NOTES:
- // ARGS:
- // RETURN:
+ //     Main sets up rocket, spins off an updater thread, then launches
+ //     the rocket server.
+ //     Rocket setup includes mounting routes + getting Rocket config values.
+ // ARGS:   None
+ // RETURN: None
  //
 fn main() {
     let rocket = rocket::ignite()
