@@ -206,6 +206,8 @@ impl FeedRacer {
                     network_file
                 }
                 else {
+                    // If we aren't integrating new episodes, just look at the feed we have stored
+                    // on disk
                     stored_rss
                 }
             },
