@@ -50,36 +50,6 @@ fn show_form_handler() -> File {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
- // NAME:   update_one_handler
- //
- // NOTES:  Update one podcast, specified by folder name or subscribe url
- // ARGS:
- //     podcast - The podcast to update. Specified by the folder name or
- //               the PodRacer subscribe url.
- // RETURN:
- //
-#[post("/update/<podcast>")]
-fn update_one_handler(podcast: String) {
-    // Update the specified podcast
-//    let racer = get_racer_by_url(&podcast);
-}
-
-////////////////////////////////////////////////////////////////////////////////
- // NAME:   update_all_handler
- //
- // NOTES:  Forces update of all podcast feeds on this server
- // ARGS:   None
- // RETURN: A result. If errored, a string containing some error info
- //
-#[post("/update")]
-fn update_all_handler() -> Result<(), String> {
-    match racer::update_all() {
-        Ok(_) => Ok(()),
-        Err(string) => Err(format!("Error in update_all_handler: {}", string)),
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
  // NAME:   create_feed_handler
  //
  // NOTES:  Creates a new PodRacer feed. This is probably from the curl script
@@ -181,6 +151,37 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     ret += format!("You should catch up on {}.\n", catch_up_date.format("%d %b, %Y")).as_str();
     ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", feed_racer.get_podracer_url()).as_str();
     Ok(ret)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   update_one_handler
+ //
+ // NOTES:  Update one podcast, specified by folder name or subscribe url
+ // ARGS:
+ //     podcast - The podcast to update. Specified by the folder name or
+ //               the PodRacer subscribe url.
+ // RETURN:
+ //
+#[post("/update/<podcast>")]
+fn update_one_handler(podcast: String) {
+    // Update the specified podcast
+    // Check if podcast is folder name
+//    let racer = get_racer_by_url(&podcast);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   update_all_handler
+ //
+ // NOTES:  Forces update of all podcast feeds on this server
+ // ARGS:   None
+ // RETURN: A result. If errored, a string containing some error info
+ //
+#[post("/update")]
+fn update_all_handler() -> Result<(), String> {
+    match racer::update_all() {
+        Ok(_) => Ok(()),
+        Err(string) => Err(format!("Error in update_all_handler: {}", string)),
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -289,7 +290,6 @@ fn main() {
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_handler_ep])
-        .mount("/", routes![create_feed_from_form_handler])
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out custom config values
             let rocket_config = RocketConfig {
