@@ -14,7 +14,7 @@ A podcast catch-up service running on your very own server!
 - **Self hosted** - complete autonomy over your feeds
 - **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
 - **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
-- **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transfering you over to the "normal" listening experience.
+- **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
 
 PodRacer is most useful if you like to listen to your podcasts as they are published. It lets legacy content seamlessly fit into the stream of contemporary content.
 
@@ -65,7 +65,7 @@ You can communicate with the server via HTTP methods (mostly just `POST` and `GE
     - start_ep [int] - The episode number to start on.
         This episode will appear to come out the day you create the feed. All previous episodes will appear published as well.
         Note this argument selects from the number of episodes published in the feed, and may not match the publisher's self reported numbering.
-        I have also noticed some podcast players take a bit to organize the "back catalog" correctly, so episodes may appear out of order for a bit. In my experience it resolves in an hour or so, which I assume corrilates with the player's next "update feed" call.
+        I have also noticed some podcast players take a bit to organize the "back catalog" correctly, so episodes may appear out of order for a bit. In my experience it resolves in an hour or so, which I assume correlates with the player's next "update feed" call.
   - example call:
     ```bash
     curl -X POST -G \
