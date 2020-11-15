@@ -196,23 +196,24 @@ fn update_all_handler() -> Result<(), String> {
  // Eventually want to expand this to be a button on the web UI after listing all podcasts
 #[post("/delete_feed?<podcast>")]
 fn delete_feed_handler(podcast: String) -> Result<String, String> {
-    // Try dir name first
-    let mut dir = dirs::home_dir().unwrap();
-    dir.push(racer::PODRACER_DIR);
-    dir.push(&podcast);
-    if dir.is_dir() {
-        // Delete it and return Ok
-        match std::fs::remove_dir_all(dir.as_path()) {
-            Ok(_) => return Ok(format!("Podcast deleted from server: {}", &podcast)),
-            Err(e) => {
-                println!("Error removing podcast {} from sever: {}", &podcast, e);
-                return Err(format!("Error removing podcast from server."));
-            },
-        };
-    }
+    Err(format!("Need to put this behind some sort of auth so random people can't delete things"))
+    // // Try dir name first
+    // let mut dir = dirs::home_dir().unwrap();
+    // dir.push(racer::PODRACER_DIR);
+    // dir.push(&podcast);
+    // if dir.is_dir() {
+    //     // Delete it and return Ok
+    //     match std::fs::remove_dir_all(dir.as_path()) {
+    //         Ok(_) => return Ok(format!("Podcast deleted from server: {}", &podcast)),
+    //         Err(e) => {
+    //             println!("Error removing podcast {} from sever: {}", &podcast, e);
+    //             return Err(format!("Error removing podcast from server."));
+    //         },
+    //     };
+    // }
 
     // Not a dir, search for a FeedRacer that has this URL
-    Err(format!("TODO: search racers for this url: {}", podcast))
+    // Err(format!("TODO: search racers for this url: {}", podcast))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
