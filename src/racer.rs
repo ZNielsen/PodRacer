@@ -177,7 +177,6 @@ impl FeedRacer {
         }
     }
 
-    // TODO -> handle the case where the url is invalid/disappears
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
     pub fn get_original_rss(&mut self, mode: &RssFile) -> rss::Channel {
@@ -187,34 +186,41 @@ impl FeedRacer {
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
 
-        let original_rss = match mode {
-            RssFile::Download => {
-                // Only download if this feed integrates new
-                if self.integrate_new {
-                    let network_file = download_rss_channel(&self.source_url).unwrap();
-                    // Compare to stored file - update if we need to
-                    let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
-                    if num_to_update > 0 {
-                        // Overwrite our stored original RSS file
-                        let stored_rss_file = File::create(stored_rss_path).unwrap();
-                        network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
-                        // Append new entries to our racer object
-                        let mut new_items = network_file.items().to_owned();
-                        new_items.truncate(num_to_update as usize);
-                        self.add_new_items(&new_items, stored_rss.items().len());
-                    }
-                    network_file
-                }
-                else {
-                    // If we aren't integrating new episodes, just look at the feed we have stored
-                    // on disk
-                    stored_rss
-                }
+        let functional_mode = match self.integrate_new {
+            true => mode,   // Preserve mode
+            false => {
+                // Not integrating, don't fetch from network
+                println!("This feed is not integrating new episodes. Using stored rss file");
+                &RssFile::FromStorage
             },
-            RssFile::FromStorage => stored_rss,
         };
 
-        original_rss
+        match functional_mode {
+            RssFile::Download => {
+                match download_rss_channel(&self.source_url) {
+                    Ok(network_file) => {
+                        // Compare to stored file - update if we need to
+                        let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
+                        if num_to_update > 0 {
+                            // Overwrite our stored original RSS file
+                            let stored_rss_file = File::create(stored_rss_path).unwrap();
+                            network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
+                            // Append new entries to our racer object
+                            let mut new_items = network_file.items().to_owned();
+                            new_items.truncate(num_to_update as usize);
+                            self.add_new_items(&new_items, stored_rss.items().len());
+                        }
+                        return network_file
+                    },
+                    Err(e) => {
+                        println!("Could not get network file: {}", e);
+                        println!("Resuming with stored rss file");
+                        return stored_rss
+                    },
+                };
+            },
+            RssFile::FromStorage => return stored_rss,
+        };
     }
 
     pub fn get_num_to_publish(&self) -> usize {
@@ -261,8 +267,10 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     // Write out the racer.rss file
     let racer_rss_path: PathBuf = [racer.get_racer_path().to_str().unwrap(), RACER_RSS_FILE].iter().collect();
     let racer_rss_file = File::create(racer_rss_path)?;
-    rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
-    Ok(())
+    match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(format!("Error while writing channel to file: {}", e)),
+    }
 }
 
 // Must not panic
@@ -354,7 +362,10 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
 }
 
 fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
-    let content = reqwest::blocking::get(url).unwrap().bytes().unwrap();
+    let content = match reqwest::blocking::get(url) {
+        Ok(val) => val.bytes().unwrap(),
+        Err(e) => return Err(Box::new(e)),
+    };
     let channel = rss::Channel::read_from(&content[..])?;
     Ok(channel)
 }
