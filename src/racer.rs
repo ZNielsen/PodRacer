@@ -31,6 +31,7 @@ pub const RACER_FILE:        &'static str = "racer.file";
 pub const INDENT_AMOUNT:            usize = 2;
 pub const SPACE_CHAR:                  u8 = 32;
 
+// All parameters we need to create a PodRacer feed
 pub struct RacerCreationParams {
     pub address: String,
     pub port: u64,
@@ -40,17 +41,21 @@ pub struct RacerCreationParams {
     pub start_ep: usize,
 }
 
+// Should we attempt to download the original RSS file, or just look at what we have?
+// This is pretty much only used to prevent a refetch when creating a new feed.
 pub enum RssFile {
     Download,
     FromStorage,
 }
 
+// Metadata about when each episode will be published
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RacerEpisode {
     ep_num: i64,
     date: String,
 }
 
+// All the fields of our racer file. Info we might want across sessions.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
@@ -80,11 +85,17 @@ impl FeedRacer {
 
 impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
-     // NAME:   [name]
+     // NAME:   FeedRacer::new
      //
      // NOTES:
+     //     Creates a new feedracer object. This involves parsing all the items from
+     //     a feed + creating a transformed list of publish dates (shift + squish/stretch).
+     //     The returned object is all ready to be written to disk as a json.
      // ARGS:
-     // RETURN:
+     //     items -
+     //     params -
+     //     dir -
+     // RETURN: A new, initialized FeedRacer object.
      //
     pub fn new(items: &mut Vec<rss::Item>,
         params: &RacerCreationParams,
