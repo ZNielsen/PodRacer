@@ -280,7 +280,7 @@ pub fn update_racer_at_path(path: &str, mode: &RssFile) -> std::io::Result<()> {
     let racer_rss_file = File::create(racer_rss_path)?;
     match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("Error while writing channel to file: {}", e)),
+        Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
     }
 }
 
