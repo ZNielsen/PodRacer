@@ -137,7 +137,7 @@ impl FeedRacer {
 
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
         let podracer_url: PathBuf = [
-                            (String::from(&params.address) +":"+ &params.address).as_str(),
+                            (String::from(&params.address) +":"+ &params.port.to_string()).as_str(),
                             "podcasts",
                             podcast_dir_name,
                             RACER_RSS_FILE].iter().collect();
@@ -188,6 +188,8 @@ impl FeedRacer {
         }
     }
 
+    // TODO -> Wrap this return in an option for the case where there is no
+    //         stored file and the network request fails.
     // TODO -> handle feeds that have a constant number of entries
     //         and push the oldest entry out
     pub fn get_original_rss(&mut self, mode: &RssFile) -> rss::Channel {
@@ -195,14 +197,24 @@ impl FeedRacer {
         stored_rss_path.push(ORIGINAL_RSS_FILE);
         let stored_rss_file = File::open(&stored_rss_path).unwrap();
         let buf_reader = BufReader::new(stored_rss_file);
-        let stored_rss = rss::Channel::read_from(buf_reader).unwrap();
+        let stored_rss = rss::Channel::read_from(buf_reader);
 
-        let functional_mode = match self.integrate_new {
-            true => mode,   // Preserve mode
-            false => {
-                // Not integrating, don't fetch from network
-                println!("This feed is not integrating new episodes. Using stored rss file");
-                &RssFile::FromStorage
+        let (stored_rss, functional_mode) = match stored_rss {
+            Ok(val) => {
+                // We do have a file on disk, so see if we need to download or not
+                match self.integrate_new {
+                    true => (Some(val), mode),   // Preserve mode
+                    false => {
+                        // Not integrating, don't fetch from network
+                        println!("This feed is not integrating new episodes. Using stored rss file");
+                        (Some(val), &RssFile::FromStorage)
+                    },
+                }
+            },
+            Err(e) => {
+                // If we don't have a stored file, we have to download.
+                println!("Couldn't get rss file on disk: {}", e);
+                (None, &RssFile::Download)
             },
         };
 
@@ -211,7 +223,10 @@ impl FeedRacer {
                 match download_rss_channel(&self.source_url) {
                     Ok(network_file) => {
                         // Compare to stored file - update if we need to
-                        let num_to_update = (network_file.items().len() as i64 - stored_rss.items().len() as i64).abs();
+                        let num_to_update = match &stored_rss {
+                            Some(rss) => (network_file.items().len() as i64 - rss.items().len() as i64).abs(),
+                            None => network_file.items().len() as i64,
+                        };
                         if num_to_update > 0 {
                             // Overwrite our stored original RSS file
                             let stored_rss_file = File::create(stored_rss_path).unwrap();
@@ -219,18 +234,23 @@ impl FeedRacer {
                             // Append new entries to our racer object
                             let mut new_items = network_file.items().to_owned();
                             new_items.truncate(num_to_update as usize);
-                            self.add_new_items(&new_items, stored_rss.items().len());
+                            let next_ep_num = match &stored_rss {
+                                Some(rss) => rss.items().len(),
+                                None => 1,
+                            };
+                            self.add_new_items(&new_items, next_ep_num);
                         }
                         return network_file
                     },
                     Err(e) => {
                         println!("Could not get network file: {}", e);
                         println!("Resuming with stored rss file");
-                        return stored_rss
+                        // Panics if there was no stored rss and the network failed
+                        return stored_rss.unwrap()
                     },
                 };
             },
-            RssFile::FromStorage => return stored_rss,
+            RssFile::FromStorage => return stored_rss.unwrap(), // Should not panic if mode checks above are correct
         };
     }
 
@@ -359,11 +379,15 @@ pub fn create_feed(params: &RacerCreationParams) -> Result<FeedRacer, String> {
 fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> String {
     let day = chrono::Utc::today();
     // Create this feed's dir name
+    let scrubbed_pod_name = &ch.title().to_lowercase()
+                                .replace(" ", "-")
+                                .replace("/", "-")
+                                .replace(":", "");
     let mut dir = String::from(dirs::home_dir().unwrap().to_str().unwrap());
     dir.push_str("/");
     dir.push_str(PODRACER_DIR);
     dir.push_str("/");
-    dir.push_str(&ch.title().to_lowercase().replace(" ", "-"));
+    dir.push_str(scrubbed_pod_name);
     dir.push_str("_");
     dir.push_str(&params.rate.to_string());
     dir.push_str("_");
