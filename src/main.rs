@@ -163,14 +163,13 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
  //     Some rss feeds don't properly escape things. Properly escape known issues.
  //     This is not really scalable, but if I'm the only one using it then it should be more or
  //     less fine.
- // ARGS:   file - the file to scrub and overwrite
- // RETURN:
+ // ARGS:   file_name - The file to scrub and replace
+ // RETURN: None
  //
 fn scrub_xml(file_name: &PathBuf) {
     // Known bad strings
     let mut subs = std::collections::HashMap::new();
     subs.insert("& ".to_owned(), "&amp; ".to_owned());
-    //subs.insert("Society & Culture".to_owned(), "Society &amp; Culture".to_owned());
 
     //
     // Go over everything and substitute known issues
@@ -192,11 +191,6 @@ fn scrub_xml(file_name: &PathBuf) {
     }).collect::<Result<(), _>>().expect("IO failed");
 
     // Replace original with scrubbed file
-    //let tmp_file = File::open(&tmp_file_name).expect("Couldn't open temp file for reading");
-    //let tmp_buf = std::io::BufReader::new(&tmp_file);
-    //let mut overwrite_buf = std::io::BufWriter::new(&file);
-    //tmp_buf.lines().map(|line_res| line_res.and_then(|line| overwrite_buf.write_all(line.as_bytes())))
-    //        .collect::<Result<(), _>>().expect("IO failed");
     std::fs::rename(std::path::Path::new(&tmp_file_name),
                     std::path::Path::new(&file_name))
          .expect("Failed to overwrite file");
