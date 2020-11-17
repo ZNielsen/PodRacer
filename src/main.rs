@@ -19,6 +19,7 @@ use rocket::fairing::AdHoc;
 use rocket::State;
 use std::path::PathBuf;
 use std::fs::File;
+use std::io::{BufRead, Write};
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -135,7 +136,9 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
 
     // Grab some info to return
     let path: PathBuf = [feed_racer.get_racer_path().to_str().unwrap(), racer::ORIGINAL_RSS_FILE].iter().collect();
-    let file = File::open(path).unwrap();
+    scrub_xml(&path);
+    println!("Getting file from {}", path.display());
+    let file = File::open(&path).unwrap();
     let mut buf = std::io::BufReader::new(&file);
     let feed = rss::Channel::read_from(&mut buf).unwrap();
     let num_items = feed.items().len() - &params.start_ep;
@@ -151,6 +154,52 @@ fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
     ret += format!("You should catch up on {}.\n", catch_up_date.format("%d %b, %Y")).as_str();
     ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", feed_racer.get_podracer_url()).as_str();
     Ok(ret)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   scrub_xml
+ //
+ // NOTES:
+ //     Some rss feeds don't properly escape things. Properly escape known issues.
+ //     This is not really scalable, but if I'm the only one using it then it should be more or
+ //     less fine.
+ // ARGS:   file - the file to scrub and overwrite
+ // RETURN:
+ //
+fn scrub_xml(file_name: &PathBuf) {
+    // Known bad strings
+    let mut subs = std::collections::HashMap::new();
+    subs.insert("& ".to_owned(), "&amp; ".to_owned());
+    //subs.insert("Society & Culture".to_owned(), "Society &amp; Culture".to_owned());
+
+    //
+    // Go over everything and substitute known issues
+    //
+    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
+    let file = File::open(file_name).expect("Could not open original file");
+    let in_buf = std::io::BufReader::new(&file);
+    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
+    let mut out_buf = std::io::BufWriter::new(scrubbed_file);
+    in_buf.lines().map(|line_res| {
+        line_res.and_then(|mut line| {
+            for (key,val) in &subs {
+                if line.contains(key) {
+                    line = line.replace(key, val);
+                }
+            }
+            out_buf.write_all(line.as_bytes())
+        })
+    }).collect::<Result<(), _>>().expect("IO failed");
+
+    // Replace original with scrubbed file
+    //let tmp_file = File::open(&tmp_file_name).expect("Couldn't open temp file for reading");
+    //let tmp_buf = std::io::BufReader::new(&tmp_file);
+    //let mut overwrite_buf = std::io::BufWriter::new(&file);
+    //tmp_buf.lines().map(|line_res| line_res.and_then(|line| overwrite_buf.write_all(line.as_bytes())))
+    //        .collect::<Result<(), _>>().expect("IO failed");
+    std::fs::rename(std::path::Path::new(&tmp_file_name),
+                    std::path::Path::new(&file_name))
+         .expect("Failed to overwrite file");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
