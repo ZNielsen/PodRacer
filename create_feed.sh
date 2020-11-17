@@ -13,11 +13,11 @@ slug="create_feed"
 
 # Debug defaults
 # url="https://atp.fm/rss"
-url="https://rss.acast.com/dungeons-and-daddies"
-# rate=1.2
+#url="https://rss.acast.com/dungeons-and-daddies"
+url="http://feeds.wnyc.org/blindspot-road-911"
 rate=1.2
-integrate_new="false"
-start_ep="36"
+integrate_new="true"
+start_ep="4"
 
 
 request="POST"
@@ -116,3 +116,6 @@ done
     # dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
     # curl -v -X ${request} -G ${hostname}:${port}/${slug}
 # fi
+
+
+echo Done!
