@@ -306,6 +306,31 @@ impl FeedRacer {
         }
         ret
     }
+
+    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<()> {
+        // Get original rss feed
+        let mut rss = self.get_original_rss(preferred_mode);
+
+        // Tack on a `- PodRacer` to the title
+        rss.set_title(String::from(rss.title()) + " - PodRacer");
+
+        // Check how many episodes we should publish at this point
+        let num_to_pub = self.get_num_to_publish();
+        let num_to_scrub = rss.items().len() - num_to_pub;
+        // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
+        let mut items_to_publish = rss.items().to_owned();
+        items_to_publish.drain(0..num_to_scrub);
+
+        // Now that we have the items we want, overwrite the objects items.
+        rss.set_items(items_to_publish);
+        // Write out the racer.rss file
+        let racer_rss_path: PathBuf = [self.get_racer_path().to_str().unwrap(), RACER_RSS_FILE].iter().collect();
+        let racer_rss_file = File::create(racer_rss_path)?;
+        match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
+    }
 }
 
 
@@ -340,28 +365,7 @@ pub fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Re
     // Load in racer file
     let mut racer = get_racer_at_path(path)?;
 
-    // Get original rss feed
-    let mut rss = racer.get_original_rss(preferred_mode);
-
-    // Tack on a `- PodRacer` to the title
-    rss.set_title(String::from(rss.title()) + " - PodRacer");
-
-    // Check how many episodes we should publish at this point
-    let num_to_pub = racer.get_num_to_publish();
-    let num_to_scrub = rss.items().len() - num_to_pub;
-    // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
-    let mut items_to_publish = rss.items().to_owned();
-    items_to_publish.drain(0..num_to_scrub);
-
-    // Now that we have the items we want, overwrite the objects items.
-    rss.set_items(items_to_publish);
-    // Write out the racer.rss file
-    let racer_rss_path: PathBuf = [racer.get_racer_path().to_str().unwrap(), RACER_RSS_FILE].iter().collect();
-    let racer_rss_file = File::create(racer_rss_path)?;
-    match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
-    }
+    racer.update(preferred_mode)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -374,7 +378,6 @@ pub fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Re
  // ARGS:   None
  // RETURN: All the items in the podracer dir
  //
-// Must not panic
 pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
     let mut dir = match dirs::home_dir() {
         Some(val) => val,
@@ -507,6 +510,32 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
     // scrub_bytes(&content);   // Is this needed?
     let channel = rss::Channel::read_from(&content[..])?;
     Ok(channel)
+}
+
+
+pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
+    // Read all dirs in the podracer dir and compare to this
+    let dirs = get_all_podcast_dirs().unwrap();
+    for dir_res in dirs {
+        let dir = dir_res.unwrap();
+        if dir.file_name() == target_dir {
+            let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
+            return Some(racer);
+        }
+    }
+    None
+}
+
+pub fn get_by_url(url: &str) -> Option<FeedRacer> {
+    let dirs = get_all_podcast_dirs().unwrap();
+    for dir_res in dirs {
+        let dir = dir_res.unwrap();
+        let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
+        if racer.get_podracer_url() == url {
+            return Some(racer);
+        };
+    }
+    None
 }
 
 
