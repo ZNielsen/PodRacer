@@ -204,9 +204,9 @@ fn update_all_handler() -> Result<(), String> {
  // RETURN: Result - strings with info either way
  //
  // Eventually want to expand this to be a button on the web UI after listing all podcasts
-#[post("/delete_feed?<podcast>")]
-fn delete_feed_handler(podcast: String) -> Result<String, String> {
-    Err(format!("Need to put this behind some sort of auth so random people can't delete things"))
+//#[post("/delete_feed?<podcast>")]
+//fn delete_feed_handler(podcast: String) -> Result<String, String> {
+    //Err(format!("Need to put this behind some sort of auth so random people can't delete things"))
     // // Try dir name first
     // let mut dir = dirs::home_dir().unwrap();
     // dir.push(racer::PODRACER_DIR);
@@ -224,7 +224,7 @@ fn delete_feed_handler(podcast: String) -> Result<String, String> {
 
     // Not a dir, search for a FeedRacer that has this URL
     // Err(format!("TODO: search racers for this url: {}", podcast))
-}
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   list_feeds_handler
@@ -281,6 +281,46 @@ fn serve_rss_handler(podcast: String) -> Option<File> {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   scrub_xml
+ //
+ // NOTES:
+ //     Some rss feeds don't properly escape things. Properly escape known issues.
+ //     This is not really scalable, but if I'm the only one using it then it should be more or
+ //     less fine.
+ // ARGS:   file_name - The file to scrub and replace
+ // RETURN: None
+ //
+fn scrub_xml(file_name: &PathBuf) {
+    // Known bad strings
+    let mut subs = std::collections::HashMap::new();
+    subs.insert("& ".to_owned(), "&amp; ".to_owned());
+
+    //
+    // Go over everything and substitute known issues
+    //
+    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
+    let file = File::open(file_name).expect("Could not open original file");
+    let in_buf = std::io::BufReader::new(&file);
+    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
+    let mut out_buf = std::io::BufWriter::new(scrubbed_file);
+    in_buf.lines().map(|line_res| {
+        line_res.and_then(|mut line| {
+            for (key,val) in &subs {
+                if line.contains(key) {
+                    line = line.replace(key, val);
+                }
+            }
+            out_buf.write_all(line.as_bytes())
+        })
+    }).collect::<Result<(), _>>().expect("IO failed");
+
+    // Replace original with scrubbed file
+    std::fs::rename(std::path::Path::new(&tmp_file_name),
+                    std::path::Path::new(&file_name))
+         .expect("Failed to overwrite file");
+}
+
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   main
  //
@@ -296,7 +336,7 @@ fn main() {
         .mount("/", routes![show_form_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
-        .mount("/", routes![delete_feed_handler])
+        //.mount("/", routes![delete_feed_handler])
         .mount("/", routes![list_feeds_handler])
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
@@ -342,42 +382,3 @@ fn main() {
     rocket.launch();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
- // NAME:   scrub_xml
- //
- // NOTES:
- //     Some rss feeds don't properly escape things. Properly escape known issues.
- //     This is not really scalable, but if I'm the only one using it then it should be more or
- //     less fine.
- // ARGS:   file_name - The file to scrub and replace
- // RETURN: None
- //
-fn scrub_xml(file_name: &PathBuf) {
-    // Known bad strings
-    let mut subs = std::collections::HashMap::new();
-    subs.insert("& ".to_owned(), "&amp; ".to_owned());
-
-    //
-    // Go over everything and substitute known issues
-    //
-    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
-    let file = File::open(file_name).expect("Could not open original file");
-    let in_buf = std::io::BufReader::new(&file);
-    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
-    let mut out_buf = std::io::BufWriter::new(scrubbed_file);
-    in_buf.lines().map(|line_res| {
-        line_res.and_then(|mut line| {
-            for (key,val) in &subs {
-                if line.contains(key) {
-                    line = line.replace(key, val);
-                }
-            }
-            out_buf.write_all(line.as_bytes())
-        })
-    }).collect::<Result<(), _>>().expect("IO failed");
-
-    // Replace original with scrubbed file
-    std::fs::rename(std::path::Path::new(&tmp_file_name),
-                    std::path::Path::new(&file_name))
-         .expect("Failed to overwrite file");
-}
