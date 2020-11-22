@@ -15,11 +15,12 @@ mod racer;
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use rocket_contrib::serve::StaticFiles;
 use rocket::fairing::AdHoc;
 use rocket::State;
 use std::path::PathBuf;
-use std::fs::File;
 use std::io::{BufRead, Write, Error, ErrorKind};
+use std::fs::File;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -38,6 +39,15 @@ struct UpdateFactor(u64);
 // Rocket Routes
 //
 
+// mod manual {
+//     use rocket::response::NamedFile;
+
+//     #[rocket::get("/rocket-icon.jpg")]
+//     pub async fn icon() -> Option<NamedFile> {
+//         NamedFile::open("static/rocket-icon.jpg").ok()
+//     }
+// }
+
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   show_form_handler
  //
@@ -45,10 +55,10 @@ struct UpdateFactor(u64);
  // ARGS:   None
  // RETURN: The new podcast form file
  //
-#[get("/")]
-fn show_form_handler() -> File {
-    File::open("static/form.html").expect("form file to exist")
-}
+// #[get("/")]
+// fn show_form_handler() -> File {
+//     File::open("static/form.html").expect("form file to exist")
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   create_feed_handler
@@ -333,7 +343,7 @@ fn scrub_xml(file_name: &PathBuf) {
  //
 fn main() {
     let rocket = rocket::ignite()
-        .mount("/", routes![show_form_handler])
+        // .mount("/", routes![show_form_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
         //.mount("/", routes![delete_feed_handler])
@@ -341,6 +351,8 @@ fn main() {
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_handler_ep])
+        // .mount("/", routes![manual::icon])
+        .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out custom config values
             let rocket_config = RocketConfig {
@@ -381,4 +393,3 @@ fn main() {
     });
     rocket.launch();
 }
-
