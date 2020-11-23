@@ -1,5 +1,6 @@
 [global]
 host = "http://podracer.zachn.me"
+template_dir = "templates/"
 
 [development]
 address = "localhost"

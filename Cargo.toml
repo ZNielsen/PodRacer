@@ -14,5 +14,10 @@ md5 = "0.7.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rocket = "0.4.5"
-rocket_contrib = "*"
 dirs = "3.0.1"
+tera = "1"
+
+[dependencies.rocket_contrib]
+version = "*"
+default-features = false
+features = ["serve", "tera_templates", "serde"]
