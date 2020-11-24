@@ -1,0 +1,12 @@
+{% import "macros" as macros %}
+
+{{ macros::header() }}
+
+{{ macros::post_open() }}
+
+Success!
+{{ subscribe_url }}
+
+{{ macros::post_close() }}
+
+{{ macros::footer() }}
