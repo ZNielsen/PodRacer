@@ -1,0 +1,12 @@
+{% import "macros" as macros %}
+
+{{ macros::header() }}
+
+{{ macros::post_open() }}
+
+Failure...<br>
+{{ url }}
+
+{{ macros::post_close() }}
+
+{{ macros::footer() }}
