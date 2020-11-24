@@ -14,8 +14,9 @@
 use super::racer;
 
 use rocket_contrib::templates::Template;
-use tera::Context;
+use rocket::request::{Form, LenientForm};
 use rocket::State;
+use tera::Context;
 use std::path::PathBuf;
 use std::io::{Error, ErrorKind};
 use std::fs::File;
@@ -33,6 +34,14 @@ pub struct RocketConfig {
 }
 pub struct UpdateFactor(pub u64);
 
+#[derive(FromForm)]
+pub struct FormParams {
+    pub url: String,
+    pub rate: f32,
+    pub integrate_new: Option<bool>,
+    pub start_ep: usize
+}
+
 //
 // Rocket Routes
 //
@@ -47,7 +56,7 @@ pub struct UpdateFactor(pub u64);
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
- // NAME:   show_form_handler
+ // NAME:   create_feed_form_handler
  //
  // NOTES:  Give the default form when requesting the root
  // ARGS:   None
@@ -61,6 +70,39 @@ pub fn create_feed_form_handler() -> Template {
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   create_feed_handler
  //
+ // NOTES:  Creates a new PodRacer feed. From the web ui.
+ // ARGS:
+ //     config -
+ //     url -
+ //     rate -
+ //     integrate_new -
+ // RETURN: A result with string information either way. Tailored for a curl response
+ //
+#[get("/create_feed?<form_data..>")]
+pub fn create_feed_handler( config: State<RocketConfig>,
+                            form_data: Form<FormParams>) -> Template {
+    let new = form_data.integrate_new.unwrap_or(false);
+    let (page, string) = match create_feed( racer::RacerCreationParams {
+        address: config.address.clone(),
+        port: config.port,
+        url: form_data.url.clone(),
+        rate: form_data.rate,
+        integrate_new: new,
+        start_ep: form_data.start_ep
+    }) {
+        Ok(val) => ("submit_success", val),
+        Err(e) =>  ("submit_failure", e),
+    };
+
+    let mut context = Context::new();
+    context.insert("subscribe_url", &string);
+    Template::render(page, &context.into_json())
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   create_feed_cli_handler
+ //
  // NOTES:  Creates a new PodRacer feed. This is probably from the curl script
  //     This can probably safely be deleted
  // ARGS:
@@ -70,8 +112,8 @@ pub fn create_feed_form_handler() -> Template {
  //     integrate_new -
  // RETURN: A result with string information either way. Tailored for a curl response
  //
- #[post("/create_feed?<url>&<rate>&<integrate_new>", rank = 2)]
- pub fn create_feed_handler( config: State<RocketConfig>,
+ #[post("/create_feed_cli?<url>&<rate>&<integrate_new>", rank = 2)]
+ pub fn create_feed_cli_handler( config: State<RocketConfig>,
                          url: String,
                          rate: f32,
                          integrate_new: bool
@@ -87,7 +129,7 @@ pub fn create_feed_form_handler() -> Template {
  }
 
  ////////////////////////////////////////////////////////////////////////////////
-  // NAME:   create_feed_handler_ep
+  // NAME:   create_feed_cli_ep_handler
   //
   // NOTES:
   //     Creatse a new PodRacer feed, but includes a start episode. This is
@@ -102,8 +144,8 @@ pub fn create_feed_form_handler() -> Template {
   //     A result containing either a success file or a failure file.
   //     If Ok(), the File will have the subscribe url to display to the user
   //
- #[post("/create_feed?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
- pub fn create_feed_handler_ep(config: State<RocketConfig>,
+ #[post("/create_feed_cli?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
+ pub fn create_feed_cli_ep_handler(config: State<RocketConfig>,
                            url: String,
                            rate: f32,
                            integrate_new: bool,

@@ -138,7 +138,7 @@ impl FeedRacer {
 
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
         let podracer_url: PathBuf = [
-                            (String::from(&params.address) +":"+ &params.port.to_string()).as_str(),
+                            &params.address,
                             "podcasts",
                             podcast_dir_name,
                             RACER_RSS_FILE].iter().collect();

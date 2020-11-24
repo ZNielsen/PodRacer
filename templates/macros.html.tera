@@ -1,6 +1,35 @@
 {% macro header() %}
-    Hello {{ greeting }}
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>PodRacer</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    </head>
 {% endmacro header %}
+
+{% macro post_open() %}
+<body>
+  <main class="page-content" aria-label="Content">
+    <div class="wrapper">
+      <article class="post">
+        <header class="post-header">
+          <h1 class="post-title"></h1>
+        </header>
+        <div class="post-content">
+          <h1 style="text-align:center">PodRacer</h1>
+          <h2 style="text-align:center">Race through the podcasts of the past</h2>
+          <br>
+{% endmacro post_open %}
+
+{% macro post_close() %}
+        </div>
+      </article>
+    </div>
+  </main>
+</body>
+{% endmacro post_close %}
 
 {% macro footer() %}
     <footer class="site-footer h-card">
@@ -28,4 +57,5 @@
     </div>
 
     </footer>
+</html>
 {% endmacro footer %}
