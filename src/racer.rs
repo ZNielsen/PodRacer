@@ -61,7 +61,7 @@ pub struct FeedRacer {
     schema_version: String,
     racer_path: PathBuf,
     source_url: String,
-    podracer_url: String,
+    subscribe_url: String,
     anchor_date: DateTime<chrono::Utc>,
     first_pubdate: DateTime<chrono::FixedOffset>,
     rate: f32,
@@ -74,7 +74,7 @@ impl FeedRacer {
     pub fn get_racer_path(&self) -> &Path { &self.racer_path }
     pub fn get_racer_name(&self) -> &std::ffi::OsStr { self.racer_path.file_name().unwrap() }
     pub fn get_source_url(&self) -> &str { &self.source_url }
-    pub fn get_podracer_url(&self) -> &str { &self.podracer_url }
+    pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
     pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
     pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
     pub fn get_rate(&self) -> f32 { self.rate }
@@ -137,7 +137,7 @@ impl FeedRacer {
         }
 
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
-        let podracer_url: PathBuf = [
+        let subscribe_url: PathBuf = [
                             &params.address,
                             "podcasts",
                             podcast_dir_name,
@@ -147,7 +147,7 @@ impl FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
             racer_path: PathBuf::from(dir),
             source_url: params.url.to_owned(),
-            podracer_url: podracer_url.to_str().unwrap().to_owned(),
+            subscribe_url: subscribe_url.to_str().unwrap().to_owned(),
             rate: params.rate.to_owned(),
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
@@ -456,7 +456,7 @@ pub fn create_feed(params: &RacerCreationParams) -> Result<FeedRacer, String> {
     };
     // Run update() on this directory. We just created it, so no need to refresh the rss file
     match update_racer_at_path(&dir, &RssFile::FromStorage) {
-        Ok(_) => println!("Subscribe to this URL in your pod catcher: {}", racer.get_podracer_url()),
+        Ok(_) => println!("Subscribe to this URL in your pod catcher: {}", racer.get_subscribe_url()),
         Err(e) => return Err(format!("Error writing file: {}", e)),
     };
 
@@ -531,7 +531,7 @@ pub fn get_by_url(url: &str) -> Option<FeedRacer> {
     for dir_res in dirs {
         let dir = dir_res.unwrap();
         let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
-        if racer.get_podracer_url() == url {
+        if racer.get_subscribe_url() == url {
             return Some(racer);
         };
     }
@@ -562,7 +562,7 @@ impl fmt::Display for FeedRacer {
         writeln!(f, "schema_version: {}", self.schema_version)?;
         writeln!(f, "racer_path: {}", self.racer_path.display() )?;
         writeln!(f, "source_url: {}", self.source_url)?;
-        writeln!(f, "podracer_url: {}", self.podracer_url)?;
+        writeln!(f, "subscribe_url: {}", self.subscribe_url)?;
         writeln!(f, "anchor_date: {}", self.anchor_date)?;
         writeln!(f, "first_pubdate: {}", self.first_pubdate)?;
         writeln!(f, "rate: {}", self.rate)?;

@@ -1,12 +1,19 @@
 {% import "macros" as macros %}
 
-{{ macros::header() }}
+{{ macros::static_header() }}
 
-{{ macros::post_open() }}
+{{ macros::static_post_open() }}
 
-Success!
-{{ subscribe_url }}
+Success!<br>
+Subscribe to this URL in your pod-catcher of choice:<br>
+<a href="{{ subscribe_url }}">{{ subscribe_url }}</a><br>
+<br>
+You have {{num_items}} episodes to catch up on.<br>
+You are {{ weeks_behind }} weeks behind.<br>
+It will take you about {{ weeks_to_catch_up }} weeks ({{ days_to_catch_up }}
+days) to catch up (excluding new episodes).<br>
+You should catch up on {{ catch_up_date }}.
 
-{{ macros::post_close() }}
+{{ macros::static_post_close() }}
 
-{{ macros::footer() }}
+{{ macros::static_footer() }}

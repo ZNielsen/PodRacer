@@ -14,7 +14,7 @@
 use super::racer;
 
 use rocket_contrib::templates::Template;
-use rocket::request::{Form, LenientForm};
+use rocket::request::{Form};
 use rocket::State;
 use tera::Context;
 use std::path::PathBuf;
@@ -24,6 +24,9 @@ use std::fs::File;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
+const SUCCESS_FILE: &'static str = "submit_success";
+const FAILURE_FILE: &'static str = "submit_failure";
+
 
 //
 // Structs for Rocket config
@@ -33,6 +36,15 @@ pub struct RocketConfig {
     pub port: u64,
 }
 pub struct UpdateFactor(pub u64);
+
+struct FeedFunFacts {
+    num_items: usize,
+    weeks_behind: i64,
+    weeks_to_catch_up: u32,
+    days_to_catch_up: u32,
+    catch_up_date: chrono::DateTime<chrono::Utc>,
+    subscribe_url: String
+}
 
 #[derive(FromForm)]
 pub struct FormParams {
@@ -81,8 +93,9 @@ pub fn create_feed_form_handler() -> Template {
 #[get("/create_feed?<form_data..>")]
 pub fn create_feed_handler( config: State<RocketConfig>,
                             form_data: Form<FormParams>) -> Template {
+    let mut context = Context::new();
     let new = form_data.integrate_new.unwrap_or(false);
-    let (page, string) = match create_feed( racer::RacerCreationParams {
+    match create_feed( racer::RacerCreationParams {
         address: config.address.clone(),
         port: config.port,
         url: form_data.url.clone(),
@@ -90,14 +103,21 @@ pub fn create_feed_handler( config: State<RocketConfig>,
         integrate_new: new,
         start_ep: form_data.start_ep
     }) {
-        Ok(val) => ("submit_success", val),
-        Err(e) =>  ("submit_failure", e),
-    };
-
-    let mut context = Context::new();
-    context.insert("subscribe_url", &string);
-    Template::render(page, &context.into_json())
-
+        Ok(fun_facts) => {
+            let catch_up_date = format!("{}", fun_facts.catch_up_date.format("%d %b, %Y"));
+            context.insert("weeks_to_catch_up", &fun_facts.weeks_to_catch_up);
+            context.insert("days_to_catch_up",  &fun_facts.days_to_catch_up);
+            context.insert("catch_up_date",     &catch_up_date);
+            context.insert("subscribe_url",     &fun_facts.subscribe_url);
+            context.insert("weeks_behind",      &fun_facts.weeks_behind);
+            context.insert("num_items",         &fun_facts.num_items);
+            Template::render(SUCCESS_FILE, &context.into_json())
+        }
+        Err(e) => {
+            context.insert("error_string", &e);
+            Template::render(FAILURE_FILE, &context.into_json())
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,14 +138,17 @@ pub fn create_feed_handler( config: State<RocketConfig>,
                          rate: f32,
                          integrate_new: bool
                      ) -> Result<String, String> {
-     create_feed( racer::RacerCreationParams {
+     match create_feed( racer::RacerCreationParams {
          address: config.address.clone(),
          port: config.port,
          url: url,
          rate:rate,
          integrate_new: integrate_new,
          start_ep: 1
-     })
+     }) {
+         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
+         Err(e) => Err(e)
+     }
  }
 
  ////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +173,7 @@ pub fn create_feed_handler( config: State<RocketConfig>,
                            rate: f32,
                            integrate_new: bool,
                            start_ep: usize
-                         ) -> Result<File, File> {
+                         ) -> Result<String, String> {
      match create_feed( racer::RacerCreationParams {
          address: config.address.clone(),
          port: config.port,
@@ -159,8 +182,8 @@ pub fn create_feed_handler( config: State<RocketConfig>,
          integrate_new: integrate_new,
          start_ep: start_ep
      }) {
-         Ok(_) => Ok(File::open("static/submit_success.html").unwrap()),
-         Err(_) => Err(File::open("static/submit_failure.html").unwrap()),
+        Ok(val) => Ok(make_fun_fact_string_cli(&val)),
+        Err(e) => Err(e)
      }
  }
 
@@ -177,7 +200,7 @@ pub fn create_feed_handler( config: State<RocketConfig>,
   //     A result. If Ok(), contains a bunch of stats for the user. If Err(),
   //     contains info for why it failed
   //
- pub fn create_feed(params: racer::RacerCreationParams) -> Result<String,String> {
+ fn create_feed(params: racer::RacerCreationParams) -> Result<FeedFunFacts,String> {
      let feed_racer = match racer::create_feed(&params) {
          Ok(val) => val,
          Err(e) => return Err(e),
@@ -197,14 +220,26 @@ pub fn create_feed_handler( config: State<RocketConfig>,
      let days_to_catch_up = (((weeks_behind*7) as f32) / feed_racer.get_rate()) as u32;
      let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
 
-     // Package up the return string
-     let mut ret = format!("You have {} episodes to catch up on.\n", num_items);
-     ret += format!("You are {} weeks behind, it will take you about {} weeks ({} days) to catch up (excluding new episodes).\n",
-             weeks_behind, weeks_to_catch_up, days_to_catch_up).as_str();
-     ret += format!("You should catch up on {}.\n", catch_up_date.format("%d %b, %Y")).as_str();
-     ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", feed_racer.get_podracer_url()).as_str();
-     Ok(ret)
- }
+
+    Ok( FeedFunFacts {
+        num_items: num_items,
+        weeks_behind: weeks_behind,
+        weeks_to_catch_up: weeks_to_catch_up,
+        days_to_catch_up: days_to_catch_up,
+        catch_up_date: catch_up_date,
+        subscribe_url: feed_racer.get_subscribe_url().to_owned()
+    })
+}
+
+fn make_fun_fact_string_cli(fff: &FeedFunFacts) -> String {
+    // Package up the return string
+    let mut ret = format!("You have {} episodes to catch up on.\n", fff.num_items);
+    ret += format!("You are {} weeks behind, it will take you about {} weeks ({} days) to catch up (excluding new episodes).\n",
+        fff.weeks_behind, fff.weeks_to_catch_up, fff.days_to_catch_up).as_str();
+    ret += format!("You should catch up on {}.\n", fff.catch_up_date.format("%d %b, %Y")).as_str();
+    ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", fff.subscribe_url).as_str();
+    ret
+}
 
  ////////////////////////////////////////////////////////////////////////////////
   // NAME:   update_one_handler

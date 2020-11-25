@@ -1,5 +1,4 @@
 [global]
-host = "http://podracer.zachn.me"
 template_dir = "templates/"
 
 [development]
@@ -9,6 +8,7 @@ keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
 update_factor = 1
+host = "http://localhost:42069"
 
 [staging]
 address = "0.0.0.0"
@@ -17,6 +17,7 @@ keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
 update_factor = 45
+host = "http://podracer.zachn.me"
 
 [production]
 address = "0.0.0.0"
@@ -25,3 +26,4 @@ keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
 update_factor = 45
+host = "http://podracer.zachn.me"
