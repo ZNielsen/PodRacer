@@ -16,7 +16,7 @@ A podcast catch-up service running on your very own server!
 - **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
 - **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
 
-PodRacer is most useful if you like to listen to your podcasts as they are published. It lets legacy content seamlessly fit into the stream of contemporary content.
+PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just lisen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
 
 # WORK IN PROGRESS - still very buggy. It's functional but not polished yet
 
