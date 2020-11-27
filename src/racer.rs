@@ -487,6 +487,8 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
     dir.push_str(scrubbed_pod_name);
     dir.push_str("_");
     dir.push_str(&params.rate.to_string());
+    dir.push_str("_ep");
+    dir.push_str(&params.start_ep.to_string());
     dir.push_str("_");
     dir.push_str(&day.format("%Y-%m-%d").to_string());
     std::fs::create_dir_all(&dir).unwrap();
