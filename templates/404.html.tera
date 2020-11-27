@@ -1,0 +1,11 @@
+{% import "macros" as macros %}
+
+{{ macros::static_header() }}
+
+{{ macros::static_post_open() }}
+
+The requested page does not exist on this server.
+
+{{ macros::static_post_close() }}
+
+{{ macros::static_footer() }}
