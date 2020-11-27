@@ -14,10 +14,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 use chrono::{DateTime, Duration};
 use serde::{Deserialize, Serialize};
-use std::io::{BufReader, Write};
-use std::fmt;
-use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::fmt;
+use std::io::{BufReader, Write};
+use std::fs::File;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -28,8 +28,8 @@ pub const PODRACER_DIR:      &'static str = ".podracer";
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE:    &'static str = "racer.rss";
 pub const RACER_FILE:        &'static str = "racer.file";
-pub const INDENT_AMOUNT:            usize = 2;
-pub const SPACE_CHAR:                  u8 = 32;
+pub const INDENT_AMOUNT:            usize = 2;  // For pretty printing rss files
+pub const SPACE_CHAR:                  u8 = 32; // ASCII ' '
 
 // All parameters we need to create a PodRacer feed
 pub struct RacerCreationParams {
@@ -168,7 +168,7 @@ impl FeedRacer {
     pub fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
 
-        let filename: PathBuf = [self.get_racer_path().to_str().unwrap(), RACER_FILE].iter().collect();
+        let filename: PathBuf = [self.racer_path.to_str().unwrap(), RACER_FILE].iter().collect();
         let mut fp = File::create(filename)?;
         fp.write_all(json.as_bytes())
     }
@@ -321,10 +321,24 @@ impl FeedRacer {
         let mut items_to_publish = rss.items().to_owned();
         items_to_publish.drain(0..num_to_scrub);
 
+        // Append racer publish date to the end of the description
+        for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
+            let mut info_date = info.date.clone();
+            let drain_iter = &info_date.find(" +").unwrap_or(info_date.len());
+            let date: String = info_date.drain(..drain_iter).collect();
+            item.set_description(
+                item.description().unwrap_or("").to_owned() +
+                "<br><br>" +
+                "PodRacer published on " +
+                &date
+            );
+        }
+
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
+
         // Write out the racer.rss file
-        let racer_rss_path: PathBuf = [self.get_racer_path().to_str().unwrap(), RACER_RSS_FILE].iter().collect();
+        let racer_rss_path: PathBuf = [self.racer_path.to_str().unwrap(), RACER_RSS_FILE].iter().collect();
         let racer_rss_file = File::create(racer_rss_path)?;
         match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
             Ok(_) => Ok(()),
