@@ -70,16 +70,16 @@ pub struct FeedRacer {
 }
 // Basic getter functions
 impl FeedRacer {
-    pub fn get_schema_version(&self) -> &str { &self.schema_version }
+    // pub fn get_schema_version(&self) -> &str { &self.schema_version }
     pub fn get_racer_path(&self) -> &Path { &self.racer_path }
     pub fn get_racer_name(&self) -> &std::ffi::OsStr { self.racer_path.file_name().unwrap() }
-    pub fn get_source_url(&self) -> &str { &self.source_url }
+    // pub fn get_source_url(&self) -> &str { &self.source_url }
     pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
-    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
+    // pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
     pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
     pub fn get_rate(&self) -> f32 { self.rate }
-    pub fn get_integrate_new(&self) -> bool { self.integrate_new }
-    pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
+    // pub fn get_integrate_new(&self) -> bool { self.integrate_new }
+    // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
 }
 
 
