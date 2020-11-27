@@ -18,7 +18,7 @@ A podcast catch-up service running on your very own server!
 
 PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just lisen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
 
-# WORK IN PROGRESS - still very buggy. It's functional but not polished yet
+# WORK IN PROGRESS - still buggy. It's functional but not polished yet
 
 Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have quirks I didn't see. Feel free to file a github issue and I'll do what I can to fix it up.
 
