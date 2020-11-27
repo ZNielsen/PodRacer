@@ -442,7 +442,10 @@ pub fn update_all() -> Result<(), String> {
  // ARGS:   params - All the params needed to make a racer
  // RETURN: A FeedRacer or error String
  //
-pub fn create_feed(params: &RacerCreationParams) -> Result<FeedRacer, String> {
+pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
+    if None == params.url.find("http") {
+        params.url = String::from("https://") + &params.url;
+    }
     let channel = match download_rss_channel(&params.url) {
         Ok(val) => val,
         Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
