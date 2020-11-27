@@ -88,6 +88,7 @@ fn main() {
     // };
 
     let rocket = rocket::ignite()
+        .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])

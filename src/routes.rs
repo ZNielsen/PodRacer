@@ -15,7 +15,7 @@ use super::racer;
 
 use rocket_contrib::templates::Template;
 use rocket::request::{Form};
-use rocket::State;
+use rocket::{Request, State};
 use tera::Context;
 use std::path::PathBuf;
 use std::io::{Error, ErrorKind};
@@ -187,11 +187,16 @@ pub fn create_feed_cli_handler( config: State<RocketConfig>,
     }
 }
 
+#[catch(404)]
+pub fn not_found_handler(req: &Request) -> Template {
+    println!("404 served to: {:?}", req.real_ip());
+    println!("\t{:?} requested {}", req.real_ip(), req.uri());
+    Template::render("404", Context::new().into_json())
+}
 
-
- //
- // Helper Functions
- //
+//
+// Helper Functions
+//
 
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   create_feed
