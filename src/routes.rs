@@ -200,8 +200,8 @@ pub fn create_feed_handler( config: State<RocketConfig>,
   //     A result. If Ok(), contains a bunch of stats for the user. If Err(),
   //     contains info for why it failed
   //
- fn create_feed(params: racer::RacerCreationParams) -> Result<FeedFunFacts,String> {
-     let feed_racer = match racer::create_feed(&params) {
+ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts,String> {
+     let feed_racer = match racer::create_feed(&mut params) {
          Ok(val) => val,
          Err(e) => return Err(e),
      };
