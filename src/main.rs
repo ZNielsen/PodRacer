@@ -10,7 +10,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #[macro_use]
 extern crate rocket;
-#[macro_use]
 extern crate tera;
 mod racer;
 mod routes;
@@ -22,7 +21,6 @@ use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
 use rocket::fairing::AdHoc;
 use routes::*;
-use tera::Tera;
 use std::path::PathBuf;
 use std::io::{BufRead, Write};
 use std::fs::File;
