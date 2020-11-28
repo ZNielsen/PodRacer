@@ -467,11 +467,11 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
     // Make directory
     let dir = create_feed_racer_dir(&channel, &params);
     // Write out original rss feed to file in dir
-    let original_rss_file = match File::create(String::from(&dir) + "/" + crate::racer::ORIGINAL_RSS_FILE) {
+    let original_rss_file = match File::create(String::from(&dir) + "/" + ORIGINAL_RSS_FILE) {
         Ok(val) => val,
         Err(e) => return Err(format!("Unable to create file: {}", e)),
     };
-    match channel.pretty_write_to(original_rss_file, crate::racer::SPACE_CHAR, 2) {
+    match channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2) {
         Ok(_) => (),
         Err(e) => return Err(format!("unable to write original rss file: {}", e)),
     };
