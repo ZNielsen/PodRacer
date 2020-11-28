@@ -10,5 +10,6 @@ before_script:
   - cargo generate-lockfile
 script:
   #- cargo test
-  - cargo build --features=fail-on-warnings
+  - cargo build --features=fail-on-warnings --manifest-path ./racer/Cargo.toml
+  - cargo build --features=fail-on-warnings --manifest-path ./server/Cargo.toml
   - cargo audit
