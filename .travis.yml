@@ -3,6 +3,9 @@ os:
 language: rust
 cache: cargo # cache cargo-audit once installed
 before_script:
+  - rustup override set nightly
+  - rustup update
+  - cargo update
   - cargo install --force cargo-audit
   - cargo generate-lockfile
 script:
