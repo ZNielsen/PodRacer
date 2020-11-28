@@ -323,7 +323,7 @@ impl FeedRacer {
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
             let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
-                        .format("%d, %b %Y"));
+                        .format("%d %b %Y"));
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
