@@ -11,7 +11,7 @@
 #[macro_use]
 extern crate rocket;
 extern crate tera;
-mod racer;
+extern crate racer;
 mod routes;
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,26 +1,2 @@
-[package]
-name = "pod_racer"
-version = "0.1.0"
-authors = ["Zach Nielsen <zach@zachn.me>"]
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[features]
-fail-on-warnings = []
-
-[dependencies]
-rss = "1.9.0"
-reqwest = { version = "0.10.8", features = ["blocking"] }
-chrono = { version = "0.4", features = ["serde"] }
-md5 = "0.7.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-rocket = "0.4.5"
-dirs = "3.0.1"
-tera = "1"
-
-[dependencies.rocket_contrib]
-version = "*"
-default-features = false
-features = ["serve", "tera_templates", "serde"]
+[workspace]
+members = ["racer", "server"]
