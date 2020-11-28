@@ -194,63 +194,6 @@ pub fn not_found_handler(req: &Request) -> Template {
     Template::render("404", Context::new().into_json())
 }
 
-//
-// Helper Functions
-//
-
-////////////////////////////////////////////////////////////////////////////////
- // NAME:   create_feed
- //
- // NOTES:
- //     Crates a PodRacer feed for given parameters. Prints some stats for the
- //     user for display over curl. Might need to make another version to handle
- //     displaying info over web UI
- // ARGS:   params - All the parameters required to put together a feed. See
- //                  the struct for more info.
- // RETURN:
- //     A result. If Ok(), contains a bunch of stats for the user. If Err(),
- //     contains info for why it failed
- //
-fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts,String> {
-    let feed_racer = match racer::create_feed(&mut params) {
-        Ok(val) => val,
-        Err(e) => return Err(e),
-    };
-    println!("{}", feed_racer);
-
-    // Grab some info to return
-    let path: PathBuf = [feed_racer.get_racer_path().to_str().unwrap(), racer::ORIGINAL_RSS_FILE].iter().collect();
-    super::scrub_xml(&path);
-   println!("Getting file from {}", path.display());
-   let file = File::open(&path).unwrap();
-   let mut buf = std::io::BufReader::new(&file);
-   let feed = rss::Channel::read_from(&mut buf).unwrap();
-   let num_items = feed.items().len() - &params.start_ep;
-   let weeks_behind = feed_racer.get_first_pubdate().signed_duration_since(chrono::Utc::now()).num_weeks().abs();
-   let weeks_to_catch_up = ((weeks_behind as f32) / feed_racer.get_rate()) as u32;
-   let days_to_catch_up = (((weeks_behind*7) as f32) / feed_racer.get_rate()) as u32;
-   let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
-
-    Ok( FeedFunFacts {
-        num_items: num_items,
-        weeks_behind: weeks_behind,
-        weeks_to_catch_up: weeks_to_catch_up,
-        days_to_catch_up: days_to_catch_up,
-        catch_up_date: catch_up_date,
-        subscribe_url: feed_racer.get_subscribe_url().to_owned()
-    })
-}
-
-fn make_fun_fact_string_cli(fff: &FeedFunFacts) -> String {
-    // Package up the return string
-    let mut ret = format!("You have {} episodes to catch up on.\n", fff.num_items);
-    ret += format!("You are {} weeks behind, it will take you about {} weeks ({} days) to catch up (excluding new episodes).\n",
-        fff.weeks_behind, fff.weeks_to_catch_up, fff.days_to_catch_up).as_str();
-    ret += format!("You should catch up on {}.\n", fff.catch_up_date.format("%d %b, %Y")).as_str();
-    ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", fff.subscribe_url).as_str();
-    ret
-}
-
 ////////////////////////////////////////////////////////////////////////////////
  // NAME:   update_one_handler
  //
@@ -371,4 +314,61 @@ pub fn serve_rss_handler(podcast: String) -> Option<File> {
         Ok(file) => Some(file),
         Err(_) => None,
     }
+}
+
+//
+// Helper Functions
+//
+
+////////////////////////////////////////////////////////////////////////////////
+ // NAME:   create_feed
+ //
+ // NOTES:
+ //     Crates a PodRacer feed for given parameters. Prints some stats for the
+ //     user for display over curl. Might need to make another version to handle
+ //     displaying info over web UI
+ // ARGS:   params - All the parameters required to put together a feed. See
+ //                  the struct for more info.
+ // RETURN:
+ //     A result. If Ok(), contains a bunch of stats for the user. If Err(),
+ //     contains info for why it failed
+ //
+ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts,String> {
+    let feed_racer = match racer::create_feed(&mut params) {
+        Ok(val) => val,
+        Err(e) => return Err(e),
+    };
+    println!("{}", feed_racer);
+
+    // Grab some info to return
+    let path: PathBuf = [feed_racer.get_racer_path().to_str().unwrap(), racer::ORIGINAL_RSS_FILE].iter().collect();
+    super::scrub_xml(&path);
+   println!("Getting file from {}", path.display());
+   let file = File::open(&path).unwrap();
+   let mut buf = std::io::BufReader::new(&file);
+   let feed = rss::Channel::read_from(&mut buf).unwrap();
+   let num_items = feed.items().len() - &params.start_ep;
+   let weeks_behind = feed_racer.get_first_pubdate().signed_duration_since(chrono::Utc::now()).num_weeks().abs();
+   let weeks_to_catch_up = ((weeks_behind as f32) / feed_racer.get_rate()) as u32;
+   let days_to_catch_up = (((weeks_behind*7) as f32) / feed_racer.get_rate()) as u32;
+   let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
+
+    Ok( FeedFunFacts {
+        num_items: num_items,
+        weeks_behind: weeks_behind,
+        weeks_to_catch_up: weeks_to_catch_up,
+        days_to_catch_up: days_to_catch_up,
+        catch_up_date: catch_up_date,
+        subscribe_url: feed_racer.get_subscribe_url().to_owned()
+    })
+}
+
+fn make_fun_fact_string_cli(fff: &FeedFunFacts) -> String {
+    // Package up the return string
+    let mut ret = format!("You have {} episodes to catch up on.\n", fff.num_items);
+    ret += format!("You are {} weeks behind, it will take you about {} weeks ({} days) to catch up (excluding new episodes).\n",
+        fff.weeks_behind, fff.weeks_to_catch_up, fff.days_to_catch_up).as_str();
+    ret += format!("You should catch up on {}.\n", fff.catch_up_date.format("%d %b, %Y")).as_str();
+    ret += format!("\nSubscribe to this URL in your podcatching app of choice: {}", fff.subscribe_url).as_str();
+    ret
 }
