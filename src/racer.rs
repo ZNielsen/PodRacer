@@ -82,8 +82,6 @@ impl FeedRacer {
     // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
 }
 
-
-
 impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
      // NAME:   FeedRacer::new
@@ -320,20 +318,20 @@ impl FeedRacer {
         // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
         let mut items_to_publish = rss.items().to_owned();
         items_to_publish.drain(0..num_to_scrub);
+        items_to_publish.sort_by(|a, b| rss_item_cmp(a,b));
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
-            let mut info_date = info.date.clone();
-            let drain_iter = &info_date.find(" +").unwrap_or(info_date.len());
-            let date: String = info_date.drain(..drain_iter).collect();
+            let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
+                        .format("%d, %b %Y"));
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
                 "PodRacer published on " +
-                &date
+                &date +
+                " (UTC)"
             );
         }
-
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
 
@@ -347,6 +345,21 @@ impl FeedRacer {
     }
 }
 
+fn rss_item_cmp(a: &rss::Item, b: &rss::Item) -> std::cmp::Ordering {
+    let a_sec = DateTime::parse_from_rfc2822(a.pub_date().unwrap()).unwrap()
+                .timestamp();
+    let b_sec = DateTime::parse_from_rfc2822(b.pub_date().unwrap()).unwrap()
+                .timestamp();
+    if a_sec < b_sec {
+        std::cmp::Ordering::Less
+    }
+    else if b_sec < a_sec {
+        std::cmp::Ordering::Greater
+    }
+    else {
+        std::cmp::Ordering::Equal
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
  // NAME:   get_racer_at_path
