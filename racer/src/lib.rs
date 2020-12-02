@@ -162,6 +162,7 @@ impl FeedRacer {
         // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
         let mut items_to_publish = rss.items().to_owned();
         items_to_publish.drain(0..num_to_scrub);
+        println!("items_to_publish: {:?}", items_to_publish);
         items_to_publish.sort_by(|a, b| rss_item_cmp(a,b));
 
         // Append racer publish date to the end of the description
