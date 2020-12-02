@@ -48,7 +48,7 @@ fn main() {
         let file = File::open(file_name.path()).expect(&format!("Could not open file: {:?}", file_name));
         let in_buf = BufReader::new(&file);
         let tmp_file_name = "/tmp/template.build".to_owned();
-        let tmp_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
+        let tmp_file = File::create(&tmp_file_name).expect("Failed to create tmp file");
         let mut out_buf = BufWriter::new(tmp_file);
 
         let mut all_static = true;
@@ -70,23 +70,33 @@ fn main() {
             out_buf.write_all(line.as_bytes()).expect("Error writing to out_buf");
         }
 
-
-        let mut static_file = static_dir_name.clone() + file_name.file_name().to_str().unwrap();
-        let iter = static_file.find(".tera").unwrap_or(static_file.len());
-        static_file.drain(iter..);
-        println!("static file is {}", static_file);
-
-        let template_file = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
-
-        let mut dest_file = Path::new(&static_file);
         if all_static {
+            let dest_file = Path::new(&static_file);
+            let mut static_file = static_dir_name.clone() + file_name.file_name().to_str().unwrap();
+            let iter = static_file.find(".tera").unwrap_or(static_file.len());
+            static_file.drain(iter..);
+            println!("static file is {}", static_file);
+
             // Scrub {% import "macros" as macros %} here
+            println!("Writing {:?} out to {:?}, scrubbing the macro import", &tmp_file_name, &dest_file);
+            let newly_static_file = File::open(&tmp_file_name).expect(&format!("Could not open file: {:?}", file_name));
+            let new_in_buf = BufReader::new(&newly_static_file);
+            let new_out_file = File::create(&dest_file).expect(&format!("Could not create file: {:?}", dest_file));
+            let mut new_out_buf = BufWriter::new(new_out_file);
+            for line_res in new_in_buf.lines() {
+                let line = line_res.unwrap();
+                println!("line: {}", &line);
+                if !line.contains("{% import") {
+                    new_out_buf.write_all(line.as_bytes()).expect("Error writing to new_out_buf");
+                }
+            }
         }
         else {
-            dest_file = Path::new(&template_file);
+            let template_file = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
+            let dest_file = Path::new(&template_file);
+            println!("Moving {:?} to {:?}", tmp_file_name, dest_file);
+            std::fs::rename(Path::new(&tmp_file_name), dest_file).expect("Could not copy template file");
         }
-        println!("Moving {:?} to {:?}", tmp_file_name, dest_file);
-        std::fs::rename(Path::new(&tmp_file_name), dest_file).expect("Could not copy template file");
     }
 
     // Move all static files to the build dir
