@@ -19,7 +19,8 @@ use std::fs::File;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
-const MACRO_FILE_NAME: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/templates/macros.html.tera");
+const MACRO_FILE_NAME: &'static str = "macros.html.tera";
+const MACRO_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/templates/macros.html.tera");
 
 fn main() {
     // Make the dirs
@@ -44,8 +45,15 @@ fn main() {
     let template_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates"));
     println!("template_dir: {:?}", template_dir);
     for file_name_res in template_dir.read_dir().unwrap() {
-
         let file_name = file_name_res.unwrap();
+        if file_name.file_name() == MACRO_FILE_NAME {
+            // Just copy over the macro file, don't do anything to it
+            let target_file_name = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
+            let target_file = Path::new(&target_file_name);
+            std::fs::copy(file_name.path(), target_file).expect("Could not copy static file");
+            continue;
+        }
+
         println!("opening file: {:?}", file_name);
         let file = File::open(file_name.path()).expect(&format!("Could not open file: {:?}", file_name));
         let in_buf = BufReader::new(&file);
@@ -124,7 +132,7 @@ enum GetMacroState {
 }
 
 fn get_static_macro(macro_name: &str) -> String {
-    let file = File::open(MACRO_FILE_NAME).expect(&format!("Could not open file: {:?}", MACRO_FILE_NAME));
+    let file = File::open(MACRO_FILE).expect(&format!("Could not open file: {:?}", MACRO_FILE));
     let in_buf = BufReader::new(&file);
 
     let mut ret = String::new();
