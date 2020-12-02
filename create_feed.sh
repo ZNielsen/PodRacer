@@ -45,7 +45,7 @@ while test $# -gt 0; do
         --update)
             dprint "In update"
             slug="update"
-            request="GET"
+            request="POST"
             args=""
             shift 1
             update_url="$1"
@@ -54,7 +54,7 @@ while test $# -gt 0; do
         --update-all)
             dprint "In update all"
             slug="update"
-            request="GET"
+            request="POST"
             args=""
             shift 1
         ;;
@@ -106,15 +106,15 @@ while test $# -gt 0; do
 done
 
 # if [[ "$pass_args" == "true" ]]; then
-    curl -X ${request} -G \
-        --data-urlencode "url=${url}" \
-        --data-urlencode "rate=${rate}" \
-        --data-urlencode "integrate_new=${integrate_new}" \
-        --data-urlencode "start_ep=${start_ep}" \
-        ${hostname}:${port}/${slug}
+    #curl -X ${request} -G \
+    #    --data-urlencode "url=${url}" \
+    #    --data-urlencode "rate=${rate}" \
+    #    --data-urlencode "integrate_new=${integrate_new}" \
+    #    --data-urlencode "start_ep=${start_ep}" \
+    #    ${hostname}:${port}/${slug}
 # else
-    # dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
-    # curl -v -X ${request} -G ${hostname}:${port}/${slug}
+    dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
+    curl -v -X ${request} -G ${hostname}:${port}/${slug}
 # fi
 
 
