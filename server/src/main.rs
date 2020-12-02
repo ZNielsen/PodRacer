@@ -28,6 +28,7 @@ use std::fs::File;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
+const STATIC_FILE_DIR: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/static");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
  // NAME:   scrub_xml
@@ -99,7 +100,7 @@ fn main() {
         .mount("/", routes![create_feed_cli_handler])
         .mount("/", routes![create_feed_cli_ep_handler])
         // .mount("/", routes![manual::icon])
-        .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")))
+        .mount("/", StaticFiles::from(STATIC_FILE_DIR))
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out custom config values
