@@ -12,4 +12,5 @@ script:
   #- cargo test
   - cargo build --features=fail-on-warnings --manifest-path ./racer/Cargo.toml
   - cargo build --features=fail-on-warnings --manifest-path ./server/Cargo.toml
+  - cargo build
   - cargo audit

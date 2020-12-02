@@ -449,83 +449,6 @@ pub fn update_all() -> Result<(), String> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
- // NAME:   create_feed
- //
- // NOTES:  Creates a new feedracer object + sets up the diretcory and files
- // ARGS:   params - All the params needed to make a racer
- // RETURN: A FeedRacer or error String
- //
-pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
-    if None == params.url.find("http") {
-        params.url = String::from("https://") + &params.url;
-    }
-    let channel = match download_rss_channel(&params.url) {
-        Ok(val) => val,
-        Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
-    };
-
-    // Make directory
-    let dir = create_feed_racer_dir(&channel, &params);
-    // Write out original rss feed to file in dir
-    let original_rss_file = match File::create(String::from(&dir) + "/" + ORIGINAL_RSS_FILE) {
-        Ok(val) => val,
-        Err(e) => return Err(format!("Unable to create file: {}", e)),
-    };
-    match channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2) {
-        Ok(_) => (),
-        Err(e) => return Err(format!("unable to write original rss file: {}", e)),
-    };
-    // Make racer file
-    let racer = FeedRacer::new(
-                    &mut channel.items().to_owned(),
-                    &params,
-                    &dir);
-    match racer.write_to_file() {
-        Ok(_) => (),
-        Err(e) => return Err(format!("failed with error: {}", e))
-    };
-    // Run update() on this directory. We just created it, so no need to refresh the rss file
-    match update_racer_at_path(&dir, &RssFile::FromStorage) {
-        Ok(_) => println!("Subscribe to this URL in your pod catcher: {}", racer.get_subscribe_url()),
-        Err(e) => return Err(format!("Error writing file: {}", e)),
-    };
-
-    Ok(racer)
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
- // NAME:   create_feed_racer_dir
- //
- // NOTES:  Creates the direcotry for a racer with these parameters
- // ARGS:
- //     ch - An rss channel (used for the title of the show)
- //     params - Input parameters
- // RETURN: The path of the created directory
- //
-fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> String {
-    let day = chrono::Utc::today();
-    // Create this feed's dir name
-    let scrubbed_pod_name = &ch.title().to_lowercase()
-                                .replace(" ", "-")
-                                .replace("/", "-")
-                                .replace(":", "");
-    let mut dir = String::from(dirs::home_dir().unwrap().to_str().unwrap());
-    dir.push_str("/");
-    dir.push_str(PODRACER_DIR);
-    dir.push_str("/");
-    dir.push_str(scrubbed_pod_name);
-    dir.push_str("_");
-    dir.push_str(&params.rate.to_string());
-    dir.push_str("_ep");
-    dir.push_str(&params.start_ep.to_string());
-    dir.push_str("_");
-    dir.push_str(&day.format("%Y-%m-%d").to_string());
-    std::fs::create_dir_all(&dir).unwrap();
-    dir
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
  // NAME:   download_rss_channel
  //
  // NOTES:
@@ -545,7 +468,7 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
 }
 
 
-pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
+fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
     // Read all dirs in the podracer dir and compare to this
     let dirs = get_all_podcast_dirs().unwrap();
     for dir_res in dirs {
@@ -558,7 +481,7 @@ pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
     None
 }
 
-pub fn get_by_url(url: &str) -> Option<FeedRacer> {
+fn get_by_url(url: &str) -> Option<FeedRacer> {
     let dirs = get_all_podcast_dirs().unwrap();
     for dir_res in dirs {
         let dir = dir_res.unwrap();
@@ -568,41 +491,4 @@ pub fn get_by_url(url: &str) -> Option<FeedRacer> {
         };
     }
     None
-}
-
-
-//
-// Display implementation
-//
-impl fmt::Display for RacerEpisode {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
-        write!(f, "ep_num: {}, date: {}", self.ep_num, self.date)
-    }
-}
-impl fmt::Display for FeedRacer {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
-        writeln!(f, "schema_version: {}", self.schema_version)?;
-        writeln!(f, "racer_path: {}", self.racer_path.display() )?;
-        writeln!(f, "source_url: {}", self.source_url)?;
-        writeln!(f, "subscribe_url: {}", self.subscribe_url)?;
-        writeln!(f, "anchor_date: {}", self.anchor_date)?;
-        writeln!(f, "first_pubdate: {}", self.first_pubdate)?;
-        writeln!(f, "rate: {}", self.rate)?;
-        writeln!(f, "integrate_new: {}", self.integrate_new)?;
-        writeln!(f, "release_dates {{")?;
-        for entry in self.release_dates.as_slice() {
-            writeln!(f, "\t{},", entry)?;
-        }
-        writeln!(f, "}}")
-    }
 }
