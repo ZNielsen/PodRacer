@@ -113,27 +113,6 @@ impl FeedRacer {
         let start_date = items[start_idx].pub_date().unwrap();
         let first_pubdate = DateTime::parse_from_rfc2822(start_date).unwrap();
         let anchor_date = chrono::Utc::now();
-        let mut dates = Vec::new();
-        let mut item_counter = 1;
-        for item in items {
-            // Get diff from first published date
-            let pub_date = item.pub_date().unwrap();
-            let mut time_diff = DateTime::parse_from_rfc2822(pub_date).unwrap()
-                                .signed_duration_since(first_pubdate)
-                                .num_seconds();
-            // Scale that diff
-            time_diff = ((time_diff as f32) / params.rate) as i64;
-            // Add back to anchor date to get new publish date + convert to string
-            let racer_date = anchor_date.checked_add_signed(Duration::seconds(time_diff)).unwrap()
-                                .to_rfc2822();
-            // Add to vector of dates
-            dates.push( RacerEpisode {
-                ep_num: item_counter,
-                date: racer_date,
-            });
-            item_counter += 1;
-        }
-
         let podcast_dir_name = Path::new(dir).file_name().unwrap().to_str().unwrap();
         let subscribe_url: PathBuf = [
                             &params.address,
@@ -141,7 +120,7 @@ impl FeedRacer {
                             podcast_dir_name,
                             RACER_RSS_FILE].iter().collect();
 
-        let racer_data = FeedRacer {
+        let mut racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
             racer_path: PathBuf::from(dir),
             source_url: params.url.to_owned(),
@@ -150,10 +129,93 @@ impl FeedRacer {
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
             integrate_new: params.integrate_new.to_owned(),
-            release_dates: dates,
+            release_dates: Vec::new(),
         };
+        racer_data.render_release_dates(items);
 
         racer_data
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+     // NAME:   FeedRacer::update
+     //
+     // NOTES:  Update this feedracer object. Fetches the upstream file.
+     // ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
+     // RETURN: Result - I/O successful or not
+     //
+    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<()> {
+        // Get original rss feed
+        let mut rss = self.get_original_rss(preferred_mode);
+
+        // Re-render in case of rate change
+        // Probably won't need this in the future
+        let mut items = rss.items().to_owned();
+        items.reverse();
+        self.render_release_dates(&mut items);
+
+        // Tack on a `- PodRacer` to the title
+        rss.set_title(String::from(rss.title()) + " - PodRacer");
+
+        // Check how many episodes we should publish at this point
+        let num_to_pub = self.get_num_to_publish();
+        let num_to_scrub = rss.items().len() - num_to_pub;
+        // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
+        let mut items_to_publish = rss.items().to_owned();
+        items_to_publish.drain(0..num_to_scrub);
+        items_to_publish.sort_by(|a, b| rss_item_cmp(a,b));
+
+        // Append racer publish date to the end of the description
+        for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
+            let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
+                        .format("%d %b %Y"));
+            item.set_description(
+                item.description().unwrap_or("").to_owned() +
+                "<br><br>" +
+                "PodRacer published on " +
+                &date +
+                " (UTC)"
+            );
+        }
+        // Now that we have the items we want, overwrite the objects items.
+        rss.set_items(items_to_publish);
+
+        // Write out the racer.rss file
+        let racer_rss_path: PathBuf = [self.racer_path.to_str().unwrap(), RACER_RSS_FILE].iter().collect();
+        let racer_rss_file = File::create(racer_rss_path)?;
+        match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+     // NAME:   FeedRacer::render_release_dates
+     //
+     // NOTES:  Renders the release dates for the passed in items. Items must be in the correct order.
+     // ARGS:   items - The items to render. Must be in the correct order.
+     // RETURN: None
+     //
+    fn render_release_dates(&mut self, items: &Vec<rss::Item>) {
+        self.release_dates = Vec::new();
+        let mut item_counter = 1;
+        for item in items {
+            // Get diff from first published date
+            let pub_date = item.pub_date().unwrap();
+            let mut time_diff = DateTime::parse_from_rfc2822(pub_date).unwrap()
+                                .signed_duration_since(self.first_pubdate)
+                                .num_seconds();
+            // Scale that diff
+            time_diff = ((time_diff as f32) / self.rate) as i64;
+            // Add back to anchor date to get new publish date + convert to string
+            let racer_date = self.anchor_date.checked_add_signed(Duration::seconds(time_diff)).unwrap()
+                                .to_rfc2822();
+            // Add to vector of dates
+            self.release_dates.push( RacerEpisode {
+                ep_num: item_counter,
+                date: racer_date,
+            });
+            item_counter += 1;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -304,45 +366,6 @@ impl FeedRacer {
         }
         ret
     }
-
-    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<()> {
-        // Get original rss feed
-        let mut rss = self.get_original_rss(preferred_mode);
-
-        // Tack on a `- PodRacer` to the title
-        rss.set_title(String::from(rss.title()) + " - PodRacer");
-
-        // Check how many episodes we should publish at this point
-        let num_to_pub = self.get_num_to_publish();
-        let num_to_scrub = rss.items().len() - num_to_pub;
-        // Drain the items we aren't publishing yet - TODO: Can we do this in place with slices?
-        let mut items_to_publish = rss.items().to_owned();
-        items_to_publish.drain(0..num_to_scrub);
-        items_to_publish.sort_by(|a, b| rss_item_cmp(a,b));
-
-        // Append racer publish date to the end of the description
-        for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
-            let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
-                        .format("%d %b %Y"));
-            item.set_description(
-                item.description().unwrap_or("").to_owned() +
-                "<br><br>" +
-                "PodRacer published on " +
-                &date +
-                " (UTC)"
-            );
-        }
-        // Now that we have the items we want, overwrite the objects items.
-        rss.set_items(items_to_publish);
-
-        // Write out the racer.rss file
-        let racer_rss_path: PathBuf = [self.racer_path.to_str().unwrap(), RACER_RSS_FILE].iter().collect();
-        let racer_rss_file = File::create(racer_rss_path)?;
-        match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
-        }
-    }
 }
 
 fn rss_item_cmp(a: &rss::Item, b: &rss::Item) -> std::cmp::Ordering {
@@ -459,25 +482,25 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
     if None == params.url.find("http") {
         params.url = String::from("https://") + &params.url;
     }
-    let channel = match download_rss_channel(&params.url) {
+    let rss = match download_rss_channel(&params.url) {
         Ok(val) => val,
         Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
     };
 
     // Make directory
-    let dir = create_feed_racer_dir(&channel, &params);
+    let dir = create_feed_racer_dir(&rss, &params);
     // Write out original rss feed to file in dir
     let original_rss_file = match File::create(String::from(&dir) + "/" + ORIGINAL_RSS_FILE) {
         Ok(val) => val,
         Err(e) => return Err(format!("Unable to create file: {}", e)),
     };
-    match channel.pretty_write_to(original_rss_file, SPACE_CHAR, 2) {
+    match rss.pretty_write_to(original_rss_file, SPACE_CHAR, 2) {
         Ok(_) => (),
         Err(e) => return Err(format!("unable to write original rss file: {}", e)),
     };
     // Make racer file
     let racer = FeedRacer::new(
-                    &mut channel.items().to_owned(),
+                    &mut rss.items().to_owned(),
                     &params,
                     &dir);
     match racer.write_to_file() {
