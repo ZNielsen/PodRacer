@@ -1,5 +1,6 @@
 [global]
-template_dir = "server/web/templates/"
+#template_dir = "server/web/templates/"
+template_dir = "server/templates/"
 
 [development]
 address = "localhost"

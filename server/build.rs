@@ -55,29 +55,32 @@ fn main() {
         }
 
         println!("opening file: {:?}", file_name);
-        let file = File::open(file_name.path()).expect(&format!("Could not open file: {:?}", file_name));
-        let in_buf = BufReader::new(&file);
-        let tmp_file_name = "/tmp/template.build".to_owned();
-        let tmp_file = File::create(&tmp_file_name).expect("Failed to create tmp file");
-        let mut out_buf = BufWriter::new(tmp_file);
-
         let mut all_static = true;
-        for line_res in in_buf.lines() {
-            let mut line = line_res.unwrap();
-            if line.contains("{{ macros::static_") {
-                // Get the static macro
-                let macro_name: Vec<&str> = line.split("macros::static_").collect();
-                let macro_name = macro_name[1];
-                let macro_name: Vec<&str> = macro_name.split("()").collect();
-                let macro_name = macro_name[0];
-                println!("about to get_static_macro: {}", macro_name);
-                line = get_static_macro(macro_name);
+        let tmp_file_name = "/tmp/template.build".to_owned();
+        // Scope to close file
+        {
+            let file = File::open(file_name.path()).expect(&format!("Could not open file: {:?}", file_name));
+            let in_buf = BufReader::new(&file);
+            let tmp_file = File::create(&tmp_file_name).expect("Failed to create tmp file");
+            let mut out_buf = BufWriter::new(tmp_file);
+
+            for line_res in in_buf.lines() {
+                let mut line = line_res.unwrap();
+                if line.contains("{{ macros::static_") {
+                    // Get the static macro
+                    let macro_name: Vec<&str> = line.split("macros::static_").collect();
+                    let macro_name = macro_name[1];
+                    let macro_name: Vec<&str> = macro_name.split("()").collect();
+                    let macro_name = macro_name[0];
+                    println!("about to get_static_macro: {}", macro_name);
+                    line = get_static_macro(macro_name);
+                }
+                else if line.contains("{{") {
+                    println!("Hit a non-static value");
+                    all_static = false;
+                }
+                out_buf.write_all(line.as_bytes()).expect("Error writing to out_buf");
             }
-            else if line.contains("{{") {
-                println!("Hit a non-static value");
-                all_static = false;
-            }
-            out_buf.write_all(line.as_bytes()).expect("Error writing to out_buf");
         }
 
         if all_static {
@@ -96,9 +99,11 @@ fn main() {
             for line_res in new_in_buf.lines() {
                 let line = line_res.unwrap();
                 println!("line: {}", &line);
-                if !line.contains("{% import") {
-                    new_out_buf.write_all(line.as_bytes()).expect("Error writing to new_out_buf");
-                }
+                let scrubbed_line = line.replace("{% import \"macros\" as macros %}", "");
+                println!("replaced line: {}", &scrubbed_line);
+                //if !line.contains("{% import") {
+                    new_out_buf.write_all(scrubbed_line.as_bytes()).expect("Error writing to new_out_buf");
+                //}
             }
         }
         else {
