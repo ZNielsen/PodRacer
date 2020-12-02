@@ -71,11 +71,11 @@ fn main() {
         }
 
         if all_static {
-            let dest_file = Path::new(&static_file);
             let mut static_file = static_dir_name.clone() + file_name.file_name().to_str().unwrap();
             let iter = static_file.find(".tera").unwrap_or(static_file.len());
             static_file.drain(iter..);
             println!("static file is {}", static_file);
+            let dest_file = Path::new(&static_file);
 
             // Scrub {% import "macros" as macros %} here
             println!("Writing {:?} out to {:?}, scrubbing the macro import", &tmp_file_name, &dest_file);
