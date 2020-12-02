@@ -151,20 +151,26 @@ impl FeedRacer {
         // Probably won't need this in the future
         let mut items = rss.items().to_owned();
         items.sort_by(|a, b| rss_item_cmp(a,b));
-        println!("Sorted items: {:?}", items);
+        //println!("Sorted items: {:?}", items);
         self.render_release_dates(&mut items);
+        items.reverse();
 
         // Tack on a `- PodRacer` to the title
         rss.set_title(String::from(rss.title()) + " - PodRacer");
 
         // Drain the items we aren't publishing yet
-        let mut items_to_publish: Vec<rss::Item> = items.drain(..=self.get_num_to_publish()).collect();
-        println!("items_to_publish: {:?}", items_to_publish);
+        //let mut items_to_publish: Vec<rss::Item> = items.drain(..self.get_num_to_publish()).collect();
+        let pub_idx = items.len() - self.get_num_to_publish();
+        let mut items_to_publish: Vec<rss::Item> = items.drain(pub_idx..).collect();
+        //println!("items_to_publish: {:?}", items_to_publish);
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
             let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
                         .format("%d %b %Y"));
+
+            // TODO - check if date is before actual pub date
+
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
