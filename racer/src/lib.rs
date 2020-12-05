@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use chrono::{DateTime, Duration};
+use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::fmt;
@@ -163,6 +163,17 @@ impl FeedRacer {
         let pub_idx = items.len() - self.get_num_to_publish();
         let mut items_to_publish: Vec<rss::Item> = items.drain(pub_idx..).collect();
         //println!("items_to_publish: {:?}", items_to_publish);
+
+        // Append the next item's publish date to the podcast description
+        let next_pub_date_str = if items.len() > 0 {
+            let next_pub_date = items[0].pub_date().unwrap();
+            let s = DateTime::parse_from_rfc2822(next_pub_date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
+            format!("<br>Next episode publishes {}", s)
+        }
+        else {
+            format!("<br>PodRacer feed has caught up.<br>The next episode will come out when creator publishes it.")
+        };
+        rss.set_description(String::from(rss.description()) + &next_pub_date_str);
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
