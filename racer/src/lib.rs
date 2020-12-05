@@ -178,16 +178,22 @@ impl FeedRacer {
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
-            let date = format!("{}", DateTime::parse_from_rfc2822(&info.date).unwrap()
-                        .format("%d %b %Y"));
-
-            // TODO - check if date is before actual pub date
+            // If we have caught up, use the actual publish date because the racer date
+            // will be in the past, which won't make much sense as a publish date
+            let racer_date = DateTime::parse_from_rfc2822(&info.date).unwrap();
+            let item_date = chrono::Utc::now();
+            let date_str = if racer_date < item_date {
+                format!("{}", item_date.format("%d %b %Y"))
+            }
+            else {
+                format!("{}", racer_date.format("%d %b %Y"))
+            };
 
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
                 "PodRacer published on " +
-                &date +
+                &date_str +
                 " (UTC)"
             );
         }
