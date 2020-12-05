@@ -168,10 +168,10 @@ impl FeedRacer {
             let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
             // println!("next episode is {}", next_item.title);
             // println!("next pub date is {}, or {} UTC", s, &next_item.date);
-            format!("<br>Next episode publishes {}", s)
+            format!("\n\nNext episode publishes {}", s)
         }
         else {
-            format!("<br>PodRacer feed has caught up.<br>The next episode will come out when creator publishes it.")
+            format!("\n\nPodRacer feed has caught up.\nThe next episode will come out when creator publishes it.")
         };
         rss.set_description(String::from(rss.description()) + &next_pub_date_str);
 
