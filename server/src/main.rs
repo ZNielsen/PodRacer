@@ -29,8 +29,8 @@ use std::fs::File;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 // `web` is a symlink to the OUT_DIR location, see build.rs
-//const STATIC_FILE_DIR: &'static str = "server/web/static";
-const STATIC_FILE_DIR: &'static str = "server/static";
+const STATIC_FILE_DIR: &'static str = "server/web/static";
+// const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
  // NAME:   scrub_xml
