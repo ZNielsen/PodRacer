@@ -198,6 +198,8 @@ impl FeedRacer {
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
 
+        // Write out the racer.file
+        self.write_to_file()?;
         // Write out the racer.rss file
         let racer_rss_path: PathBuf = [self.racer_path.to_str().unwrap(), RACER_RSS_FILE].iter().collect();
         let racer_rss_file = File::create(racer_rss_path)?;
