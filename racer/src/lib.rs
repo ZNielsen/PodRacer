@@ -53,6 +53,7 @@ pub enum RssFile {
 pub struct RacerEpisode {
     ep_num: i64,
     date: String,
+    title: String,
 }
 
 // All the fields of our racer file. Info we might want across sessions.
@@ -226,6 +227,7 @@ impl FeedRacer {
             // Add to vector of dates
             self.release_dates.push( RacerEpisode {
                 ep_num: item_counter,
+                title: item.title().unwrap_or("[no title]").to_owned(),
                 date: racer_date,
             });
             item_counter += 1;
@@ -273,6 +275,7 @@ impl FeedRacer {
             // Add to vector of dates
             self.release_dates.push(RacerEpisode {
                 ep_num: item_counter,
+                title: item.title().unwrap_or("[no title]").to_owned(),
                 date: racer_date,
             });
             item_counter += 1;
@@ -618,7 +621,7 @@ impl fmt::Display for RacerEpisode {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, "ep_num: {}, date: {}", self.ep_num, self.date)
+        write!(f, "ep_num: {}, date: {}, title: {}", self.ep_num, self.date, self.title)
     }
 }
 impl fmt::Display for FeedRacer {
