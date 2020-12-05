@@ -180,7 +180,7 @@ impl FeedRacer {
             // If we have caught up, use the actual publish date because the racer date
             // will be in the past, which won't make much sense as a publish date
             let racer_date = DateTime::parse_from_rfc2822(&info.date).unwrap();
-            let item_date = chrono::Utc::now();
+            let item_date = DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap();
             let date_str = if racer_date < item_date {
                 format!("{}", item_date.with_timezone(&Local).format("%d %b %Y"))
             }
