@@ -49,15 +49,15 @@ pub enum RssFile {
 }
 
 // Metadata about when each episode will be published
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug,)]
 pub struct RacerEpisode {
     ep_num: i64,
     date: String,
-    title: String,
+    title: Option<String>,
 }
 
 // All the fields of our racer file. Info we might want across sessions.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
     racer_path: PathBuf,
@@ -151,24 +151,23 @@ impl FeedRacer {
         // Re-render in case of rate change
         // Probably won't need this in the future
         let mut items = rss.items().to_owned();
+        // Sorts ascending order
         items.sort_by(|a, b| rss_item_cmp(a,b));
-        //println!("Sorted items: {:?}", items);
-        self.render_release_dates(&mut items);
-        items.reverse();
+        // println!("Sorted items. First item is: {:?}", items.first().unwrap().title().unwrap());
+        self.render_release_dates(&items);
 
         // Tack on a `- PodRacer` to the title
         rss.set_title(String::from(rss.title()) + " - PodRacer");
 
         // Drain the items we aren't publishing yet
-        //let mut items_to_publish: Vec<rss::Item> = items.drain(..self.get_num_to_publish()).collect();
-        let pub_idx = items.len() - self.get_num_to_publish();
-        let mut items_to_publish: Vec<rss::Item> = items.drain(pub_idx..).collect();
-        //println!("items_to_publish: {:?}", items_to_publish);
+        let mut items_to_publish: Vec<rss::Item> = items.drain(..self.get_num_to_publish()).collect();
 
         // Append the next item's publish date to the podcast description
         let next_pub_date_str = if items.len() > 0 {
-            let next_pub_date = items[0].pub_date().unwrap();
-            let s = DateTime::parse_from_rfc2822(next_pub_date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
+            let next_item = self.release_dates[self.get_num_to_publish()].clone();
+            let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
+            // println!("next episode is {}", next_item.title);
+            // println!("next pub date is {}, or {} UTC", s, &next_item.date);
             format!("<br>Next episode publishes {}", s)
         }
         else {
@@ -183,18 +182,17 @@ impl FeedRacer {
             let racer_date = DateTime::parse_from_rfc2822(&info.date).unwrap();
             let item_date = chrono::Utc::now();
             let date_str = if racer_date < item_date {
-                format!("{}", item_date.format("%d %b %Y"))
+                format!("{}", item_date.with_timezone(&Local).format("%d %b %Y"))
             }
             else {
-                format!("{}", racer_date.format("%d %b %Y"))
+                format!("{}", racer_date.with_timezone(&Local).format("%d %b %Y"))
             };
 
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
                 "PodRacer published on " +
-                &date_str +
-                " (UTC)"
+                &date_str
             );
         }
         // Now that we have the items we want, overwrite the objects items.
@@ -233,7 +231,7 @@ impl FeedRacer {
             // Add to vector of dates
             self.release_dates.push( RacerEpisode {
                 ep_num: item_counter,
-                title: item.title().unwrap_or("[no title]").to_owned(),
+                title: Some(item.title().unwrap_or("[no title]").to_owned()),
                 date: racer_date,
             });
             item_counter += 1;
@@ -281,7 +279,7 @@ impl FeedRacer {
             // Add to vector of dates
             self.release_dates.push(RacerEpisode {
                 ep_num: item_counter,
-                title: item.title().unwrap_or("[no title]").to_owned(),
+                title: Some(item.title().unwrap_or("[no title]").to_owned()),
                 date: racer_date,
             });
             item_counter += 1;
@@ -627,7 +625,7 @@ impl fmt::Display for RacerEpisode {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, "ep_num: {}, date: {}, title: {}", self.ep_num, self.date, self.title)
+        write!(f, "ep_num: {}, date: {}, title: {}", self.ep_num, self.date, self.title.as_ref().unwrap_or(&"[none]".to_string()))
     }
 }
 impl fmt::Display for FeedRacer {
