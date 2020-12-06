@@ -165,12 +165,12 @@ impl FeedRacer {
         let next_pub_date_str = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
             let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
-            format!("&amp;ltbr&amp;gtNext episode publishes {}", s)
+            format!("Next episode publishes {}.", s)
         }
         else {
-            format!("&amp;ltbr&amp;gtPodRacer feed has caught up.&amp;ltbr&amp;gtThe next episode will come out when creator publishes it.</p>")
+            format!("PodRacer feed has caught up.")
         };
-        rss.set_description(format!("{}{}", rss.description(), &next_pub_date_str));
+        rss.set_description(format!("{} -- {}", rss.description(), &next_pub_date_str));
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
