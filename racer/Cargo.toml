@@ -15,5 +15,5 @@ chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 dirs = "3.0.1"
-rss = { path = "rss" }
+rss = { git = "https://github.com/ZNielsen/rss.git", branch = "writer_fix"}
 # rss = "1.9.0"
