@@ -153,7 +153,6 @@ impl FeedRacer {
         let mut items = rss.items().to_owned();
         // Sorts ascending order
         items.sort_by(|a, b| rss_item_cmp(a,b));
-        // println!("Sorted items. First item is: {:?}", items.first().unwrap().title().unwrap());
         self.render_release_dates(&items);
 
         // Tack on a `- PodRacer` to the title
@@ -166,14 +165,12 @@ impl FeedRacer {
         let next_pub_date_str = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
             let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
-            // println!("next episode is {}", next_item.title);
-            // println!("next pub date is {}, or {} UTC", s, &next_item.date);
-            format!("<br><br>Next episode publishes {}", s)
+            format!("\n\nNext episode publishes {}", s)
         }
         else {
-            format!("<br><br>PodRacer feed has caught up.<br>The next episode will come out when creator publishes it.")
+            format!("\n\nPodRacer feed has caught up.\nThe next episode will come out when creator publishes it.")
         };
-        rss.set_description(format!("<![CDATA[{}{}]]>", rss.description(), &next_pub_date_str));
+        rss.set_description(format!("{}{}", rss.description(), &next_pub_date_str));
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
