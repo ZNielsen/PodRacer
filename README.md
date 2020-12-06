@@ -13,14 +13,13 @@ A podcast catch-up service running on your very own server!
 I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to take the service for a spin. I'm planning on keeping this up and available for free, but I'm not making any promises until this project becomes a bit more stable.
 
 ## Features
-- **Self hosted** - complete autonomy over your feeds
 - **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
 - **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
 - **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
+- **Self hosted** - complete autonomy over your feeds
 
 PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just lisen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
 
-# WORK IN PROGRESS - still buggy. It's functional but not polished yet
 
 Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have quirks I didn't see. Feel free to file a github issue and I'll do what I can to fix it up.
 
@@ -28,32 +27,26 @@ Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id8884
 
 I run this server on a Raspberry Pi 3.
 
-Grab the binary from the github releases
-```
-wget https://github.com/znielsen/PodRacer/releases/newest
-```
-
-Alternatively, you can clone and build. You will need the rust nightly build for rocket.
+You will need the rust nightly build for rocket.
 ```
 rustup override set nightly && rustup update && cargo update && cargo build --release
 ```
 It's going to take a very long time to build. That's Rust.
 
+Sometimes (not quite sure why only sometimes) my Pi3 struggles to build when multiple threads are enabled (the default). You can `cargo clean && cargo build --release -j 1` to force building with only one thread. This will take way longer, but you don't run out of memory.
+
 ### Start the server
 ```
 cargo run --release
 ```
-Sometimes (not quite sure why only sometimes) my Pi3 struggles to build when multiple threads are enabled (the default). You can `cargo clean && cargo build -j 1` to force building with only one thread. This will take way longer, but you don't run out of memory.
 
-If you want to access the server remotely, set up port forwarding in your router.
+Podcast clients will need to access the server remotely, so you will have to set up [port forwarding](https://www.howtogeek.com/66214/how-to-forward-ports-on-your-router/) in your router.
 
 ### Keeping the process alive
 You can either run in a tmux instance or use `nohup` and send it to the background.
 
-## Configuration
-
 ## Usage
-You can communicate with the server via HTTP methods (mostly just `POST` and `GET`). The included `create_feed.sh` bash script makes a `curl` request to the server, you can customize the arguments via command line, or change up the following examples (assuming your server is at `0.0.0.0`, listening on port `1234`)
+Beyond the web UI, you can communicate with the server via HTTP methods (mostly just `POST` and `GET`). The included `create_feed.sh` bash script makes a `curl` request to the server, you can customize the arguments via command line, or change up the following examples (assuming your server is at `0.0.0.0`, listening on port `1234`)
 
 ### Create a new PodRacer feed
 - POST to 0.0.0.0:1234/create_feed
@@ -74,25 +67,18 @@ You can communicate with the server via HTTP methods (mostly just `POST` and `GE
         --data-urlencode "url=http://example.com" \
         --data-urlencode "rate=1.2" \
         --data-urlencode "integrate_new=false" \
+        --data-urlencode "start_ep=1" \
         ${hostname}:${port}/${slug}
     ```
 
 ### Force update of the specified podcast
 - POST to 0.0.0.0:1234/update/<url>
   - parameters:
-    - url [string] -
+    - url [string] - Either the folder name of the podcast to update, or the racer subscribe url of the podcast to update.
 
 ### Force update of all podcasts on this server
 - POST to 0.0.0.0:1234/update
   - parameters: none
-
-### Delete an existing PodRacer feed
-- POST to 0.0.0.0:1234/delete_feed
-  - parameters:
-    - url [string] - The PodRacer RSS feed to delete from the server.
-        This will permanently delete the PodRacer feed, so use with caution.
-    - example call:
-        TODO - add example call
 
 ### List all the PodRacer feeds on this server
 - GET to 0.0.0.0:1234/list_feeds
