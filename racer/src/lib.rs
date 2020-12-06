@@ -51,7 +51,7 @@ pub enum RssFile {
 // Metadata about when each episode will be published
 #[derive(Clone, Serialize, Deserialize, Debug,)]
 pub struct RacerEpisode {
-    ep_num: i64,
+    ep_num: Option<i64>,
     date: String,
     title: Option<String>,
 }
@@ -229,7 +229,7 @@ impl FeedRacer {
                                 .to_rfc2822();
             // Add to vector of dates
             self.release_dates.push( RacerEpisode {
-                ep_num: item_counter,
+                ep_num: Some(item_counter),
                 title: Some(item.title().unwrap_or("[no title]").to_owned()),
                 date: racer_date,
             });
@@ -277,7 +277,7 @@ impl FeedRacer {
                                 .to_rfc2822();
             // Add to vector of dates
             self.release_dates.push(RacerEpisode {
-                ep_num: item_counter,
+                ep_num: Some(item_counter),
                 title: Some(item.title().unwrap_or("[no title]").to_owned()),
                 date: racer_date,
             });
@@ -624,7 +624,10 @@ impl fmt::Display for RacerEpisode {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, "ep_num: {}, date: {}, title: {}", self.ep_num, self.date, self.title.as_ref().unwrap_or(&"[none]".to_string()))
+        write!(f, "ep_num: {}, date: {}, title: {}",
+            self.ep_num.as_ref().unwrap_or(&0),
+            self.date,
+            self.title.as_ref().unwrap_or(&"[none]".to_string()))
     }
 }
 impl fmt::Display for FeedRacer {
