@@ -283,23 +283,23 @@ pub fn update_all_handler() -> Result<(), String> {
 #[get("/list_feeds")]
 pub fn list_feeds_handler() -> Result<String, String> {
     let mut ret = String::new();
-    // Get all folders in the podracer dir
-    let podcast_dirs = match racer::get_all_podcast_dirs() {
+    let racers = match racer::get_all_racers() {
         Ok(val) => val,
-        Err(str) => {
-            println!("Error in list_feeds_handler: {}", str);
-            return Err(format!("Error getting feeds, check logs"));
-        },
+        Err(e) => return Err(format!("Error getting racers: {}", e)),
     };
-    for podcast_dir in podcast_dirs {
-        let path = match podcast_dir {
-            Ok(val) => val.path(),
-            Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
-        };
-        let this_dir_name = path.file_name().unwrap();
-        ret.push_str(this_dir_name.to_str().unwrap());
+
+    // Parse into a string to be fed back to curl
+    for racer in racers {
+        ret += &format!("Podcast Folder: {:?}\n", racer.get_racer_path().file_name().unwrap());
+        ret += &format!("\tsubscribe_url: {}\n", racer.get_subscribe_url());
+        ret += &format!("\tsource_url: {}\n", racer.get_source_url());
+        ret += &format!("\tintegrate_new: {}\n", racer.get_integrate_new());
+        ret += &format!("\tfirst_pubdate: {}\n", racer.get_first_pubdate());
+        ret += &format!("\tanchor_date: {}\n", racer.get_anchor_date());
+        ret += &format!("\trate: {}\n", racer.get_rate());
         ret.push_str("\n");
     }
+
     Ok(ret)
 }
 ////////////////////////////////////////////////////////////////////////////////

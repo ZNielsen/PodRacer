@@ -74,12 +74,12 @@ impl FeedRacer {
     // pub fn get_schema_version(&self) -> &str { &self.schema_version }
     pub fn get_racer_path(&self) -> &Path { &self.racer_path }
     pub fn get_racer_name(&self) -> &std::ffi::OsStr { self.racer_path.file_name().unwrap() }
-    // pub fn get_source_url(&self) -> &str { &self.source_url }
+    pub fn get_source_url(&self) -> &str { &self.source_url }
     pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
-    // pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
+    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
     pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
     pub fn get_rate(&self) -> f32 { self.rate }
-    // pub fn get_integrate_new(&self) -> bool { self.integrate_new }
+    pub fn get_integrate_new(&self) -> bool { self.integrate_new }
     // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
 }
 
@@ -611,6 +611,44 @@ pub fn get_by_url(url: &str) -> Option<FeedRacer> {
         };
     }
     None
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   get_all_racers
+ //
+ // NOTES:  Gets all the racers on this server.
+ // ARGS:   None
+ // RETURN: A vector of the racers on this server, or an error.
+ //
+pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
+    let mut racers = Vec::new();
+
+    // Get all folders in the podracer dir
+    let podcast_dirs = match get_all_podcast_dirs() {
+        Ok(val) => val,
+        Err(str) => {
+            println!("Error in list_feeds_handler: {}", str);
+            return Err(format!("Error getting feeds, check logs"));
+        },
+    };
+    for podcast_dir_res in podcast_dirs {
+        let podcast_dir = match podcast_dir_res {
+            Ok(val) => val,
+            Err(e) => return Err(format!("Error iterating over path from get_all_podcast_dirs: {}", e)),
+        };
+        let path = podcast_dir.path();
+        let path = match path.to_str() {
+            Some(val) => val,
+            None => return Err(format!("Error converting podcast_dir path to string")),
+        };
+        let racer = match get_racer_at_path(path) {
+            Ok(val) => val,
+            Err(e) => return Err(format!("Error getting racer_at_path: {}", e)),
+        };
+        racers.push(racer);
+    }
+
+    Ok(racers)
 }
 
 
