@@ -7,7 +7,7 @@ function dprint() {
 dprint "debugging is on"
 
 
-hostname="http://localhost"
+hostname="http://podracer.zachn.me"
 port="42069"
 slug="create_feed"
 
@@ -113,8 +113,9 @@ done
     #    --data-urlencode "start_ep=${start_ep}" \
     #    ${hostname}:${port}/${slug}
 # else
-    dprint "curl -v -X ${request} -G ${hostname}:${port}/${slug}"
-    curl -v -X ${request} -G ${hostname}:${port}/${slug}
+    dprint "args: $args"
+    dprint "curl -X ${request} -G "$args" ${hostname}:${port}/${slug}"
+    curl -X ${request} -G "$args" ${hostname}:${port}/${slug}
 # fi
 
 
