@@ -179,17 +179,20 @@ impl FeedRacer {
             let racer_date = DateTime::parse_from_rfc2822(&info.date).unwrap();
             let item_date = DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap();
             let date_str = if racer_date < item_date {
-                format!("{}", item_date.with_timezone(&Local).format("%d %b %Y"))
+                item_date.with_timezone(&Local).to_rfc2822()
             }
             else {
-                format!("{}", racer_date.with_timezone(&Local).format("%d %b %Y"))
+                racer_date.with_timezone(&Local).to_rfc2822()
             };
+
+            let original_pub_date = DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap();
+            item.set_pub_date(date_str);
 
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
-                "PodRacer published on " +
-                &date_str
+                "Originally published on " +
+                &format!("{}", original_pub_date.with_timezone(&Local).format("%d %b %Y"))
             );
         }
         // Now that we have the items we want, overwrite the objects items.
