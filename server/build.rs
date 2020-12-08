@@ -46,6 +46,9 @@ fn main() {
     println!("template_dir: {:?}", template_dir);
     for file_name_res in template_dir.read_dir().unwrap() {
         let file_name = file_name_res.unwrap();
+        // First things first - Tell Cargo to rerun if this file changes
+        println!("cargo:rerun-if-changed=templates/{}", file_name.file_name().to_str().unwrap());
+
         if file_name.file_name() == MACRO_FILE_NAME {
             // Just copy over the macro file, don't do anything to it
             let target_file_name = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
@@ -98,9 +101,9 @@ fn main() {
             let mut new_out_buf = BufWriter::new(new_out_file);
             for line_res in new_in_buf.lines() {
                 let line = line_res.unwrap();
-                println!("line: {}", &line);
+                // println!("line: {}", &line);
                 let scrubbed_line = line.replace("{% import \"macros\" as macros %}", "");
-                println!("replaced line: {}", &scrubbed_line);
+                // println!("replaced line: {}", &scrubbed_line);
                 //if !line.contains("{% import") {
                     new_out_buf.write_all(scrubbed_line.as_bytes()).expect("Error writing to new_out_buf");
                 //}
@@ -118,6 +121,9 @@ fn main() {
     let static_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/static"));
     for file_res in static_dir.read_dir().unwrap() {
         let file = file_res.unwrap();
+        // First things first - Tell Cargo to rerun if this file changes
+        println!("cargo:rerun-if-changed=static/{}", file.file_name().to_str().unwrap());
+
         let target_file_name = static_dir_name.clone() + file.file_name().to_str().unwrap();
         let target_file = Path::new(&target_file_name);
         println!("Copying {:?} to {:?}", file, target_file);
@@ -126,8 +132,8 @@ fn main() {
 
     // Send info to Cargo
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=templates/*");
-    println!("cargo:rerun-if-changed=static/*");
+    println!("cargo:rerun-if-changed=templates");
+    println!("cargo:rerun-if-changed=static");
 }
 
 
@@ -160,7 +166,7 @@ fn get_static_macro(macro_name: &str) -> String {
                     return ret;
                 }
                 ret.push_str(&line);
-                println!("{}", line);
+                // println!("{}", line);
             },
         }
     }
