@@ -41,6 +41,11 @@ pub struct RacerCreationParams {
     pub start_ep: usize,
 }
 
+pub struct UpdateMetadata {
+    pub num: u64,
+    pub time: std::time::Duration,
+}
+
 // Should we attempt to download the original RSS file, or just look at what we have?
 // This is pretty much only used to prevent a refetch when creating a new feed.
 pub enum RssFile {
@@ -451,9 +456,11 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
  //     Updates all the racers on this server
  //     This function must not panic, as it's used in the update thread.
  // ARGS:   None
- // RETURN: A result containing an error string
+ // RETURN: A result containing some metadata about the update or an error string
  //
-pub fn update_all() -> Result<(), String> {
+pub fn update_all() -> Result<UpdateMetadata, String> {
+    let start = std::time::SystemTime::now();
+    let mut counter = 0;
     let podcast_dirs = match get_all_podcast_dirs() {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
@@ -471,8 +478,20 @@ pub fn update_all() -> Result<(), String> {
             Ok(()) => (),
             Err(e) => return Err(format!("Could not update path {}. Error was: {}", path_str, e)),
         };
+        counter += 1;
     };
-    Ok(())
+    let end = std::time::SystemTime::now();
+    let duration = match end.duration_since(start) {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error getting update_all duration: {}", e);
+            std::time::Duration::new(0, 0)
+        }
+    };
+    Ok( UpdateMetadata {
+        num: counter,
+        time: duration,
+    })
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
