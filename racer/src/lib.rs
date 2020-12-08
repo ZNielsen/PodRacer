@@ -164,7 +164,7 @@ impl FeedRacer {
         // Append the next item's publish date to the podcast description
         let next_pub_date_str = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
-            let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M %P");
+            let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M%P");
             format!("Next episode publishes {}.", s)
         }
         else {
