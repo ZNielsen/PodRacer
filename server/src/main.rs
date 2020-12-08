@@ -121,7 +121,8 @@ fn main() {
 
     // Manually update on start
     match racer::update_all() {
-        Ok(_) => println!("Updated all racer feeds on server"),
+        Ok(update_metadata) => println!("Updated all racer feeds on server. Did {} feeds in {:?}.",
+                                    update_metadata.num, update_metadata.time),
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
@@ -130,16 +131,19 @@ fn main() {
         None => (59 * 60),
     };
 
-    // Create update thread - update every hour
+    // Create update thread - update every <duration> (default to every hour if not specified in Rocket.toml)
     let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");
             match racer::update_all() {
-                Ok(_) => (),
-                Err(string) => println!("Error in update_all in update thread: {}", string),
+                Ok(update_metadata) => {
+                    println!("Done. Did {} feeds in {:?}.", update_metadata.num, update_metadata.time);
+                }
+                Err(string) => {
+                    println!("Error in update_all in update thread: {}", string);
+                },
             };
-            println!("Done")
         }
     });
     rocket.launch();
