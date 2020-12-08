@@ -275,39 +275,6 @@ impl FeedRacer {
         fp.write_all(json.as_bytes())
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-     // NAME:   FeedRacer::add_new_items
-     //
-     // NOTES:  Appends items to this racer
-     // ARGS:
-     //     items - new items to add to this racer object
-     //     curren_len: the counter value to start at. Probably don't need this? Can be refactored.
-     // RETURN: None, modifies self
-     //
-    fn add_new_items(&mut self, items: &Vec<rss::Item>, current_len: usize) {
-        let mut item_counter = (current_len - 1) as i64;
-        for item in items {
-            // Get diff from first published date
-            let pub_date = item.pub_date().unwrap();
-            let mut time_diff = DateTime::parse_from_rfc2822(pub_date).unwrap()
-                                    .signed_duration_since(self.first_pubdate)
-                                    .num_seconds();
-            // Scale that diff
-            time_diff = ((time_diff as f32) / self.rate) as i64;
-            // Add back to anchor date to get new publish date + convert to string
-            let racer_date = self.anchor_date
-                                .checked_add_signed(Duration::seconds(time_diff)).unwrap()
-                                .to_rfc2822();
-            // Add to vector of dates
-            self.release_dates.push(RacerEpisode {
-                ep_num: Some(item_counter),
-                title: Some(item.title().unwrap_or("[no title]").to_owned()),
-                date: racer_date,
-            });
-            item_counter += 1;
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
      // NAME:   FeedRacer::get_original_rss
      //
@@ -362,16 +329,10 @@ impl FeedRacer {
                         };
                         if num_to_update > 0 {
                             // Overwrite our stored original RSS file
+                            // TODO - If a feed pushes out the oldest entries, overwriting won't cut it.
+                            //        We'll need to save old items.
                             let stored_rss_file = File::create(stored_rss_path).unwrap();
                             network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT).unwrap();
-                            // Append new entries to our racer object
-                            let mut new_items = network_file.items().to_owned();
-                            new_items.truncate(num_to_update as usize);
-                            let next_ep_num = match &stored_rss {
-                                Some(rss) => rss.items().len(),
-                                None => 1,
-                            };
-                            self.add_new_items(&new_items, next_ep_num);
                         }
                         return network_file
                     },
