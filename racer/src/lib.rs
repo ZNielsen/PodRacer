@@ -141,6 +141,7 @@ impl FeedRacer {
      // NAME:   FeedRacer::update
      //
      // NOTES:  Update this feedracer object. Fetches the upstream file.
+     //         Must not panic.
      // ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
      // RETURN: Result - I/O successful or not
      //
@@ -164,7 +165,10 @@ impl FeedRacer {
         // Append the next item's publish date to the podcast description
         let next_pub_date_str = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
-            let s = DateTime::parse_from_rfc2822(&next_item.date).unwrap().with_timezone(&Local).format("%d %b %Y at %I:%M%P");
+            let s = match DateTime::parse_from_rfc2822(&next_item.date) {
+                Ok(val) => val.with_timezone(&Local).format("%d %b %Y at %I:%M%P"),
+                Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            };
             format!("Next episode publishes {}.", s)
         }
         else {
@@ -176,18 +180,30 @@ impl FeedRacer {
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
             // If we have caught up, use the actual publish date because the racer date
             // will be in the past, which won't make much sense as a publish date
-            let racer_date = DateTime::parse_from_rfc2822(&info.date).unwrap();
-            let item_date = DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap();
+            let racer_date = match DateTime::parse_from_rfc2822(&info.date) {
+                Ok(val) => val,
+                Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            };
+            let item_pub_date = match item.pub_date() {
+                Some(val) => val,
+                None => return Err(std::io::Error::new(std::io::ErrorKind::Other, "no pub_date on item")),
+            };
+            let item_date = match DateTime::parse_from_rfc2822(item_pub_date) {
+                Ok(val) => val,
+                Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            };
             let date_str = if racer_date < item_date {
                 item_date.with_timezone(&Local).to_rfc2822()
             }
             else {
                 racer_date.with_timezone(&Local).to_rfc2822()
             };
+            let original_pub_date = match DateTime::parse_from_rfc2822(item_pub_date) {
+                Ok(val) => val,
+                Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            };
 
-            let original_pub_date = DateTime::parse_from_rfc2822(item.pub_date().unwrap()).unwrap();
             item.set_pub_date(date_str);
-
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
