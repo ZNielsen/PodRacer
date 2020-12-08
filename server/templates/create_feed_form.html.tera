@@ -18,7 +18,7 @@
     </label><br>
     <label>
     Integrate New Episodes
-    <input type="checkbox" id="integrate_new" name="integrate_new" value="1" checked>
+    <input type="checkbox" id="integrate_new" name="integrate_new" value="true" checked>
     </label><br>
     <input type="submit" value="Submit">
 </form>
