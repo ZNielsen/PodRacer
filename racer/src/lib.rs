@@ -178,8 +178,9 @@ impl FeedRacer {
 
         // Append racer publish date to the end of the description
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
-            // If we have caught up, use the actual publish date because the racer date
-            // will be in the past, which won't make much sense as a publish date
+            //
+            // Get all the DateTime's we need
+            //
             let racer_date = match DateTime::parse_from_rfc2822(&info.date) {
                 Ok(val) => val,
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
@@ -192,23 +193,26 @@ impl FeedRacer {
                 Ok(val) => val,
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
-            let date_str = if racer_date < item_date {
+
+            // If we have caught up, use the actual publish date because the racer date
+            // will be in the past, which won't make much sense as a publish date
+            let racer_pub_date = if racer_date < item_date {
                 item_date.with_timezone(&Local).to_rfc2822()
             }
             else {
                 racer_date.with_timezone(&Local).to_rfc2822()
             };
             let original_pub_date = match DateTime::parse_from_rfc2822(item_pub_date) {
-                Ok(val) => val,
+                Ok(val) => val.with_timezone(&Local).format("%d %b %Y"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
 
-            item.set_pub_date(date_str);
+            item.set_pub_date(racer_pub_date);
             item.set_description(
                 item.description().unwrap_or("").to_owned() +
                 "<br><br>" +
                 "Originally published on " +
-                &format!("{}", original_pub_date.with_timezone(&Local).format("%d %b %Y"))
+                &format!("{}", original_pub_date)
             );
         }
         // Now that we have the items we want, overwrite the objects items.
