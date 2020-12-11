@@ -366,6 +366,15 @@ impl FeedRacer {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   rss_item_cmp
+ //
+ // NOTES:
+ //     A sort function for rss items. Sorts by date. Lots of string stuff for each item, might
+ //     need to come up with a better solution to this if it ends up being a bottleneck.
+ // ARGS:   a/b - The rss::Items to sort
+ // RETURN: An ordering
+ //
 fn rss_item_cmp(a: &rss::Item, b: &rss::Item) -> std::cmp::Ordering {
     let a_sec = DateTime::parse_from_rfc2822(a.pub_date().unwrap()).unwrap()
                 .timestamp();
