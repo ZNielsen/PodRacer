@@ -582,20 +582,29 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
     Ok(channel)
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   get_by_dir_name
+ //
+ // NOTES:  Check if the specified directory hosts a FeedRacer + return it.
+ // ARGS:   target_dir: the name of the directory to check
+ // RETURN: A FeedRacer or None
+ //
 pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
-    // Read all dirs in the podracer dir and compare to this
-    let dirs = get_all_podcast_dirs().unwrap();
-    for dir_res in dirs {
-        let dir = dir_res.unwrap();
-        if dir.file_name() == target_dir {
-            let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
-            return Some(racer);
-        }
+    let dir = Path::from(target_dir);
+    if dir.is_dir() {
+        let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
+        return Some(racer);
     }
     None
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ // NAME:   get_by_url
+ //
+ // NOTES:  Check all racers on this server to see if we have one with this URL
+ // ARGS:   url - the racer url to check for
+ // RETURN: A FeedRacer or None
+ //
 pub fn get_by_url(url: &str) -> Option<FeedRacer> {
     let dirs = get_all_podcast_dirs().unwrap();
     for dir_res in dirs {
