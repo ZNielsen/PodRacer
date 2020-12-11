@@ -582,7 +582,10 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
  //
 fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
     let content = match reqwest::blocking::get(url) {
-        Ok(val) => val.bytes().unwrap(),
+        Ok(val) => match val.bytes() {
+            Ok(val) => val,
+            Err(e) => return Err(Box::new(e)),
+        },
         Err(e) => return Err(Box::new(e)),
     };
     // scrub_bytes(&content);   // Is this needed?
