@@ -50,7 +50,6 @@ struct FeedFunFacts {
 pub struct FormParams {
     pub url: String,
     pub rate: f32,
-    pub integrate_new: Option<bool>,
     pub start_ep: usize
 }
 
@@ -103,20 +102,17 @@ pub fn not_found_handler(req: &Request) -> File {
  //     config -
  //     url -
  //     rate -
- //     integrate_new -
  // RETURN: A result with string information either way. Tailored for a curl response
  //
 #[get("/create_feed?<form_data..>")]
 pub fn create_feed_handler( config: State<RocketConfig>,
                             form_data: Form<FormParams>) -> Template {
     let mut context = Context::new();
-    let new = form_data.integrate_new.unwrap_or(false);
     match create_feed( racer::RacerCreationParams {
         address: config.address.clone(),
         port: config.port,
         url: form_data.url.clone(),
         rate: form_data.rate,
-        integrate_new: new,
         start_ep: form_data.start_ep
     }) {
         Ok(fun_facts) => {
@@ -145,21 +141,18 @@ pub fn create_feed_handler( config: State<RocketConfig>,
  //     config -
  //     url -
  //     rate -
- //     integrate_new -
  // RETURN: A result with string information either way. Tailored for a curl response
  //
-#[post("/create_feed_cli?<url>&<rate>&<integrate_new>", rank = 2)]
+#[post("/create_feed_cli?<url>&<rate>", rank = 2)]
 pub fn create_feed_cli_handler( config: State<RocketConfig>,
                                 url: String,
                                 rate: f32,
-                                integrate_new: bool
 ) -> Result<String, String> {
     match create_feed( racer::RacerCreationParams {
         address: config.address.clone(),
         port: config.port,
         url: url,
         rate:rate,
-        integrate_new: integrate_new,
         start_ep: 1
     }) {
         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
@@ -177,17 +170,15 @@ pub fn create_feed_cli_handler( config: State<RocketConfig>,
  //     config -
  //     url -
  //     rate -
- //     integrate_new -
  //     start_ep -
  // RETURN:
  //     A result containing either a success file or a failure file.
  //     If Ok(), the File will have the subscribe url to display to the user
  //
-#[post("/create_feed_cli?<url>&<rate>&<integrate_new>&<start_ep>", rank = 1)]
+#[post("/create_feed_cli?<url>&<rate>&<start_ep>", rank = 1)]
  pub fn create_feed_cli_ep_handler( config: State<RocketConfig>,
                                     url: String,
                                     rate: f32,
-                                    integrate_new: bool,
                                     start_ep: usize
 ) -> Result<String, String> {
     match create_feed( racer::RacerCreationParams {
@@ -195,7 +186,6 @@ pub fn create_feed_cli_handler( config: State<RocketConfig>,
         port: config.port,
         url: url,
         rate:rate,
-        integrate_new: integrate_new,
         start_ep: start_ep
     }) {
        Ok(val) => Ok(make_fun_fact_string_cli(&val)),
@@ -293,7 +283,6 @@ pub fn list_feeds_handler() -> Result<String, String> {
         ret += &format!("Podcast Folder: {:?}\n", racer.get_racer_path().file_name().unwrap());
         ret += &format!("\tsubscribe_url: {}\n", racer.get_subscribe_url());
         ret += &format!("\tsource_url: {}\n", racer.get_source_url());
-        ret += &format!("\tintegrate_new: {}\n", racer.get_integrate_new());
         ret += &format!("\tfirst_pubdate: {}\n", racer.get_first_pubdate());
         ret += &format!("\tanchor_date: {}\n", racer.get_anchor_date());
         ret += &format!("\trate: {}\n", racer.get_rate());

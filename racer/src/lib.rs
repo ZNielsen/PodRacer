@@ -37,7 +37,6 @@ pub struct RacerCreationParams {
     pub port: u64,
     pub url: String,
     pub rate: f32,
-    pub integrate_new: bool,
     pub start_ep: usize,
 }
 
@@ -71,21 +70,19 @@ pub struct FeedRacer {
     anchor_date: DateTime<chrono::Utc>,
     first_pubdate: DateTime<chrono::FixedOffset>,
     rate: f32,
-    integrate_new: bool,
     release_dates: Vec<RacerEpisode>
 }
 // Basic getter functions
 impl FeedRacer {
     // pub fn get_schema_version(&self) -> &str { &self.schema_version }
+    // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
+    pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
+    pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
+    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
     pub fn get_racer_path(&self) -> &Path { &self.racer_path }
     pub fn get_racer_name(&self) -> &std::ffi::OsStr { self.racer_path.file_name().unwrap() }
     pub fn get_source_url(&self) -> &str { &self.source_url }
-    pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
-    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
-    pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
     pub fn get_rate(&self) -> f32 { self.rate }
-    pub fn get_integrate_new(&self) -> bool { self.integrate_new }
-    // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
 }
 
 impl FeedRacer {
@@ -134,7 +131,6 @@ impl FeedRacer {
             rate: params.rate.to_owned(),
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
-            integrate_new: params.integrate_new.to_owned(),
             release_dates: Vec::new(),
         };
         racer_data.render_release_dates(items);
@@ -307,14 +303,7 @@ impl FeedRacer {
         let (stored_rss, functional_mode) = match stored_rss {
             Ok(val) => {
                 // We do have a file on disk, so see if we need to download or not
-                match self.integrate_new {
-                    true => (Some(val), preferred_mode),   // Preserve mode
-                    false => {
-                        // Not integrating, don't fetch from network
-                        println!("{:?} is not integrating new episodes. Using stored rss file", self.get_racer_name());
-                        (Some(val), &RssFile::FromStorage)
-                    },
-                }
+                (Some(val), preferred_mode)
             },
             Err(e) => {
                 // If we don't have a stored file, we have to download.
@@ -688,7 +677,6 @@ impl fmt::Display for FeedRacer {
         writeln!(f, "anchor_date: {}", self.anchor_date)?;
         writeln!(f, "first_pubdate: {}", self.first_pubdate)?;
         writeln!(f, "rate: {}", self.rate)?;
-        writeln!(f, "integrate_new: {}", self.integrate_new)?;
         writeln!(f, "release_dates {{")?;
         for entry in self.release_dates.as_slice() {
             writeln!(f, "\t{},", entry)?;
