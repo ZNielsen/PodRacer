@@ -599,7 +599,12 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
  // RETURN: A FeedRacer or None
  //
 pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
-    let dir = Path::from(target_dir);
+    let mut dir = match dirs::home_dir() {
+        Some(val) => val,
+        None => return Err(format!("Error retrieving home dir")),
+    };
+    dir.push(PODRACER_DIR);
+    dir.push(target_dir);
     if dir.is_dir() {
         let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
         return Some(racer);
