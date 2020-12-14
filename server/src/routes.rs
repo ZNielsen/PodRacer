@@ -347,8 +347,9 @@ pub fn serve_rss_handler(podcast: String) -> Option<File> {
    let feed = rss::Channel::read_from(&mut buf).unwrap();
    let num_items = feed.items().len() - &params.start_ep;
    let weeks_behind = feed_racer.get_first_pubdate().signed_duration_since(chrono::Utc::now()).num_weeks().abs();
+   let days_behind = feed_racer.get_first_pubdate().signed_duration_since(chrono::Utc::now()).num_days().abs();
    let weeks_to_catch_up = ((weeks_behind as f32) / feed_racer.get_rate()) as u32;
-   let days_to_catch_up = (((weeks_behind*7) as f32) / feed_racer.get_rate()) as u32;
+   let days_to_catch_up =  ((days_behind  as f32) / feed_racer.get_rate()) as u32;
    let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
 
     Ok( FeedFunFacts {

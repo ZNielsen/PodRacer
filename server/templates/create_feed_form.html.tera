@@ -16,10 +16,6 @@
     Starting Episode:
     <input type="number" size="4" id="start_ep" name="start_ep" value="1" step=1 required>
     </label><br>
-    <label>
-    Integrate New Episodes
-    <input type="checkbox" id="integrate_new" name="integrate_new" value="true" checked>
-    </label><br>
     <input type="submit" value="Submit">
 </form>
 {{ macros::static_post_close() }}
