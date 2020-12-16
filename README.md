@@ -15,7 +15,7 @@ I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to t
 ## Features
 - **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
 - **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
-- **Integrates new episodes** - Once you catch up, PodRacer can integrate the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
+- **Integrates new episodes** - Once you catch up, PodRacer integrates the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
 - **Self hosted** - complete autonomy over your feeds
 
 PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just lisen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
@@ -54,9 +54,6 @@ Beyond the web UI, you can communicate with the server via HTTP methods (mostly 
     - url [string] - The actual RSS feed for the podcast.
     - rate [float] - Used to scale the time between episodes.
         For a weekly podcast, a rate of 2.0 will give episodes every 3.5 days. A rate of 1.2 will give episodes roughly every 6 days. A rate of 1.0 will just time shift the podcast as if the first episode was published today.
-    - integrate_new [bool] - Should PodRacer check the actual RSS feed for updates, or should it just stick with the current backlog?
-        Set to false if you plan on listening contemporaneously, but also want to work through the backlog.
-        Set to true if you want to listen to all the episodes in order, eventually catching up to real time. Once you are caught up, you can either unsubscribe from the PodRacer feed and subscribe to the 'real' feed, or just leave it - as long as PodRacer is running, it will continue to update the feed.
     - start_ep [int] - The episode number to start on.
         This episode will appear to come out the day you create the feed. All previous episodes will appear published as well.
         Note this argument selects from the number of episodes published in the feed, and may not match the publisher's self reported numbering.
@@ -66,7 +63,6 @@ Beyond the web UI, you can communicate with the server via HTTP methods (mostly 
     curl -X POST -G \
         --data-urlencode "url=http://example.com" \
         --data-urlencode "rate=1.2" \
-        --data-urlencode "integrate_new=false" \
         --data-urlencode "start_ep=1" \
         ${hostname}:${port}/${slug}
     ```
