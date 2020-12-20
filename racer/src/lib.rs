@@ -1,3 +1,5 @@
+#![warn(rust_2018_idioms)]
+
 ////////////////////////////////////////////////////////////////////////////////
 //  File:   racer.rs
 //
@@ -53,7 +55,7 @@ pub enum RssFile {
 }
 
 // Metadata about when each episode will be published
-#[derive(Clone, Serialize, Deserialize, Debug,)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct RacerEpisode {
     ep_num: Option<i64>,
     date: String,
@@ -70,38 +72,50 @@ pub struct FeedRacer {
     anchor_date: DateTime<chrono::Utc>,
     first_pubdate: DateTime<chrono::FixedOffset>,
     rate: f32,
-    release_dates: Vec<RacerEpisode>
+    release_dates: Vec<RacerEpisode>,
 }
 // Basic getter functions
 impl FeedRacer {
     // pub fn get_schema_version(&self) -> &str { &self.schema_version }
     // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
-    pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> { self.first_pubdate }
-    pub fn get_subscribe_url(&self) -> &str { &self.subscribe_url }
-    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> { self.anchor_date }
-    pub fn get_racer_path(&self) -> &Path { &self.racer_path }
-    pub fn get_racer_name(&self) -> &std::ffi::OsStr { self.racer_path.file_name().unwrap() }
-    pub fn get_source_url(&self) -> &str { &self.source_url }
-    pub fn get_rate(&self) -> f32 { self.rate }
+    pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> {
+        self.first_pubdate
+    }
+    pub fn get_subscribe_url(&self) -> &str {
+        &self.subscribe_url
+    }
+    pub fn get_anchor_date(&self) -> DateTime<chrono::Utc> {
+        self.anchor_date
+    }
+    pub fn get_racer_path(&self) -> &Path {
+        &self.racer_path
+    }
+    pub fn get_racer_name(&self) -> &std::ffi::OsStr {
+        self.racer_path.file_name().unwrap()
+    }
+    pub fn get_source_url(&self) -> &str {
+        &self.source_url
+    }
+    pub fn get_rate(&self) -> f32 {
+        self.rate
+    }
 }
 
 impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
-     // NAME:   FeedRacer::new
-     //
-     // NOTES:
-     //     Creates a new feedracer object. This involves parsing all the items from
-     //     a feed + creating a transformed list of publish dates (shift + squish/stretch).
-     //     The returned object is all ready to be written to disk as a json.
-     // ARGS:
-     //     items - All the episodes to publish
-     //     params - The input parameters for this feed
-     //     dir - The directory for the new feed
-     // RETURN: A new, initialized FeedRacer object.
-     //
-    fn new(items: &mut Vec<rss::Item>,
-        params: &RacerCreationParams,
-        dir: &str) -> FeedRacer {
+    // NAME:   FeedRacer::new
+    //
+    // NOTES:
+    //     Creates a new feedracer object. This involves parsing all the items from
+    //     a feed + creating a transformed list of publish dates (shift + squish/stretch).
+    //     The returned object is all ready to be written to disk as a json.
+    // ARGS:
+    //     items - All the episodes to publish
+    //     params - The input parameters for this feed
+    //     dir - The directory for the new feed
+    // RETURN: A new, initialized FeedRacer object.
+    //
+    fn new(items: &mut Vec<rss::Item>, params: &RacerCreationParams, dir: &str) -> FeedRacer {
         // Reverse the items so the oldest entry is first
         items.reverse();
         // Get anchor date
@@ -154,7 +168,7 @@ impl FeedRacer {
         // Probably won't need this in the future
         let mut items = rss.items().to_owned();
         // Sorts ascending order
-        items.sort_by(|a, b| rss_item_cmp(a,b));
+        items.sort_by(|a, b| rss_item_cmp(a, b));
         self.render_release_dates(&items);
 
         // Tack on a `- PodRacer` to the title
@@ -188,7 +202,12 @@ impl FeedRacer {
             };
             let item_pub_date = match item.pub_date() {
                 Some(val) => val,
-                None => return Err(std::io::Error::new(std::io::ErrorKind::Other, "no pub_date on item")),
+                None => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "no pub_date on item",
+                    ))
+                }
             };
             let item_date = match DateTime::parse_from_rfc2822(item_pub_date) {
                 Ok(val) => val,
@@ -210,10 +229,10 @@ impl FeedRacer {
 
             item.set_pub_date(racer_pub_date);
             item.set_description(
-                item.description().unwrap_or("").to_owned() +
-                "<br><br>" +
-                "Originally published on " +
-                &format!("{}", original_pub_date)
+                item.description().unwrap_or("").to_owned()
+                    + "<br><br>"
+                    + "Originally published on "
+                    + &format!("{}", original_pub_date),
             );
         }
         // Now that we have the items we want, overwrite the objects items.
@@ -252,7 +271,7 @@ impl FeedRacer {
             let racer_date = self.anchor_date.checked_add_signed(Duration::seconds(time_diff)).unwrap()
                                 .to_rfc2822();
             // Add to vector of dates
-            self.release_dates.push( RacerEpisode {
+            self.release_dates.push(RacerEpisode {
                 ep_num: Some(item_counter),
                 title: Some(item.title().unwrap_or("[no title]").to_owned()),
                 date: racer_date,
@@ -304,12 +323,12 @@ impl FeedRacer {
             Ok(val) => {
                 // We do have a file on disk, so see if we need to download or not
                 (Some(val), preferred_mode)
-            },
+            }
             Err(e) => {
                 // If we don't have a stored file, we have to download.
                 println!("Couldn't get rss file on disk: {}", e);
                 (None, &RssFile::Download)
-            },
+            }
         };
 
         match functional_mode {
@@ -474,10 +493,15 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
         };
         match update_racer_at_path(path_str, &RssFile::Download) {
             Ok(()) => (),
-            Err(e) => return Err(format!("Could not update path {}. Error was: {}", path_str, e)),
+            Err(e) => {
+                return Err(format!(
+                    "Could not update path {}. Error was: {}",
+                    path_str, e
+                ))
+            }
         };
         counter += 1;
-    };
+    }
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
         Ok(val) => val,
@@ -592,18 +616,18 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
- // NAME:   get_by_dir_name
- //
- // NOTES:  Check if the specified directory hosts a FeedRacer + return it.
- // ARGS:   target_dir: the name of the directory to check
- // RETURN: A FeedRacer or None
- //
+// NAME:   get_by_dir_name
+//
+// NOTES:  Check if the specified directory hosts a FeedRacer + return it.
+// ARGS:   target_dir: the name of the directory to check
+// RETURN: A FeedRacer or None
+//
 pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
     let mut dir = match dirs::home_dir() {
         Some(val) => val,
         None => {
             println!("Error retrieving home dir");
-            return None
+            return None;
         }
     };
     dir.push(PODRACER_DIR);
@@ -651,12 +675,17 @@ pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
         Err(str) => {
             println!("Error in list_feeds_handler: {}", str);
             return Err(format!("Error getting feeds, check logs"));
-        },
+        }
     };
     for podcast_dir_res in podcast_dirs {
         let podcast_dir = match podcast_dir_res {
             Ok(val) => val,
-            Err(e) => return Err(format!("Error iterating over path from get_all_podcast_dirs: {}", e)),
+            Err(e) => {
+                return Err(format!(
+                    "Error iterating over path from get_all_podcast_dirs: {}",
+                    e
+                ))
+            }
         };
         let path = podcast_dir.path();
         let path = match path.to_str() {
@@ -673,13 +702,12 @@ pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
     Ok(racers)
 }
 
-
 //
 // Display implementation
 //
 impl fmt::Display for RacerEpisode {
     // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Write strictly the first element into the supplied output
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
@@ -692,13 +720,13 @@ impl fmt::Display for RacerEpisode {
 }
 impl fmt::Display for FeedRacer {
     // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Write strictly the first element into the supplied output
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
         writeln!(f, "schema_version: {}", self.schema_version)?;
-        writeln!(f, "racer_path: {}", self.racer_path.display() )?;
+        writeln!(f, "racer_path: {}", self.racer_path.display())?;
         writeln!(f, "source_url: {}", self.source_url)?;
         writeln!(f, "subscribe_url: {}", self.subscribe_url)?;
         writeln!(f, "anchor_date: {}", self.anchor_date)?;
