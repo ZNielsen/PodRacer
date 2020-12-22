@@ -104,17 +104,17 @@ impl FeedRacer {
 
 impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::new
+    //  NAME:   FeedRacer::new
     //
-    // NOTES:
-    //     Creates a new feedracer object. This involves parsing all the items from
-    //     a feed + creating a transformed list of publish dates (shift + squish/stretch).
-    //     The returned object is all ready to be written to disk as a json.
-    // ARGS:
-    //     items - All the episodes to publish
-    //     params - The input parameters for this feed
-    //     dir - The directory for the new feed
-    // RETURN: A new, initialized FeedRacer object.
+    //  NOTES:
+    //      Creates a new feedracer object. This involves parsing all the items from
+    //      a feed + creating a transformed list of publish dates (shift + squish/stretch).
+    //      The returned object is all ready to be written to disk as a json.
+    //  ARGS:
+    //      items - All the episodes to publish
+    //      params - The input parameters for this feed
+    //      dir - The directory for the new feed
+    //  RETURN: A new, initialized FeedRacer object.
     //
     fn new(items: &mut Vec<rss::Item>, params: &RacerCreationParams, dir: &str) -> FeedRacer {
         // Reverse the items so the oldest entry is first
@@ -161,12 +161,12 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::update
+    //  NAME:   FeedRacer::update
     //
-    // NOTES:  Update this feedracer object. Fetches the upstream file.
+    //  NOTES:  Update this feedracer object. Fetches the upstream file.
     //         Must not panic.
-    // ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
-    // RETURN: Result - I/O successful or not
+    //  ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
+    //  RETURN: Result - I/O successful or not
     //
     pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
         // Get original rss feed
@@ -259,11 +259,11 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::render_release_dates
+    //  NAME:   FeedRacer::render_release_dates
     //
-    // NOTES:  Renders the release dates for the passed in items. Items must be in the correct order.
-    // ARGS:   items - The items to render. Must be in the correct order.
-    // RETURN: None
+    //  NOTES:  Renders the release dates for the passed in items. Items must be in the correct order.
+    //  ARGS:   items - The items to render. Must be in the correct order.
+    //  RETURN: None
     //
     fn render_release_dates(&mut self, items: &Vec<rss::Item>) {
         self.release_dates = Vec::new();
@@ -294,11 +294,11 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::write_to_file
+    //  NAME:   FeedRacer::write_to_file
     //
-    // NOTES:  Writes the racer to a file in JSON format
-    // ARGS:   None
-    // RETURN: Result - I/O successful or not
+    //  NOTES:  Writes the racer to a file in JSON format
+    //  ARGS:   None
+    //  RETURN: Result - I/O successful or not
     //
     fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
@@ -311,21 +311,21 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::get_original_rss
+    //  NAME:   FeedRacer::get_original_rss
     //
-    // NOTES:
-    //     Gets the original rss one way or another (downloaded or from storage).
-    //     We try to avoid downloading if possible. If we have the file on disk and the feed
-    //     doesn't integrate new episodes, there's no need to download so we can just serve back
-    //     what we have on disk. If either of those things is not true, we need to fetch to update
-    //     the rss feed, but we only overwrite the stored file if it has more feed items.
+    //  NOTES:
+    //      Gets the original rss one way or another (downloaded or from storage).
+    //      We try to avoid downloading if possible. If we have the file on disk and the feed
+    //      doesn't integrate new episodes, there's no need to download so we can just serve back
+    //      what we have on disk. If either of those things is not true, we need to fetch to update
+    //      the rss feed, but we only overwrite the stored file if it has more feed items.
     // TODO -> handle feeds that have a constant number of entries and push the oldest entry out.
     // TODO -> Wrap this return in an option for the case where there is no stored file and the
     //         network request fails.
-    // ARGS:
-    //     preferred_mode - the requested mode. We don't always honnor it, but it lets us know if the asker
-    //     wants to go to the network or not.
-    // RETURN: A tuple - the original rss channel + if there were new episodes to publish
+    //  ARGS:
+    //      preferred_mode - the requested mode. We don't always honnor it, but it lets us know if the asker
+    //      wants to go to the network or not.
+    //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
     fn get_original_rss(&mut self, preferred_mode: &RssFile) -> (rss::Channel, bool) {
         let mut stored_rss_path = self.racer_path.clone();
@@ -381,13 +381,13 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // NAME:   FeedRacer::get_num_to_publish
+    //  NAME:   FeedRacer::get_num_to_publish
     //
-    // NOTES:
-    //     Counts how many items are ready to publish according to this racer's rules.
-    //     This function must not panic, as it's used in the update thread
-    // ARGS:   None
-    // RETURN: The number of items that should be published.
+    //  NOTES:
+    //      Counts how many items are ready to publish according to this racer's rules.
+    //      This function must not panic, as it's used in the update thread
+    //  ARGS:   None
+    //  RETURN: The number of items that should be published.
     //
     fn get_num_to_publish(&self) -> usize {
         let mut ret = 0;
@@ -405,13 +405,13 @@ impl FeedRacer {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   rss_item_cmp
+//  NAME:   rss_item_cmp
 //
-// NOTES:
-//     A sort function for rss items. Sorts by date. Lots of string stuff for each item, might
-//     need to come up with a better solution to this if it ends up being a bottleneck.
-// ARGS:   a/b - The rss::Items to sort
-// RETURN: An ordering
+//  NOTES:
+//      A sort function for rss items. Sorts by date. Lots of string stuff for each item, might
+//      need to come up with a better solution to this if it ends up being a bottleneck.
+//  ARGS:   a/b - The rss::Items to sort
+//  RETURN: An ordering
 //
 fn rss_item_cmp(a: &rss::Item, b: &rss::Item) -> std::cmp::Ordering {
     let a_sec = DateTime::parse_from_rfc2822(a.pub_date().unwrap())
@@ -430,13 +430,13 @@ fn rss_item_cmp(a: &rss::Item, b: &rss::Item) -> std::cmp::Ordering {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   get_racer_at_path
+//  NAME:   get_racer_at_path
 //
-// NOTES:
-//     Grabs a racer object from a racer file located in the specified directory.
-//     This function must not panic, as it's used in the update thread.
-// ARGS:   The path to the directory of interest
-// RETURN: The FeedRacer or an error.
+//  NOTES:
+//      Grabs a racer object from a racer file located in the specified directory.
+//      This function must not panic, as it's used in the update thread.
+//  ARGS:   The path to the directory of interest
+//  RETURN: The FeedRacer or an error.
 //
 fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
     let racer_file_path: PathBuf = [path, RACER_FILE].iter().collect();
@@ -446,15 +446,15 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   update_racer_at_path
+//  NAME:   update_racer_at_path
 //
-// NOTES:
-//     Updates the items that need to be published for the racer in the given directory
-//     This function must not panic, as it's used in the update thread.
-// ARGS:
-//     path - the directory of the racer of interest
-//     preferred_mode - Whether we prefer to download a fresh copy or not.
-// RETURN: A result. Typically only fails on I/O or network stuff.
+//  NOTES:
+//      Updates the items that need to be published for the racer in the given directory
+//      This function must not panic, as it's used in the update thread.
+//  ARGS:
+//      path - the directory of the racer of interest
+//      preferred_mode - Whether we prefer to download a fresh copy or not.
+//  RETURN: A result. Typically only fails on I/O or network stuff.
 //
 fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
     // Load in racer file
@@ -464,14 +464,14 @@ fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   get_all_podcast_dirs
+//  NAME:   get_all_podcast_dirs
 //
-// NOTES:
-//     Gets all the dirs in the PODRACER_DIR (~/.podracer). Each of these dirs has info for one
-//     feed.
-//     This function must not panic, as it's used in the update thread.
-// ARGS:   None
-// RETURN: All the items in the podracer dir
+//  NOTES:
+//      Gets all the dirs in the PODRACER_DIR (~/.podracer). Each of these dirs has info for one
+//      feed.
+//      This function must not panic, as it's used in the update thread.
+//  ARGS:   None
+//  RETURN: All the items in the podracer dir
 //
 pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
     let mut dir = match dirs::home_dir() {
@@ -486,13 +486,13 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   update_all
+//  NAME:   update_all
 //
-// NOTES:
-//     Updates all the racers on this server
-//     This function must not panic, as it's used in the update thread.
-// ARGS:   None
-// RETURN: A result containing some metadata about the update or an error string
+//  NOTES:
+//      Updates all the racers on this server
+//      This function must not panic, as it's used in the update thread.
+//  ARGS:   None
+//  RETURN: A result containing some metadata about the update or an error string
 //
 pub fn update_all() -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
@@ -542,11 +542,11 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed
+//  NAME:   create_feed
 //
-// NOTES:  Creates a new feedracer object + sets up the diretcory and files
-// ARGS:   params - All the params needed to make a racer
-// RETURN: A FeedRacer or error String
+//  NOTES:  Creates a new feedracer object + sets up the diretcory and files
+//  ARGS:   params - All the params needed to make a racer
+//  RETURN: A FeedRacer or error String
 //
 pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
     if None == params.url.find("http") {
@@ -587,13 +587,13 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed_racer_dir
+//  NAME:   create_feed_racer_dir
 //
-// NOTES:  Creates the direcotry for a racer with these parameters
-// ARGS:
-//     ch - An rss channel (used for the title of the show)
-//     params - Input parameters
-// RETURN: The path of the created directory
+//  NOTES:  Creates the direcotry for a racer with these parameters
+//  ARGS:
+//      ch - An rss channel (used for the title of the show)
+//      params - Input parameters
+//  RETURN: The path of the created directory
 //
 fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> String {
     let day = chrono::Utc::today();
@@ -620,13 +620,13 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   download_rss_channel
+//  NAME:   download_rss_channel
 //
-// NOTES:
-//     Handles the network stuff for getting an rss file from the network.
-//     TODO - Might need to scrub the input here
-// ARGS:   url - the url of the file to get
-// RETURN: A channel or error information
+//  NOTES:
+//      Handles the network stuff for getting an rss file from the network.
+//      TODO - Might need to scrub the input here
+//  ARGS:   url - the url of the file to get
+//  RETURN: A channel or error information
 //
 fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
     let content = match reqwest::blocking::get(url) {
@@ -642,11 +642,11 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   get_by_dir_name
+//  NAME:   get_by_dir_name
 //
-// NOTES:  Check if the specified directory hosts a FeedRacer + return it.
-// ARGS:   target_dir: the name of the directory to check
-// RETURN: A FeedRacer or None
+//  NOTES:  Check if the specified directory hosts a FeedRacer + return it.
+//  ARGS:   target_dir: the name of the directory to check
+//  RETURN: A FeedRacer or None
 //
 pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
     let mut dir = match dirs::home_dir() {
@@ -667,11 +667,11 @@ pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   get_by_url
+//  NAME:   get_by_url
 //
-// NOTES:  Check all racers on this server to see if we have one with this URL
-// ARGS:   url - the racer url to check for
-// RETURN: A FeedRacer or None
+//  NOTES:  Check all racers on this server to see if we have one with this URL
+//  ARGS:   url - the racer url to check for
+//  RETURN: A FeedRacer or None
 //
 pub fn get_by_url(url: &str) -> Option<FeedRacer> {
     let dirs = get_all_podcast_dirs().unwrap();
@@ -686,11 +686,11 @@ pub fn get_by_url(url: &str) -> Option<FeedRacer> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   get_all_racers
+//  NAME:   get_all_racers
 //
-// NOTES:  Gets all the racers on this server.
-// ARGS:   None
-// RETURN: A vector of the racers on this server, or an error.
+//  NOTES:  Gets all the racers on this server.
+//  ARGS:   None
+//  RETURN: A vector of the racers on this server, or an error.
 //
 pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
     let mut racers = Vec::new();
