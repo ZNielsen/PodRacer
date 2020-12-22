@@ -66,11 +66,11 @@ pub struct FormParams {
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed_form_handler
+//  NAME:   create_feed_form_handler
 //
-// NOTES:  Give the default form when requesting the root
-// ARGS:   None
-// RETURN: The new podcast form file
+//  NOTES:  Give the default form when requesting the root
+//  ARGS:   None
+//  RETURN: The new podcast form file
 //
 #[get("/")]
 // pub fn create_feed_form_handler() -> Template {
@@ -98,14 +98,14 @@ pub fn not_found_handler(req: &Request) -> File {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed_handler
+//  NAME:   create_feed_handler
 //
-// NOTES:  Creates a new PodRacer feed. From the web ui.
-// ARGS:
-//     config -
-//     url -
-//     rate -
-// RETURN: A result with string information either way. Tailored for a curl response
+//  NOTES:  Creates a new PodRacer feed. From the web ui.
+//  ARGS:
+//      config -
+//      url -
+//      rate -
+//  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[get("/create_feed?<form_data..>")]
 pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormParams>) -> Template {
@@ -135,15 +135,15 @@ pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormPara
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed_cli_handler
+//  NAME:   create_feed_cli_handler
 //
-// NOTES:  Creates a new PodRacer feed. This is probably from the curl script
-//     This can probably safely be deleted
-// ARGS:
-//     config -
-//     url -
-//     rate -
-// RETURN: A result with string information either way. Tailored for a curl response
+//  NOTES:  Creates a new PodRacer feed. This is probably from the curl script
+//      This can probably safely be deleted
+//  ARGS:
+//      config -
+//      url -
+//      rate -
+//  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[post("/create_feed_cli?<url>&<rate>", rank = 2)]
 pub fn create_feed_cli_handler(
@@ -164,19 +164,19 @@ pub fn create_feed_cli_handler(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed_cli_ep_handler
+//  NAME:   create_feed_cli_ep_handler
 //
-// NOTES:
-//     Creatse a new PodRacer feed, but includes a start episode. This is
-//     probably from the form.
-// ARGS:
-//     config -
-//     url -
-//     rate -
-//     start_ep -
-// RETURN:
-//     A result containing either a success file or a failure file.
-//     If Ok(), the File will have the subscribe url to display to the user
+//  NOTES:
+//      Creatse a new PodRacer feed, but includes a start episode. This is
+//      probably from the form.
+//  ARGS:
+//      config -
+//      url -
+//      rate -
+//      start_ep -
+//  RETURN:
+//      A result containing either a success file or a failure file.
+//      If Ok(), the File will have the subscribe url to display to the user
 //
 #[post("/create_feed_cli?<url>&<rate>&<start_ep>", rank = 1)]
 pub fn create_feed_cli_ep_handler(
@@ -198,13 +198,13 @@ pub fn create_feed_cli_ep_handler(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   update_one_handler
+//  NAME:   update_one_handler
 //
-// NOTES:  Update one podcast, specified by folder name or subscribe url
-// ARGS:
-//     podcast - The podcast to update. Specified by the folder name or
+//  NOTES:  Update one podcast, specified by folder name or subscribe url
+//  ARGS:
+//      podcast - The podcast to update. Specified by the folder name or
 //               the PodRacer subscribe url.
-// RETURN:
+//  RETURN:
 //
 #[post("/update/<podcast>")]
 pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
@@ -230,11 +230,11 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   update_all_handler
+//  NAME:   update_all_handler
 //
-// NOTES:  Forces update of all podcast feeds on this server
-// ARGS:   None
-// RETURN: A result. If errored, a string containing some error info
+//  NOTES:  Forces update of all podcast feeds on this server
+//  ARGS:   None
+//  RETURN: A result. If errored, a string containing some error info
 //
 #[post("/update")]
 pub fn update_all_handler() -> Result<(), String> {
@@ -244,13 +244,13 @@ pub fn update_all_handler() -> Result<(), String> {
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   delete_feed_handler
+//  NAME:   delete_feed_handler
 //
-// NOTES:
-//     Deletes the sepecified feed. No authentication required, so anyone can
-//     get in there and cause havoc. Probs should change that.
-// ARGS:   podcast - the podcast to delete. Can be a dir name or PodRacer URL
-// RETURN: Result - strings with info either way
+//  NOTES:
+//      Deletes the sepecified feed. No authentication required, so anyone can
+//      get in there and cause havoc. Probs should change that.
+//  ARGS:   podcast - the podcast to delete. Can be a dir name or PodRacer URL
+//  RETURN: Result - strings with info either way
 //
 // Eventually want to expand this to be a button on the web UI after listing all podcasts
 //#[post("/delete_feed?<podcast>")]
@@ -275,13 +275,13 @@ pub fn update_all_handler() -> Result<(), String> {
 //}
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   list_feeds_handler
+//  NAME:   list_feeds_handler
 //
-// NOTES:
-//     List all the feeds on this server. Gives a list of podcasts by the
-//     directory names: <podcast_name>_<rate>_<feed creation date>
-// ARGS:   None
-// RETURN: Result string - either the feeds or info on what failed
+//  NOTES:
+//      List all the feeds on this server. Gives a list of podcasts by the
+//      directory names: <podcast_name>_<rate>_<feed creation date>
+//  ARGS:   None
+//  RETURN: Result string - either the feeds or info on what failed
 //
 #[get("/list_feeds")]
 pub fn list_feeds_handler() -> Result<String, String> {
@@ -308,15 +308,15 @@ pub fn list_feeds_handler() -> Result<String, String> {
     Ok(ret)
 }
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   serve_rss_handler
+//  NAME:   serve_rss_handler
 //
-// NOTES:
-//     Serves the racer.rss file for the specified podcast. This is almost
-//     certainly called by a podcast player to check for new episodes.
-//     TODO: Should we not serve the file if nothing changed? Is there a safe
+//  NOTES:
+//      Serves the racer.rss file for the specified podcast. This is almost
+//      certainly called by a podcast player to check for new episodes.
+//      TODO: Should we not serve the file if nothing changed? Is there a safe
 //         way to do that?
-// ARGS:   podcast - The podcast to serve. Format is the folder name
-// RETURN: Our PodRacer RSS file
+//  ARGS:   podcast - The podcast to serve. Format is the folder name
+//  RETURN: Our PodRacer RSS file
 //
 #[get("/podcasts/<podcast>/racer.rss")]
 pub fn serve_rss_handler(podcast: String) -> Option<File> {
@@ -342,17 +342,17 @@ pub fn serve_rss_handler(podcast: String) -> Option<File> {
 //
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   create_feed
+//  NAME:   create_feed
 //
-// NOTES:
-//     Crates a PodRacer feed for given parameters. Prints some stats for the
-//     user for display over curl. Might need to make another version to handle
-//     displaying info over web UI
-// ARGS:   params - All the parameters required to put together a feed. See
+//  NOTES:
+//      Crates a PodRacer feed for given parameters. Prints some stats for the
+//      user for display over curl. Might need to make another version to handle
+//      displaying info over web UI
+//  ARGS:   params - All the parameters required to put together a feed. See
 //                  the struct for more info.
-// RETURN:
-//     A result. If Ok(), contains a bunch of stats for the user. If Err(),
-//     contains info for why it failed
+//  RETURN:
+//      A result. If Ok(), contains a bunch of stats for the user. If Err(),
+//      contains info for why it failed
 //
 fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, String> {
     let feed_racer = match racer::create_feed(&mut params) {

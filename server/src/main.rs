@@ -33,14 +33,14 @@ const STATIC_FILE_DIR: &'static str = "server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// NAME:   scrub_xml
+//  NAME:   scrub_xml
 //
-// NOTES:
-//     Some rss feeds don't properly escape things. Properly escape known issues.
-//     This is not really scalable, but if I'm the only one using it then it should be more or
-//     less fine.
-// ARGS:   file_name - The file to scrub and replace
-// RETURN: None
+//  NOTES:
+//      Some rss feeds don't properly escape things. Properly escape known issues.
+//      This is not really scalable, but if I'm the only one using it then it should be more or
+//      less fine.
+//  ARGS:   file_name - The file to scrub and replace
+//  RETURN: None
 //
 fn scrub_xml(file_name: &PathBuf) {
     // Known bad strings
@@ -79,14 +79,14 @@ fn scrub_xml(file_name: &PathBuf) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAME:   main
+//  NAME:   main
 //
-// NOTES:
-//     Main sets up rocket, spins off an updater thread, then launches
-//     the rocket server.
-//     Rocket setup includes mounting routes + getting Rocket config values.
-// ARGS:   None
-// RETURN: None
+//  NOTES:
+//      Main sets up rocket, spins off an updater thread, then launches
+//      the rocket server.
+//      Rocket setup includes mounting routes + getting Rocket config values.
+//  ARGS:   None
+//  RETURN: None
 //
 fn main() {
     // Use globbing.
