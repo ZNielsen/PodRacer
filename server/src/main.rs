@@ -10,20 +10,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 #[macro_use]
 extern crate rocket;
-extern crate tera;
 extern crate racer;
+extern crate tera;
 mod routes;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use rocket::fairing::AdHoc;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
-use rocket::fairing::AdHoc;
 use routes::*;
-use std::path::PathBuf;
-use std::io::{BufRead, Write};
 use std::fs::File;
+use std::io::{BufRead, Write};
+use std::path::PathBuf;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -33,15 +33,15 @@ const STATIC_FILE_DIR: &'static str = "server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
- // NAME:   scrub_xml
- //
- // NOTES:
- //     Some rss feeds don't properly escape things. Properly escape known issues.
- //     This is not really scalable, but if I'm the only one using it then it should be more or
- //     less fine.
- // ARGS:   file_name - The file to scrub and replace
- // RETURN: None
- //
+// NAME:   scrub_xml
+//
+// NOTES:
+//     Some rss feeds don't properly escape things. Properly escape known issues.
+//     This is not really scalable, but if I'm the only one using it then it should be more or
+//     less fine.
+// ARGS:   file_name - The file to scrub and replace
+// RETURN: None
+//
 fn scrub_xml(file_name: &PathBuf) {
     // Known bad strings
     let mut subs = std::collections::HashMap::new();
@@ -55,33 +55,39 @@ fn scrub_xml(file_name: &PathBuf) {
     let in_buf = std::io::BufReader::new(&file);
     let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
     let mut out_buf = std::io::BufWriter::new(scrubbed_file);
-    in_buf.lines().map(|line_res| {
-        line_res.and_then(|mut line| {
-            for (key,val) in &subs {
-                if line.contains(key) {
-                    line = line.replace(key, val);
+    in_buf
+        .lines()
+        .map(|line_res| {
+            line_res.and_then(|mut line| {
+                for (key, val) in &subs {
+                    if line.contains(key) {
+                        line = line.replace(key, val);
+                    }
                 }
-            }
-            out_buf.write_all(line.as_bytes())
+                out_buf.write_all(line.as_bytes())
+            })
         })
-    }).collect::<Result<(), _>>().expect("IO failed");
+        .collect::<Result<(), _>>()
+        .expect("IO failed");
 
     // Replace original with scrubbed file
-    std::fs::rename(std::path::Path::new(&tmp_file_name),
-                    std::path::Path::new(&file_name))
-         .expect("Failed to overwrite file");
+    std::fs::rename(
+        std::path::Path::new(&tmp_file_name),
+        std::path::Path::new(&file_name),
+    )
+    .expect("Failed to overwrite file");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
- // NAME:   main
- //
- // NOTES:
- //     Main sets up rocket, spins off an updater thread, then launches
- //     the rocket server.
- //     Rocket setup includes mounting routes + getting Rocket config values.
- // ARGS:   None
- // RETURN: None
- //
+// NAME:   main
+//
+// NOTES:
+//     Main sets up rocket, spins off an updater thread, then launches
+//     the rocket server.
+//     Rocket setup includes mounting routes + getting Rocket config values.
+// ARGS:   None
+// RETURN: None
+//
 fn main() {
     // Use globbing.
     // TODO - look into lazy_static! here.
@@ -115,14 +121,15 @@ fn main() {
             // Add custom configs to the State manager - only one of each type is allowed
             Ok(rocket
                 .manage(rocket_config)
-                .manage(routes::UpdateFactor(update_factor))
-            )
+                .manage(routes::UpdateFactor(update_factor)))
         }));
 
     // Manually update on start
     match racer::update_all() {
-        Ok(update_metadata) => println!("Updated all racer feeds on server. Did {} feeds in {:?}.",
-                                    update_metadata.num, update_metadata.time),
+        Ok(update_metadata) => println!(
+            "Updated all racer feeds on server. Did {} feeds in {:?}.",
+            update_metadata.num, update_metadata.time
+        ),
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
@@ -132,19 +139,22 @@ fn main() {
     };
 
     // Create update thread - update every <duration> (default to every hour if not specified in Rocket.toml)
-    let _update_thread = std::thread::Builder::new().name("Updater".to_owned()).spawn(move || {
-        loop {
+    let _update_thread = std::thread::Builder::new()
+        .name("Updater".to_owned())
+        .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");
             match racer::update_all() {
                 Ok(update_metadata) => {
-                    println!("Done. Did {} feeds in {:?}.", update_metadata.num, update_metadata.time);
+                    println!(
+                        "Done. Did {} feeds in {:?}.",
+                        update_metadata.num, update_metadata.time
+                    );
                 }
                 Err(string) => {
                     println!("Error in update_all in update thread: {}", string);
-                },
+                }
             };
-        }
-    });
+        });
     rocket.launch();
 }

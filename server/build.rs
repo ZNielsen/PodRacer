@@ -11,10 +11,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use std::path::Path;
 use std::env;
-use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::path::Path;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -27,7 +27,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let web_dir = out_dir.clone() + "/web";
     let template_dir_name = web_dir.clone() + "/templates/";
-    let static_dir_name   = web_dir.clone() + "/static/";
+    let static_dir_name = web_dir.clone() + "/static/";
     std::fs::create_dir_all(&template_dir_name).expect("can't create template dir");
     std::fs::create_dir_all(&static_dir_name).expect("can't create static dir");
 
@@ -47,11 +47,15 @@ fn main() {
     for file_name_res in template_dir.read_dir().unwrap() {
         let file_name = file_name_res.unwrap();
         // First things first - Tell Cargo to rerun if this file changes
-        println!("cargo:rerun-if-changed=templates/{}", file_name.file_name().to_str().unwrap());
+        println!(
+            "cargo:rerun-if-changed=templates/{}",
+            file_name.file_name().to_str().unwrap()
+        );
 
         if file_name.file_name() == MACRO_FILE_NAME {
             // Just copy over the macro file, don't do anything to it
-            let target_file_name = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
+            let target_file_name =
+                template_dir_name.clone() + file_name.file_name().to_str().unwrap();
             let target_file = Path::new(&target_file_name);
             std::fs::copy(file_name.path(), target_file).expect("Could not copy static file");
             continue;
@@ -62,7 +66,8 @@ fn main() {
         let tmp_file_name = "/tmp/template.build".to_owned();
         // Scope to close file
         {
-            let file = File::open(file_name.path()).expect(&format!("Could not open file: {:?}", file_name));
+            let file = File::open(file_name.path())
+                .expect(&format!("Could not open file: {:?}", file_name));
             let in_buf = BufReader::new(&file);
             let tmp_file = File::create(&tmp_file_name).expect("Failed to create tmp file");
             let mut out_buf = BufWriter::new(tmp_file);
@@ -77,12 +82,13 @@ fn main() {
                     let macro_name = macro_name[0];
                     println!("about to get_static_macro: {}", macro_name);
                     line = get_static_macro(macro_name);
-                }
-                else if line.contains("{{") {
+                } else if line.contains("{{") {
                     println!("Hit a non-static value");
                     all_static = false;
                 }
-                out_buf.write_all(line.as_bytes()).expect("Error writing to out_buf");
+                out_buf
+                    .write_all(line.as_bytes())
+                    .expect("Error writing to out_buf");
             }
         }
 
@@ -94,10 +100,15 @@ fn main() {
             let dest_file = Path::new(&static_file);
 
             // Scrub {% import "macros" as macros %} here
-            println!("Writing {:?} out to {:?}, scrubbing the macro import", &tmp_file_name, &dest_file);
-            let newly_static_file = File::open(&tmp_file_name).expect(&format!("Could not open file: {:?}", file_name));
+            println!(
+                "Writing {:?} out to {:?}, scrubbing the macro import",
+                &tmp_file_name, &dest_file
+            );
+            let newly_static_file =
+                File::open(&tmp_file_name).expect(&format!("Could not open file: {:?}", file_name));
             let new_in_buf = BufReader::new(&newly_static_file);
-            let new_out_file = File::create(&dest_file).expect(&format!("Could not create file: {:?}", dest_file));
+            let new_out_file =
+                File::create(&dest_file).expect(&format!("Could not create file: {:?}", dest_file));
             let mut new_out_buf = BufWriter::new(new_out_file);
             for line_res in new_in_buf.lines() {
                 let line = line_res.unwrap();
@@ -105,15 +116,17 @@ fn main() {
                 let scrubbed_line = line.replace("{% import \"macros\" as macros %}", "");
                 // println!("replaced line: {}", &scrubbed_line);
                 //if !line.contains("{% import") {
-                    new_out_buf.write_all(scrubbed_line.as_bytes()).expect("Error writing to new_out_buf");
+                new_out_buf
+                    .write_all(scrubbed_line.as_bytes())
+                    .expect("Error writing to new_out_buf");
                 //}
             }
-        }
-        else {
+        } else {
             let template_file = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
             let dest_file = Path::new(&template_file);
             println!("Moving {:?} to {:?}", tmp_file_name, dest_file);
-            std::fs::rename(Path::new(&tmp_file_name), dest_file).expect("Could not copy template file");
+            std::fs::rename(Path::new(&tmp_file_name), dest_file)
+                .expect("Could not copy template file");
         }
     }
 
@@ -122,7 +135,10 @@ fn main() {
     for file_res in static_dir.read_dir().unwrap() {
         let file = file_res.unwrap();
         // First things first - Tell Cargo to rerun if this file changes
-        println!("cargo:rerun-if-changed=static/{}", file.file_name().to_str().unwrap());
+        println!(
+            "cargo:rerun-if-changed=static/{}",
+            file.file_name().to_str().unwrap()
+        );
 
         let target_file_name = static_dir_name.clone() + file.file_name().to_str().unwrap();
         let target_file = Path::new(&target_file_name);
@@ -136,10 +152,9 @@ fn main() {
     println!("cargo:rerun-if-changed=static");
 }
 
-
 enum GetMacroState {
     SearchingForMacro,
-    GrabbingMacro
+    GrabbingMacro,
 }
 
 fn get_static_macro(macro_name: &str) -> String {
@@ -152,12 +167,12 @@ fn get_static_macro(macro_name: &str) -> String {
         let line = line_res.unwrap();
         match state {
             GetMacroState::SearchingForMacro => {
-                let test_line = String::from("{% macro static_") + macro_name +"() %}";
+                let test_line = String::from("{% macro static_") + macro_name + "() %}";
                 if line.contains(&test_line) {
                     state = GetMacroState::GrabbingMacro;
                     println!("Found the macro: {}", line);
                 }
-            },
+            }
 
             GetMacroState::GrabbingMacro => {
                 let test_line = String::from("{% endmacro static_") + macro_name + " %}";
@@ -167,7 +182,7 @@ fn get_static_macro(macro_name: &str) -> String {
                 }
                 ret.push_str(&line);
                 // println!("{}", line);
-            },
+            }
         }
     }
     return ret;
