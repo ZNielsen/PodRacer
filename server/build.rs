@@ -33,8 +33,13 @@ fn main() {
 
     // Make a symlink to the dirs
     let symlink = Path::new("./web");
-    if symlink.exists() {
-        std::fs::remove_dir_all(&symlink).expect("can't remove symlink");
+    match symlink.symlink_metadata() {
+        Ok(metadata) => {
+            if metadata.file_type().is_symlink() {
+                std::fs::remove_dir_all(&symlink).expect("can't remove symlink");
+            }
+        },
+        Err(_) => (),
     }
     std::os::unix::fs::symlink(Path::new(&web_dir), &symlink).expect("can't create symlink");
 
