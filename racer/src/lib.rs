@@ -43,8 +43,9 @@ pub struct RacerCreationParams {
 }
 
 pub struct UpdateMetadata {
-    pub num: u64,
+    pub num_updated: u64,
     pub time: std::time::Duration,
+    pub num_with_new_eps: u64,
 }
 
 // Should we attempt to download the original RSS file, or just look at what we have?
@@ -167,9 +168,9 @@ impl FeedRacer {
     // ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
     // RETURN: Result - I/O successful or not
     //
-    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<()> {
+    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
         // Get original rss feed
-        let mut rss = self.get_original_rss(preferred_mode);
+        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode);
 
         // Re-render in case of rate change
         // Probably won't need this in the future
@@ -252,7 +253,7 @@ impl FeedRacer {
             .collect();
         let racer_rss_file = File::create(racer_rss_path)?;
         match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
-            Ok(_) => Ok(()),
+            Ok(_) => Ok(new_episodes),
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
         }
     }
@@ -324,9 +325,9 @@ impl FeedRacer {
     // ARGS:
     //     preferred_mode - the requested mode. We don't always honnor it, but it lets us know if the asker
     //     wants to go to the network or not.
-    // RETURN: The original rss channel
+    // RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
-    fn get_original_rss(&mut self, preferred_mode: &RssFile) -> rss::Channel {
+    fn get_original_rss(&mut self, preferred_mode: &RssFile) -> (rss::Channel, bool) {
         let mut stored_rss_path = self.racer_path.clone();
         stored_rss_path.push(ORIGINAL_RSS_FILE);
         let stored_rss_file = File::open(&stored_rss_path).unwrap();
@@ -365,17 +366,17 @@ impl FeedRacer {
                                 .pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT)
                                 .unwrap();
                         }
-                        return network_file;
+                        return (network_file, (num_to_update > 0));
                     }
                     Err(e) => {
                         println!("Could not get network file: {}", e);
                         println!("Resuming with stored rss file");
                         // Panics if there was no stored rss and the network failed
-                        return stored_rss.unwrap();
+                        return (stored_rss.unwrap(), false);
                     }
                 };
             }
-            RssFile::FromStorage => return stored_rss.unwrap(), // Should not panic if mode checks above are correct
+            RssFile::FromStorage => return (stored_rss.unwrap(), false), // Should not panic if mode checks above are correct
         };
     }
 
@@ -455,7 +456,7 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 //     preferred_mode - Whether we prefer to download a fresh copy or not.
 // RETURN: A result. Typically only fails on I/O or network stuff.
 //
-fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<()> {
+fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
     // Load in racer file
     let mut racer = get_racer_at_path(path)?;
 
@@ -496,6 +497,7 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 pub fn update_all() -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
+    let mut num_with_new_eps = 0;
     let podcast_dirs = match get_all_podcast_dirs() {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
@@ -510,7 +512,11 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
             None => return Err(format!("Tried to open empty path")),
         };
         match update_racer_at_path(path_str, &RssFile::Download) {
-            Ok(()) => (),
+            Ok(new_eps) => {
+                if new_eps {
+                    num_with_new_eps += 1;
+                }
+            }
             Err(e) => {
                 return Err(format!(
                     "Could not update path {}. Error was: {}",
@@ -529,8 +535,9 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
         }
     };
     Ok(UpdateMetadata {
-        num: counter,
+        num_updated: counter,
         time: duration,
+        num_with_new_eps: num_with_new_eps,
     })
 }
 
