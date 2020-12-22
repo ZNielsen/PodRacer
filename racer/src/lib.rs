@@ -170,7 +170,7 @@ impl FeedRacer {
     //
     pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
         // Get original rss feed
-        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode);
+        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode)?;
 
         // Re-render in case of rate change
         // Probably won't need this in the future
@@ -327,10 +327,10 @@ impl FeedRacer {
     //      wants to go to the network or not.
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
-    fn get_original_rss(&mut self, preferred_mode: &RssFile) -> (rss::Channel, bool) {
+    fn get_original_rss(&mut self, preferred_mode: &RssFile) -> std::io::Result<(rss::Channel, bool)> {
         let mut stored_rss_path = self.racer_path.clone();
         stored_rss_path.push(ORIGINAL_RSS_FILE);
-        let stored_rss_file = File::open(&stored_rss_path).unwrap();
+        let stored_rss_file = File::open(&stored_rss_path)?;
         let buf_reader = BufReader::new(stored_rss_file);
         let stored_rss = rss::Channel::read_from(buf_reader);
 
@@ -362,22 +362,31 @@ impl FeedRacer {
                             // TODO - If a feed pushes out the oldest entries, overwriting won't cut it.
                             //        We'll need to save old items.
                             let stored_rss_file = File::create(stored_rss_path).unwrap();
-                            network_file
-                                .pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT)
-                                .unwrap();
+                            match network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
+                                Ok(_) => (),
+                                Err(e) => println!("Error writing network_file to disk: {}. Continuing without writing.", e),
+                            };
                         }
-                        return (network_file, (num_to_update > 0));
+                        return Ok((network_file, num_to_update > 0));
                     }
                     Err(e) => {
                         println!("Could not get network file: {}", e);
                         println!("Resuming with stored rss file");
                         // Panics if there was no stored rss and the network failed
-                        return (stored_rss.unwrap(), false);
+                        if let Some(stored_rss) = stored_rss {
+                            return Ok((stored_rss, false));
+                        }
                     }
                 };
             }
-            RssFile::FromStorage => return (stored_rss.unwrap(), false), // Should not panic if mode checks above are correct
+            RssFile::FromStorage => {
+                if let Some(stored_rss) = stored_rss {
+                    return Ok((stored_rss, false));
+                }
+            }
         };
+
+        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Error getting original rss"))
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
