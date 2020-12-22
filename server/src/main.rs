@@ -127,7 +127,7 @@ fn main() {
     // Manually update on start
     match racer::update_all() {
         Ok(update_metadata) => println!(
-            "Done. Did {} feeds in {:?} ({} feeds with new episodes).",
+            "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
             update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
         ),
         Err(string) => println!("Error in update_all on boot: {}", string),
