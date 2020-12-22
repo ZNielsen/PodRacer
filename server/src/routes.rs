@@ -211,11 +211,17 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
     // Update the specified podcast
     // Check if podcast is folder name
     if let Some(mut racer) = racer::get_by_dir_name(&podcast) {
-        return racer.update(&racer::RssFile::Download);
+        return match racer.update(&racer::RssFile::Download) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        };
     }
     // Check if subscribe url
     if let Some(mut racer) = racer::get_by_url(&podcast) {
-        return racer.update(&racer::RssFile::Download);
+        return match racer.update(&racer::RssFile::Download) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        };
     }
     Err(Error::new(
         ErrorKind::NotFound,
