@@ -246,9 +246,20 @@ impl FeedRacer {
         rss.set_items(items_to_publish);
 
         // Write out the racer.file
-        self.write_to_file()?;
+        match self.write_to_file() {
+            Ok(_) => (),
+            Err(e) => println!("Error writing the racer.file, but still continuing: {}.", e),
+        }
+
         // Write out the racer.rss file
-        let racer_rss_path: PathBuf = [self.racer_path.to_str().unwrap(), RACER_RSS_FILE]
+        let racer_path = match self.racer_path.to_str() {
+            Some(val) => val,
+            None => {
+                println!("Error getting self.racer_path as a str. Very not good. Using the tmp dir.");
+                "/tmp"
+            }
+        };
+        let racer_rss_path: PathBuf = [racer_path, RACER_RSS_FILE]
             .iter()
             .collect();
         let racer_rss_file = File::create(racer_rss_path)?;
@@ -361,10 +372,14 @@ impl FeedRacer {
                             // Overwrite our stored original RSS file
                             // TODO - If a feed pushes out the oldest entries, overwriting won't cut it.
                             //        We'll need to save old items.
-                            let stored_rss_file = File::create(stored_rss_path).unwrap();
-                            match network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
-                                Ok(_) => (),
-                                Err(e) => println!("Error writing network_file to disk: {}. Continuing without writing.", e),
+                             match File::create(stored_rss_path) {
+                                Ok(stored_rss_file) => {
+                                    match network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
+                                        Ok(_) => (),
+                                        Err(e) => println!("Error writing network_file to disk: {}. Continuing without writing.", e),
+                                    };
+                                },
+                                Err(e) => println!("Error during File::create(stored_rss_path): {}. Continuing without writing.", e),
                             };
                         }
                         return Ok((network_file, num_to_update > 0));
