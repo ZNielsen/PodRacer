@@ -21,6 +21,7 @@ use std::path::Path;
 ////////////////////////////////////////////////////////////////////////////////
 const MACRO_FILE_NAME: &'static str = "macros.html.tera";
 const MACRO_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/templates/macros.html.tera");
+const MACRO_IMPORT_STR: &'static str = "{% import \"macros\" as macros %}";
 
 fn main() {
     // Make the dirs
@@ -87,10 +88,12 @@ fn main() {
                     let macro_name = macro_name[0];
                     println!("about to get_static_macro: {}", macro_name);
                     line = get_static_macro(macro_name);
-                } else if line.contains("{{") {
-                    println!("Hit a non-static value");
+                } else if !line_is_static(&line) {
+                    println!("Hit a non-static value: {}", &line);
                     all_static = false;
                 }
+
+                line.push_str("\n");
                 out_buf
                     .write_all(line.as_bytes())
                     .expect("Error writing to out_buf");
@@ -98,13 +101,14 @@ fn main() {
         }
 
         if all_static {
+            // Remove the .tera
             let mut static_file = static_dir_name.clone() + file_name.file_name().to_str().unwrap();
             let iter = static_file.find(".tera").unwrap_or(static_file.len());
             static_file.drain(iter..);
             println!("static file is {}", static_file);
             let dest_file = Path::new(&static_file);
 
-            // Scrub {% import "macros" as macros %} here
+            // Scrub MACRO_IMPORT_STR here
             println!(
                 "Writing {:?} out to {:?}, scrubbing the macro import",
                 &tmp_file_name, &dest_file
@@ -118,7 +122,7 @@ fn main() {
             for line_res in new_in_buf.lines() {
                 let line = line_res.unwrap();
                 // println!("line: {}", &line);
-                let scrubbed_line = line.replace("{% import \"macros\" as macros %}", "");
+                let scrubbed_line = line.replace(MACRO_IMPORT_STR, "");
                 // println!("replaced line: {}", &scrubbed_line);
                 //if !line.contains("{% import") {
                 new_out_buf
@@ -155,6 +159,17 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=templates");
     println!("cargo:rerun-if-changed=static");
+}
+
+fn line_is_static(line: &str) -> bool {
+    if line.contains(MACRO_IMPORT_STR) {
+        // Importing the macros does not count as a variable line
+        return true;
+    }
+    else if line.contains("{{") || line.contains("{%") {
+        return false;
+    }
+    return true;
 }
 
 enum GetMacroState {
