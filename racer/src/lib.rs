@@ -255,13 +255,13 @@ impl FeedRacer {
         let racer_path = match self.racer_path.to_str() {
             Some(val) => val,
             None => {
-                println!("Error getting self.racer_path as a str. Very not good. Using the tmp dir.");
+                println!(
+                    "Error getting self.racer_path as a str. Very not good. Using the tmp dir."
+                );
                 "/tmp"
             }
         };
-        let racer_rss_path: PathBuf = [racer_path, RACER_RSS_FILE]
-            .iter()
-            .collect();
+        let racer_rss_path: PathBuf = [racer_path, RACER_RSS_FILE].iter().collect();
         let racer_rss_file = File::create(racer_rss_path)?;
         match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
             Ok(_) => Ok(new_episodes),
@@ -338,7 +338,10 @@ impl FeedRacer {
     //      wants to go to the network or not.
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
-    fn get_original_rss(&mut self, preferred_mode: &RssFile) -> std::io::Result<(rss::Channel, bool)> {
+    fn get_original_rss(
+        &mut self,
+        preferred_mode: &RssFile,
+    ) -> std::io::Result<(rss::Channel, bool)> {
         let mut stored_rss_path = self.racer_path.clone();
         stored_rss_path.push(ORIGINAL_RSS_FILE);
         let stored_rss_file = File::open(&stored_rss_path)?;
@@ -372,7 +375,7 @@ impl FeedRacer {
                             // Overwrite our stored original RSS file
                             // TODO - If a feed pushes out the oldest entries, overwriting won't cut it.
                             //        We'll need to save old items.
-                             match File::create(stored_rss_path) {
+                            match File::create(stored_rss_path) {
                                 Ok(stored_rss_file) => {
                                     match network_file.pretty_write_to(stored_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
                                         Ok(_) => (),
@@ -401,7 +404,10 @@ impl FeedRacer {
             }
         };
 
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Error getting original rss"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Error getting original rss",
+        ))
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
