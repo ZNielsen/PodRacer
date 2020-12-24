@@ -19,9 +19,9 @@ use std::path::Path;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
+const MACRO_IMPORT_STR: &'static str = "{% import \"macros\" as macros %}";
 const MACRO_FILE_NAME: &'static str = "macros.html.tera";
 const MACRO_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/templates/macros.html.tera");
-const MACRO_IMPORT_STR: &'static str = "{% import \"macros\" as macros %}";
 
 fn main() {
     // Make the dirs

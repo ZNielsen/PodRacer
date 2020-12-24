@@ -1,3 +1,5 @@
+#![warn(rust_2018_idioms)]
+
 ////////////////////////////////////////////////////////////////////////////////
 //  File:   main.rs
 //
@@ -10,8 +12,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #[macro_use]
 extern crate rocket;
-extern crate racer;
-extern crate tera;
+//extern crate racer;
+//extern crate tera;
 mod routes;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +66,7 @@ fn scrub_xml(file_name: &PathBuf) {
                         line = line.replace(key, val);
                     }
                 }
+                line.push_str("\n");
                 out_buf.write_all(line.as_bytes())
             })
         })
@@ -103,6 +106,7 @@ fn main() {
         .mount("/", routes![update_all_handler])
         //.mount("/", routes![delete_feed_handler])
         .mount("/", routes![list_feeds_handler])
+        .mount("/", routes![list_feeds_cli_handler])
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_cli_handler])

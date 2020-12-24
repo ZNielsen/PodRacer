@@ -1,0 +1,17 @@
+{% import "macros" as macros %}
+
+{{ macros::static_header() }}
+{{ macros::static_post_open() }}
+
+<h3>Feeds</h3>
+{% for feed in feeds %}
+    <h4> {{ feed.name }}</h4>
+    subscribe_url: {{ feed.subscribe_url }}<br>
+    source_url: {{ feed.source_url }}<br>
+    rate: {{ feed.rate }}<br>
+    start_ep: {{ feed.start_ep }}<br>
+    <br>
+{% endfor %}
+
+{{ macros::static_post_close() }}
+{{ macros::static_footer() }}

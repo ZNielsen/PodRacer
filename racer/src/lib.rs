@@ -30,6 +30,7 @@ pub const PODRACER_DIR: &'static str = ".podracer";
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";
 pub const RACER_FILE: &'static str = "racer.file";
+
 pub const INDENT_AMOUNT: usize = 2; // For pretty printing rss files
 pub const SPACE_CHAR: u8 = 32; // ASCII ' '
 
@@ -99,6 +100,9 @@ impl FeedRacer {
     }
     pub fn get_rate(&self) -> f32 {
         self.rate
+    }
+    pub fn get_start_ep(&self) -> u32 {
+        1
     }
 }
 

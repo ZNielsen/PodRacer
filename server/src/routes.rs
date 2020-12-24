@@ -4,6 +4,7 @@
 //  © Zach Nielsen 2020
 //  All the routes for rocket
 //
+
 ////////////////////////////////////////////////////////////////////////////////
 //  Included Modules
 ////////////////////////////////////////////////////////////////////////////////
@@ -11,19 +12,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use super::racer;
-
+use rocket_contrib::templates::Template;
 use rocket::request::Form;
 use rocket::{Request, State};
-use rocket_contrib::templates::Template;
+use serde::Serialize;
+use tera::Context;
 use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
-use tera::Context;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
+const FEED_LIST_FILE: &'static str = "feed_list";
 const SUCCESS_FILE: &'static str = "submit_success";
 const FAILURE_FILE: &'static str = "submit_failure";
 
@@ -45,6 +46,15 @@ struct FeedFunFacts {
     subscribe_url: String,
 }
 
+#[derive(Serialize)]
+struct FeedInfoForList {
+    name: String,
+    subscribe_url: String,
+    source_url: String,
+    rate: f32,
+    start_ep: u32
+}
+
 #[derive(FromForm)]
 pub struct FormParams {
     pub url: String,
@@ -56,15 +66,6 @@ pub struct FormParams {
 // Rocket Routes
 //
 
-// mod manual {
-//     use rocket::response::NamedFile;
-
-//     #[rocket::get("/rocket-icon.jpg")]
-//     pub async fn icon() -> Option<NamedFile> {
-//         NamedFile::open("static/rocket-icon.jpg").ok()
-//     }
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_form_handler
 //
@@ -73,25 +74,14 @@ pub struct FormParams {
 //  RETURN: The new podcast form file
 //
 #[get("/")]
-// pub fn create_feed_form_handler() -> Template {
-//     Template::render("create_feed_form", &Context::new().into_json())
-// }
 pub fn create_feed_form_handler() -> File {
-    File::open(format!(
-        "{}/{}",
-        super::STATIC_FILE_DIR,
-        "create_feed_form.html"
-    ))
-    .unwrap()
+    let form_file = format!("{}/{}", super::STATIC_FILE_DIR, "create_feed_form.html");
+    println!("Opening file {}", form_file);
+    File::open(form_file).unwrap()
 }
 
 #[catch(404)]
-// pub fn not_found_handler(req: &Request) -> Template {
-//     println!("404 served to: {:?}", req.client_ip());
-//     println!("\t{:?} requested {}", req.real_ip(), req.uri());
-//     Template::render("404", Context::new().into_json())
-// }
-pub fn not_found_handler(req: &Request) -> File {
+pub fn not_found_handler(req: &Request<'_>) -> File {
     println!("404 served to: {:?}", req.client_ip());
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
     File::open(format!("{}/{}", super::STATIC_FILE_DIR, "404.html")).unwrap()
@@ -108,7 +98,7 @@ pub fn not_found_handler(req: &Request) -> File {
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[get("/create_feed?<form_data..>")]
-pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormParams>) -> Template {
+pub fn create_feed_handler(config: State<'_, RocketConfig>, form_data: Form<FormParams>) -> Template {
     let mut context = Context::new();
     match create_feed(racer::RacerCreationParams {
         address: config.address.clone(),
@@ -147,7 +137,7 @@ pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormPara
 //
 #[post("/create_feed_cli?<url>&<rate>", rank = 2)]
 pub fn create_feed_cli_handler(
-    config: State<RocketConfig>,
+    config: State<'_, RocketConfig>,
     url: String,
     rate: f32,
 ) -> Result<String, String> {
@@ -180,7 +170,7 @@ pub fn create_feed_cli_handler(
 //
 #[post("/create_feed_cli?<url>&<rate>&<start_ep>", rank = 1)]
 pub fn create_feed_cli_ep_handler(
-    config: State<RocketConfig>,
+    config: State<'_, RocketConfig>,
     url: String,
     rate: f32,
     start_ep: usize,
@@ -275,7 +265,7 @@ pub fn update_all_handler() -> Result<(), String> {
 //}
 
 ////////////////////////////////////////////////////////////////////////////////
-//  NAME:   list_feeds_handler
+//  NAME:   list_feeds_cli_handler
 //
 //  NOTES:
 //      List all the feeds on this server. Gives a list of podcasts by the
@@ -283,8 +273,8 @@ pub fn update_all_handler() -> Result<(), String> {
 //  ARGS:   None
 //  RETURN: Result string - either the feeds or info on what failed
 //
-#[get("/list_feeds")]
-pub fn list_feeds_handler() -> Result<String, String> {
+#[get("/list_feeds_cli")]
+pub fn list_feeds_cli_handler() -> Result<String, String> {
     let mut ret = String::new();
     let racers = match racer::get_all_racers() {
         Ok(val) => val,
@@ -307,6 +297,45 @@ pub fn list_feeds_handler() -> Result<String, String> {
 
     Ok(ret)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//  NAME:   list_feeds_handler
+//
+//  NOTES:
+//      List all the feeds on this server. Gives a list of podcasts by the
+//      directory names: <podcast_name>_<rate>_<feed creation date>
+//  ARGS:   None
+//  RETURN: Result string - either the feeds or info on what failed
+//
+#[get("/list_feeds")]
+pub fn list_feeds_handler() -> Template {
+    let mut context = Context::new();
+
+    let racers = match racer::get_all_racers() {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error getting racers: {}", e);
+            return Template::render(FEED_LIST_FILE, &context.into_json())
+        }
+    };
+
+    // Parse into a vector of FeedInfoForList
+    let mut feed_infos = Vec::new();
+    for racer in racers {
+
+        feed_infos.push( FeedInfoForList {
+            name: racer.get_racer_name().to_str().unwrap().to_owned(),
+            subscribe_url: racer.get_subscribe_url().to_owned(),
+            source_url: racer.get_source_url().to_owned(),
+            rate: racer.get_rate(),
+            start_ep: racer.get_start_ep()
+        });
+    }
+
+    context.insert("feeds", &feed_infos);
+    Template::render(FEED_LIST_FILE, &context.into_json())
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   serve_rss_handler
 //
@@ -365,10 +394,10 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     let path: PathBuf = [
         feed_racer.get_racer_path().to_str().unwrap(),
         racer::ORIGINAL_RSS_FILE,
-    ]
-    .iter()
-    .collect();
+    ].iter().collect();
+
     super::scrub_xml(&path);
+
     println!("Getting file from {}", path.display());
     let file = File::open(&path).unwrap();
     let mut buf = std::io::BufReader::new(&file);
