@@ -367,7 +367,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
         racer::ORIGINAL_RSS_FILE,
     ].iter().collect();
 
-    super::scrub_xml(&path);
+    // racer::scrub_xml_file(&path);
 
     println!("Getting file from {}", path.display());
     let file = File::open(&path).unwrap();

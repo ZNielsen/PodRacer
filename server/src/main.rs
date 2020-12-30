@@ -21,9 +21,6 @@ use rocket::fairing::AdHoc;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
 use routes::*;
-use std::fs::File;
-use std::io::{BufRead, Write};
-use std::path::PathBuf;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -31,52 +28,6 @@ use std::path::PathBuf;
 // `web` is a symlink to the OUT_DIR location, see build.rs
 const STATIC_FILE_DIR: &'static str = "server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//  NAME:   scrub_xml
-//
-//  NOTES:
-//      Some rss feeds don't properly escape things. Properly escape known issues.
-//      This is not really scalable, but if I'm the only one using it then it should be more or
-//      less fine.
-//  ARGS:   file_name - The file to scrub and replace
-//  RETURN: None
-//
-fn scrub_xml(file_name: &PathBuf) {
-    // Known bad strings
-    let mut subs = std::collections::HashMap::new();
-    subs.insert("& ".to_owned(), "&amp; ".to_owned());
-
-    //
-    // Go over everything and substitute known issues
-    //
-    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
-    let file = File::open(file_name).expect("Could not open original file");
-    let in_buf = std::io::BufReader::new(&file);
-    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
-    let mut out_buf = std::io::BufWriter::new(scrubbed_file);
-    in_buf
-        .lines()
-        .map(|line_res| {
-            line_res.and_then(|mut line| {
-                for (key, val) in &subs {
-                    if line.contains(key) {
-                        line = line.replace(key, val);
-                    }
-                }
-                out_buf.write_all(line.as_bytes())
-            })
-        })
-        .collect::<Result<(), _>>()
-        .expect("IO failed");
-
-    // Replace original with scrubbed file
-    std::fs::rename(
-        std::path::Path::new(&tmp_file_name),
-        std::path::Path::new(&file_name),
-    )
-    .expect("Failed to overwrite file");
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   main
