@@ -360,6 +360,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
         Err(e) => return Err(e),
     };
     println!("{}", feed_racer);
+    println!("Success creating feed!");
 
     // Grab some info to return
     let path: PathBuf = [
@@ -367,7 +368,10 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
         racer::ORIGINAL_RSS_FILE,
     ].iter().collect();
 
-    // racer::scrub_xml_file(&path);
+    // This should not be needed, but it is.
+    // Look into why this can't be removed -> It's needed because rss writes a file it can't read
+    // GH-33 GH-39
+    racer::scrub_xml_file(&path);
 
     println!("Getting file from {}", path.display());
     let file = File::open(&path).unwrap();
