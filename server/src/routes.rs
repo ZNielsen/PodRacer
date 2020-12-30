@@ -373,7 +373,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     // GH-33 GH-39
     racer::scrub_xml_file(&path);
 
-    println!("Getting file from {}", path.display());
+    println!("Getting stats from file at {}", path.display());
     let file = File::open(&path).unwrap();
     let mut buf = std::io::BufReader::new(&file);
     let feed = rss::Channel::read_from(&mut buf).unwrap();
