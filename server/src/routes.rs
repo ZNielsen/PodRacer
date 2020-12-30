@@ -365,10 +365,10 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     let path: PathBuf = [
         feed_racer.get_racer_path().to_str().unwrap(),
         racer::ORIGINAL_RSS_FILE,
-    ]
-    .iter()
-    .collect();
+    ].iter().collect();
+
     super::scrub_xml(&path);
+
     println!("Getting file from {}", path.display());
     let file = File::open(&path).unwrap();
     let mut buf = std::io::BufReader::new(&file);

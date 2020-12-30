@@ -89,13 +89,6 @@ fn scrub_xml(file_name: &PathBuf) {
 //  RETURN: None
 //
 fn main() {
-    // Use globbing.
-    // TODO - look into lazy_static! here.
-    // let tera = match Tera::new("templates/**/*.html.tera") {
-    //     Ok(t) => t,
-    //     Err(e) => panic!("Tera parsing error(s): {}", e),
-    // };
-
     let rocket = rocket::ignite()
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
