@@ -18,7 +18,7 @@ use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs::File;
-use std::io::{BufReader, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -338,6 +338,7 @@ impl FeedRacer {
     //      wants to go to the network or not.
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
+
     fn get_original_rss(
         &mut self,
         preferred_mode: &RssFile,
@@ -666,9 +667,24 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
         },
         Err(e) => return Err(Box::new(e)),
     };
-    // scrub_bytes(&content);   // Is this needed?
-    let channel = rss::Channel::read_from(&content[..])?;
-    Ok(channel)
+
+    //
+    // Scrub the file
+    //
+    let buf_content = BufReader::new(&content[..]);
+    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
+    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
+    scrub_xml_content_to_file(buf_content, &scrubbed_file);
+    let scrubbed_file = File::open(&tmp_file_name).expect("Failed to open tmp scrub file");
+    let scrubbed_buff = std::io::BufReader::new(&scrubbed_file);
+
+    match rss::Channel::read_from(scrubbed_buff) {
+        Ok(channel) => Ok(channel),
+        Err(e) => {
+            println!("Failure when downloading rss channel");
+            Err(Box::new(e))
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -756,6 +772,65 @@ pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
     }
 
     Ok(racers)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  NAME:   scrub_xml_content_to_file
+//
+//  NOTES:
+//      Some rss feeds don't properly escape things. Properly escape known issues.
+//      This is not really scalable, but if I'm the only one using it then it should be more or
+//      less fine.
+//  ARGS:   file_name - The file to scrub and replace
+//  RETURN: None
+//
+pub fn scrub_xml_content_to_file<B: BufRead>(in_buf: B, file: &File) {
+    // Known bad strings
+    let mut subs = std::collections::HashMap::new();
+    subs.insert("& ".to_owned(), "&amp; ".to_owned());
+    subs.insert("&source".to_owned(), "&amp;source".to_owned());
+    subs.insert("&stitched".to_owned(), "&amp;stitched".to_owned());
+
+    let mut out_buf = std::io::BufWriter::new(file);
+    in_buf
+        .lines()
+        .map(|line_res| {
+            line_res.and_then(|mut line| {
+                for (key, val) in &subs {
+                    if line.contains(key) {
+                        line = line.replace(key, val);
+                    }
+                }
+                out_buf.write_all(line.as_bytes())
+            })
+        })
+        .collect::<Result<(), _>>()
+        .expect("IO failed");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  NAME:   scrub_xml_file
+//
+//  NOTES:
+//      Some rss feeds don't properly escape things. Properly escape known issues.
+//      This is not really scalable, but if I'm the only one using it then it should be more or
+//      less fine.
+//  ARGS:   file_name - The file to scrub and replace
+//  RETURN: None
+//
+pub fn scrub_xml_file(file_name: &PathBuf) {
+    let tmp_file_name = "/tmp/scrubbed.rss".to_owned();
+    let scrubbed_file = File::create(&tmp_file_name).expect("Failed to create tmp scrub file");
+    let file = File::open(file_name).expect("Could not open original file");
+    let in_buf = std::io::BufReader::new(&file);
+    scrub_xml_content_to_file(in_buf, &scrubbed_file);
+
+    // Replace original with scrubbed file
+    std::fs::rename(
+        std::path::Path::new(&tmp_file_name),
+        std::path::Path::new(&file_name),
+    )
+    .expect("Failed to overwrite file");
 }
 
 //
