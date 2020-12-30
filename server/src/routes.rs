@@ -368,7 +368,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     ]
     .iter()
     .collect();
-    super::scrub_xml(&path);
+    // racer::scrub_xml_file(&path);
     println!("Getting file from {}", path.display());
     let file = File::open(&path).unwrap();
     let mut buf = std::io::BufReader::new(&file);
