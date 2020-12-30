@@ -25,7 +25,8 @@ use std::path::{Path, PathBuf};
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 pub const SCHEMA_VERSION: &'static str = "1.0.0";
-pub const PODRACER_DIR: &'static str = ".podracer";
+// pub const PODRACER_DIR: &'static str = ".podracer";
+pub const PODRACER_DIR: &'static str = ".config/pod_racer";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";
@@ -345,18 +346,33 @@ impl FeedRacer {
     ) -> std::io::Result<(rss::Channel, bool)> {
         let mut stored_rss_path = self.racer_path.clone();
         stored_rss_path.push(ORIGINAL_RSS_FILE);
-        let stored_rss_file = File::open(&stored_rss_path)?;
-        let buf_reader = BufReader::new(stored_rss_file);
-        let stored_rss = rss::Channel::read_from(buf_reader);
+        let stored_rss_file = match File::open(&stored_rss_path) {
+            Ok(val) => Some(val),
+            Err(e) => {
+                println!("Error opening original rss file: {}", e);
+                None
+            }
+        };
+        let stored_rss = if let Some(f) = stored_rss_file {
+            let buf_reader = BufReader::new(f);
+            match rss::Channel::read_from(buf_reader) {
+                Ok(val) => Some(val),
+                Err(e) => {
+                    println!("Error reading rss channel from disk: {}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
 
         let (stored_rss, functional_mode) = match stored_rss {
-            Ok(val) => {
+            Some(val) => {
                 // We do have a file on disk, so see if we need to download or not
                 (Some(val), preferred_mode)
             }
-            Err(e) => {
+            None => {
                 // If we don't have a stored file, we have to download.
-                println!("Couldn't get rss file on disk: {}", e);
                 (None, &RssFile::Download)
             }
         };
@@ -801,6 +817,7 @@ pub fn scrub_xml_content_to_file<B: BufRead>(in_buf: B, file: &File) {
                         line = line.replace(key, val);
                     }
                 }
+                line.push_str("\n");
                 out_buf.write_all(line.as_bytes())
             })
         })
