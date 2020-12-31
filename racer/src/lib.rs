@@ -263,9 +263,13 @@ impl FeedRacer {
             }
         };
         let racer_rss_path: PathBuf = [racer_path, RACER_RSS_FILE].iter().collect();
-        let racer_rss_file = File::create(racer_rss_path)?;
+        let racer_rss_file = File::create(&racer_rss_path)?;
         match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
-            Ok(_) => Ok(new_episodes),
+            Ok(_) => {
+                // Need to scrub on write since pretty_write doesn't write valid xml
+                scrub_xml_file(&racer_rss_path);
+                Ok(new_episodes)
+            },
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
         }
     }
