@@ -14,6 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use futures::join;
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -508,7 +509,7 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 //      preferred_mode - Whether we prefer to download a fresh copy or not.
 //  RETURN: A result. Typically only fails on I/O or network stuff.
 //
-fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
+async fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
     // Load in racer file
     let mut racer = get_racer_at_path(path)?;
 
@@ -554,6 +555,9 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
+
+    let futures = Vec::new();
+
     for podcast_dir in podcast_dirs {
         let path = match podcast_dir {
             Ok(val) => val.path(),
@@ -563,21 +567,33 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
             Some(val) => val,
             None => return Err(format!("Tried to open empty path")),
         };
-        match update_racer_at_path(path_str, &RssFile::Download) {
-            Ok(new_eps) => {
-                if new_eps {
-                    num_with_new_eps += 1;
-                }
-            }
-            Err(e) => {
-                return Err(format!(
-                    "Could not update path {}. Error was: {}",
-                    path_str, e
-                ))
-            }
-        };
+
+        futures.push(update_racer_at_path(path_str, &RssFile::Download));
         counter += 1;
     }
+
+    let results: Vec<Option<bool>> = join!(futures.iter().collect()).collect();
+
+    for result_res in results {
+        match result_res {
+            Some(result) => {
+                match result {
+                    Ok(new_eps) => {
+                        if new_eps {
+                            num_with_new_eps += 1;
+                        }
+                    }
+                    Err(e) => {
+                        println!("Could not update path {}. Error was: {}",
+                            "dummy path", e);
+                    }
+                }
+            }
+            None => println!("Missing a result - it was none");
+        };
+
+    };
+
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
         Ok(val) => val,
