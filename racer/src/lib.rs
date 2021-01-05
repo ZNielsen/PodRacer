@@ -547,8 +547,12 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 //
 pub fn update_all() -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
+
     let mut counter = 0;
     let mut num_with_new_eps = 0;
+    let mut ret_str = String::new();
+    let mut threads = Vec::new();
+
     let podcast_dirs = match get_all_podcast_dirs() {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
@@ -559,24 +563,32 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
             Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
         };
         let path_str = match path.to_str() {
-            Some(val) => val,
+            Some(val) => val.to_owned(),
             None => return Err(format!("Tried to open empty path")),
         };
-        match update_racer_at_path(path_str, &RssFile::Download) {
-            Ok(new_eps) => {
-                if new_eps {
-                    num_with_new_eps += 1;
+
+        let mut ret_str_ref = &ret_str;
+
+        let t = std::thread::Builder::new()
+            .name(format!(""))
+            .spawn(move || loop {
+                match update_racer_at_path(&path_str, &RssFile::Download) {
+                    Ok(new_eps) => {
+                        if new_eps {
+                            num_with_new_eps += 1;
+                        }
+                    }
+                    Err(e) => Err(format!("Could not update path {}. Error was: {}\n", path_str, e)),
                 }
-            }
-            Err(e) => {
-                return Err(format!(
-                    "Could not update path {}. Error was: {}",
-                    path_str, e
-                ))
-            }
-        };
+            });
+        threads.push(t);
         counter += 1;
     }
+    //if ret_str != "" {
+    //    return Err(ret_str);
+    //}
+    for thread in
+
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
         Ok(val) => val,
