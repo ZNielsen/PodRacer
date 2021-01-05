@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use futures::join;
+use futures::select;
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -47,7 +47,6 @@ pub struct RacerCreationParams {
 pub struct UpdateMetadata {
     pub num_updated: u64,
     pub time: std::time::Duration,
-    pub num_with_new_eps: u64,
 }
 
 // Should we attempt to download the original RSS file, or just look at what we have?
@@ -509,11 +508,24 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 //      preferred_mode - Whether we prefer to download a fresh copy or not.
 //  RETURN: A result. Typically only fails on I/O or network stuff.
 //
-async fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
+async fn update_racer_at_path(path: String, preferred_mode: &RssFile) {
     // Load in racer file
-    let mut racer = get_racer_at_path(path)?;
+    let mut racer = match get_racer_at_path(&path) {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error getting racer at path {}: {}", &path, e);
+            return
+        },
+    };
 
-    racer.update(preferred_mode)
+    match racer.update(preferred_mode) {
+        Ok(new_episodes) => {
+            if new_episodes {
+                println!("New episodes of {:?}", racer.get_racer_name());
+            }
+        },
+        Err(e) => println!("Error updating racer at path {}: {}", &path, e),
+    };
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -547,7 +559,7 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 //  ARGS:   None
 //  RETURN: A result containing some metadata about the update or an error string
 //
-pub fn update_all() -> Result<UpdateMetadata, String> {
+pub async fn update_all() -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
     let mut num_with_new_eps = 0;
@@ -556,7 +568,7 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
 
-    let futures = Vec::new();
+    let mut futures = Vec::new();
 
     for podcast_dir in podcast_dirs {
         let path = match podcast_dir {
@@ -568,30 +580,14 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
             None => return Err(format!("Tried to open empty path")),
         };
 
-        futures.push(update_racer_at_path(path_str, &RssFile::Download));
+        futures.push(update_racer_at_path(path_str.to_owned(), &RssFile::Download));
         counter += 1;
     }
 
-    let results: Vec<Option<bool>> = join!(futures.iter().collect()).collect();
-
-    for result_res in results {
-        match result_res {
-            Some(result) => {
-                match result {
-                    Ok(new_eps) => {
-                        if new_eps {
-                            num_with_new_eps += 1;
-                        }
-                    }
-                    Err(e) => {
-                        println!("Could not update path {}. Error was: {}",
-                            "dummy path", e);
-                    }
-                }
-            }
-            None => println!("Missing a result - it was none");
+    loop {
+        select! {
+            complete => break,
         };
-
     };
 
     let end = std::time::SystemTime::now();
@@ -605,7 +601,6 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
     Ok(UpdateMetadata {
         num_updated: counter,
         time: duration,
-        num_with_new_eps: num_with_new_eps,
     })
 }
 
@@ -643,12 +638,8 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
         Err(e) => return Err(format!("failed with error: {}", e)),
     };
     // Run update() on this directory. We just created it, so no need to refresh the rss file
-    match update_racer_at_path(&dir, &RssFile::FromStorage) {
-        Ok(_) => println!(
-            "Subscribe to this URL in your pod catcher: {}",
-            racer.get_subscribe_url()
-        ),
-        Err(e) => return Err(format!("Error writing file: {}", e)),
+    async {
+        update_racer_at_path(dir.to_owned(), &RssFile::FromStorage).await;
     };
 
     Ok(racer)

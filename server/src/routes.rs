@@ -238,10 +238,13 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
 //
 #[post("/update")]
 pub fn update_all_handler() -> Result<(), String> {
-    match racer::update_all() {
-        Ok(_) => Ok(()),
-        Err(string) => Err(format!("Error in update_all_handler: {}", string)),
-    }
+    async {
+        match racer::update_all().await {
+            Ok(_) => Ok(()),
+            Err(string) => return Err(format!("Error in update_all_handler: {}", string)),
+        }
+    };
+    Ok(())
 }
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   delete_feed_handler

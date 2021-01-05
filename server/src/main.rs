@@ -69,12 +69,14 @@ fn main() {
         }));
 
     // Manually update on start
-    match racer::update_all() {
-        Ok(update_metadata) => println!(
-            "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
-            update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
-        ),
-        Err(string) => println!("Error in update_all on boot: {}", string),
+    async {
+        match racer::update_all().await {
+            Ok(update_metadata) => println!(
+                "Manually updated on boot. Did {} feeds in {:?}.",
+                update_metadata.num_updated, update_metadata.time
+            ),
+            Err(string) => println!("Error in update_all on boot: {}", string),
+        };
     };
 
     let duration: u64 = match rocket.state::<u64>() {
@@ -87,19 +89,20 @@ fn main() {
         .name("Updater".to_owned())
         .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
-            print!("Updating all feeds... ");
-            match racer::update_all() {
-                Ok(update_metadata) => {
-                    println!(
-                        "Done. Did {} feeds in {:?} ({} feeds with new episodes).",
-                        update_metadata.num_updated,
-                        update_metadata.time,
-                        update_metadata.num_with_new_eps
-                    );
-                }
-                Err(string) => {
-                    println!("Error in update_all in update thread: {}", string);
-                }
+            println!("Updating all feeds... ");
+            async {
+                match racer::update_all().await {
+                    Ok(update_metadata) => {
+                        println!(
+                            "Done. Did {} feeds in {:?}.",
+                            update_metadata.num_updated,
+                            update_metadata.time,
+                        );
+                    }
+                    Err(string) => {
+                        println!("Error in update_all in update thread: {}", string);
+                    }
+                };
             };
         });
     rocket.launch();
