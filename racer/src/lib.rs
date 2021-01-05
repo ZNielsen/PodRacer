@@ -562,7 +562,6 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 pub async fn update_all() -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
-    let mut num_with_new_eps = 0;
     let podcast_dirs = match get_all_podcast_dirs() {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
