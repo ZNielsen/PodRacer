@@ -373,7 +373,7 @@ impl FeedRacer {
 
         let (stored_rss, functional_mode) = match stored_rss {
             Some(val) => {
-                // We do have a file on disk, so see if we need to download or not
+                // We do have a file on disk, so use whatever the requested mode was
                 (Some(val), preferred_mode)
             }
             None => {
