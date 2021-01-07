@@ -14,6 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use futures::poll::Poll;
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -583,6 +584,22 @@ pub async fn update_all() -> Result<UpdateMetadata, String> {
     }
 
     // Loop over all futures in a statemachine
+    let mut got_all = false;
+    let mut done = HashSet::new();
+    while(!got_all) {
+        for future in futures {
+            if !done.contains(future) {
+                match futures.poll() {
+                    Poll:Pending => _
+                    Poll:Ready(_) => done.insert(future);
+                }
+            }
+        }
+
+        if futures.len() == done.len() {
+            got_all = true;
+        }
+    }
 
 
     let end = std::time::SystemTime::now();
