@@ -586,6 +586,7 @@ pub async fn update_all() -> Result<UpdateMetadata, String> {
     loop {
         select! {
             complete => break,
+            default => println!("Still chugging..."),
         };
     };
 
