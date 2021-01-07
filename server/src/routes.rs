@@ -331,6 +331,7 @@ pub fn serve_rss_handler(podcast: String) -> Option<File> {
     ]
     .iter()
     .collect();
+    println!("Getting podcast from dir: {:?}", path);
     match std::fs::File::open(path) {
         Ok(file) => Some(file),
         Err(_) => None,

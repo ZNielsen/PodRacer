@@ -267,7 +267,8 @@ impl FeedRacer {
         match rss.pretty_write_to(racer_rss_file, SPACE_CHAR, INDENT_AMOUNT) {
             Ok(_) => {
                 // Need to scrub on write since pretty_write doesn't write valid xml
-                scrub_xml_file(&racer_rss_path);
+                // Should be fixed with GH-33
+                //scrub_xml_file(&racer_rss_path);
                 Ok(new_episodes)
             },
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
@@ -353,7 +354,7 @@ impl FeedRacer {
         let stored_rss_file = match File::open(&stored_rss_path) {
             Ok(val) => Some(val),
             Err(e) => {
-                println!("Error opening original rss file: {}", e);
+                println!("Error opening original rss file ({}): {}", stored_rss_path.display(), e);
                 None
             }
         };
@@ -675,7 +676,6 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
 //
 //  NOTES:
 //      Handles the network stuff for getting an rss file from the network.
-//      TODO - Might need to scrub the input here
 //  ARGS:   url - the url of the file to get
 //  RETURN: A channel or error information
 //
