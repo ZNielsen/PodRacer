@@ -79,10 +79,12 @@ fn main() {
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
-    let duration: u64 = match rocket.state::<u64>() {
-        Some(val) => val.clone(),
+    let duration: u64 = match rocket.state::<UpdateFactor>() {
+        Some(val) => (val.0 * 60),
         None => (59 * 60),
     };
+
+    println!("Spawning update thread. Will run every {} seconds.", duration);
 
     // Create update thread - update every <duration> (default to every hour if not specified in Rocket.toml)
     let _update_thread = std::thread::Builder::new()
