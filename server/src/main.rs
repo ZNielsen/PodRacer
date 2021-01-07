@@ -17,7 +17,7 @@ mod routes;
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use futures;
+//use futures;
 use rocket::fairing::AdHoc;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
@@ -70,7 +70,8 @@ fn main() {
         }));
 
     // Manually update on start
-    let update_res = futures::executor::block_on(racer::update_all());
+    //let update_res = futures::executor::block_on(racer::update_all());
+    let update_res = racer::update_all();
     match update_res {
         Ok(update_metadata) => println!(
             "Manually updated on boot. Did {} feeds in {:?}.",
@@ -92,7 +93,8 @@ fn main() {
         .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             println!("Updating all feeds... ");
-            let update_res = futures::executor::block_on(racer::update_all());
+            //let update_res = futures::executor::block_on(racer::update_all());
+            let update_res = racer::update_all();
             match update_res {
                 Ok(update_metadata) => {
                     println!(

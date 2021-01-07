@@ -14,7 +14,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use futures::poll::Poll;
+use futures::executor::LocalPool;
+use futures::task::LocalSpawnExt;
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -567,7 +568,9 @@ pub async fn update_all() -> Result<UpdateMetadata, String> {
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
 
-    let mut futures = Vec::new();
+    //let mut futures = Vec::new();
+    let mut pool = LocalPool::new();
+    let spawner = pool.spawner();
 
     for podcast_dir in podcast_dirs {
         let path = match podcast_dir {
@@ -579,28 +582,16 @@ pub async fn update_all() -> Result<UpdateMetadata, String> {
             None => return Err(format!("Tried to open empty path")),
         };
 
-        futures.push(update_racer_at_path(path_str.to_owned(), &RssFile::Download));
+        match spawner.spawn_local(update_racer_at_path(path_str.to_owned(), &RssFile::Download)) {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Error spawning local for path {}: {}", path_str, e);
+            },
+        };
         counter += 1;
     }
 
-    // Loop over all futures in a statemachine
-    let mut got_all = false;
-    let mut done = HashSet::new();
-    while(!got_all) {
-        for future in futures {
-            if !done.contains(future) {
-                match futures.poll() {
-                    Poll:Pending => _
-                    Poll:Ready(_) => done.insert(future);
-                }
-            }
-        }
-
-        if futures.len() == done.len() {
-            got_all = true;
-        }
-    }
-
+    pool.run();
 
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
