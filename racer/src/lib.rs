@@ -238,7 +238,7 @@ impl FeedRacer {
             item.set_pub_date(racer_pub_date);
             item.set_description(
                 item.description().unwrap_or("").to_owned()
-                    + "<br><br>"
+                    + "\r\r"
                     + "Originally published on "
                     + &format!("{}", original_pub_date),
             );
@@ -806,10 +806,11 @@ pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
 //
 pub fn scrub_xml_content_to_file<B: BufRead>(in_buf: B, file: &File) {
     // Known bad strings
-    let mut subs = std::collections::HashMap::new();
-    subs.insert("& ".to_owned(), "&amp; ".to_owned());
-    subs.insert("&source".to_owned(), "&amp;source".to_owned());
-    subs.insert("&stitched".to_owned(), "&amp;stitched".to_owned());
+    let subs: std::collections::HashMap<String, String> =
+        [("& ".to_owned(), "&amp; ".to_owned())]
+        .iter().cloned().collect();
+    //subs.insert("&source".to_owned(), "&amp;source".to_owned());
+    //subs.insert("&stitched".to_owned(), "&amp;stitched".to_owned());
 
     let mut out_buf = std::io::BufWriter::new(file);
     in_buf
