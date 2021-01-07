@@ -14,7 +14,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
-use futures::select;
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -583,12 +582,8 @@ pub async fn update_all() -> Result<UpdateMetadata, String> {
         counter += 1;
     }
 
-    loop {
-        select! {
-            complete => break,
-            default => println!("Still chugging..."),
-        };
-    };
+    // Loop over all futures in a statemachine
+
 
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
