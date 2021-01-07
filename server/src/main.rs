@@ -17,6 +17,7 @@ mod routes;
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use futures;
 use rocket::fairing::AdHoc;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
@@ -69,14 +70,13 @@ fn main() {
         }));
 
     // Manually update on start
-    async {
-        match racer::update_all().await {
-            Ok(update_metadata) => println!(
-                "Manually updated on boot. Did {} feeds in {:?}.",
-                update_metadata.num_updated, update_metadata.time
-            ),
-            Err(string) => println!("Error in update_all on boot: {}", string),
-        };
+    let update_res = futures::executor::block_on(racer::update_all());
+    match update_res {
+        Ok(update_metadata) => println!(
+            "Manually updated on boot. Did {} feeds in {:?}.",
+            update_metadata.num_updated, update_metadata.time
+        ),
+        Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
     let duration: u64 = match rocket.state::<u64>() {
@@ -90,19 +90,18 @@ fn main() {
         .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             println!("Updating all feeds... ");
-            async {
-                match racer::update_all().await {
-                    Ok(update_metadata) => {
-                        println!(
-                            "Done. Did {} feeds in {:?}.",
-                            update_metadata.num_updated,
-                            update_metadata.time,
-                        );
-                    }
-                    Err(string) => {
-                        println!("Error in update_all in update thread: {}", string);
-                    }
-                };
+            let update_res = futures::executor::block_on(racer::update_all());
+            match update_res {
+                Ok(update_metadata) => {
+                    println!(
+                        "Done. Did {} feeds in {:?}.",
+                        update_metadata.num_updated,
+                        update_metadata.time,
+                    );
+                }
+                Err(string) => {
+                    println!("Error in update_all in update thread: {}", string);
+                }
             };
         });
     rocket.launch();

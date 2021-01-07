@@ -13,6 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 use super::racer;
 
+use futures;
 use rocket::request::Form;
 use rocket::{Request, State};
 use rocket_contrib::templates::Template;
@@ -238,13 +239,11 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
 //
 #[post("/update")]
 pub fn update_all_handler() -> Result<(), String> {
-    async {
-        match racer::update_all().await {
-            Ok(_) => Ok(()),
-            Err(string) => return Err(format!("Error in update_all_handler: {}", string)),
-        }
-    };
-    Ok(())
+    let res = futures::executor::block_on(racer::update_all());
+    match res {
+        Ok(_) => Ok(()),
+        Err(string) => return Err(format!("Error in update_all_handler: {}", string)),
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   delete_feed_handler

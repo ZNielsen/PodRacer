@@ -637,9 +637,7 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
         Err(e) => return Err(format!("failed with error: {}", e)),
     };
     // Run update() on this directory. We just created it, so no need to refresh the rss file
-    async {
-        update_racer_at_path(dir.to_owned(), &RssFile::FromStorage).await;
-    };
+    futures::executor::block_on(update_racer_at_path(dir.to_owned(), &RssFile::FromStorage));
 
     Ok(racer)
 }
