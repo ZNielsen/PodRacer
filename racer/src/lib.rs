@@ -238,9 +238,9 @@ impl FeedRacer {
             item.set_pub_date(racer_pub_date);
             item.set_description(
                 item.description().unwrap_or("").to_owned()
-                    + "\r\r"
+                    + "\n\n"
                     + "Originally published on "
-                    + &format!("{}", original_pub_date),
+                    + &format!("{}", original_pub_date)
             );
         }
         // Now that we have the items we want, overwrite the objects items.
