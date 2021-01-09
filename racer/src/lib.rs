@@ -236,12 +236,10 @@ impl FeedRacer {
             };
 
             item.set_pub_date(racer_pub_date);
-            item.set_description(
-                item.description().unwrap_or("").to_owned()
-                    + "\n\n"
-                    + "Originally published on "
-                    + &format!("{}", original_pub_date)
-            );
+            let new_description = item.description().unwrap_or("").to_owned()
+                    + "<br><br>" + "Originally published on "
+                    + &format!("{}", original_pub_date);
+            item.set_description(new_description);
         }
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
