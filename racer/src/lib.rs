@@ -95,6 +95,14 @@ impl FeedRacer {
     pub fn get_racer_name(&self) -> &std::ffi::OsStr {
         self.racer_path.file_name().unwrap()
     }
+    pub fn get_podcast_name(&self) -> String {
+        let racer_path = self.racer_path.to_str().unwrap();
+        let original_rss_path: PathBuf = [racer_path, ORIGINAL_RSS_FILE].iter().collect();
+        let original_rss_file = File::open(&original_rss_path).unwrap();
+        let buff = std::io::BufReader::new(&original_rss_file);
+        let rss = rss::Channel::read_from(buff).unwrap();
+        rss.title().to_owned()
+    }
     pub fn get_source_url(&self) -> &str {
         &self.source_url
     }
