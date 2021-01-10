@@ -292,9 +292,10 @@ pub fn list_feeds_handler() -> Result<String, String> {
     };
 
     // Parse into a string to be fed back to curl
-    for racer in racers {
+    for mut racer in racers {
+        ret += &format!("Podcast: {}", racer.get_podcast_title());
         ret += &format!(
-            "Podcast Folder: {:?}\n",
+            "\tpodcast folder: {:?}\n",
             racer.get_racer_path().file_name().unwrap()
         );
         ret += &format!("\tsubscribe_url: {}\n", racer.get_subscribe_url());
