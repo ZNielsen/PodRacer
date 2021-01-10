@@ -68,6 +68,7 @@ pub struct RacerEpisode {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
+    podcast_title: Option<String>,
     racer_path: PathBuf,
     source_url: String,
     subscribe_url: String,
@@ -95,13 +96,19 @@ impl FeedRacer {
     pub fn get_racer_name(&self) -> &std::ffi::OsStr {
         self.racer_path.file_name().unwrap()
     }
-    pub fn get_podcast_name(&self) -> String {
-        let racer_path = self.racer_path.to_str().unwrap();
-        let original_rss_path: PathBuf = [racer_path, ORIGINAL_RSS_FILE].iter().collect();
-        let original_rss_file = File::open(&original_rss_path).unwrap();
-        let buff = std::io::BufReader::new(&original_rss_file);
-        let rss = rss::Channel::read_from(buff).unwrap();
-        rss.title().to_owned()
+    pub fn get_podcast_title(&mut self) -> String {
+        if let Some(title) = &self.podcast_title {
+            title.to_owned()
+        }
+        else {
+            let racer_path = self.racer_path.to_str().unwrap();
+            let original_rss_path: PathBuf = [racer_path, ORIGINAL_RSS_FILE].iter().collect();
+            let original_rss_file = File::open(&original_rss_path).unwrap();
+            let buff = std::io::BufReader::new(&original_rss_file);
+            let rss = rss::Channel::read_from(buff).unwrap();
+            self.podcast_title = Some(rss.title().to_owned());
+            rss.title().to_owned()
+        }
     }
     pub fn get_source_url(&self) -> &str {
         &self.source_url
@@ -156,6 +163,7 @@ impl FeedRacer {
 
         let mut racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
+            podcast_title: None,
             racer_path: PathBuf::from(dir),
             source_url: params.url.to_owned(),
             subscribe_url: subscribe_url.to_str().unwrap().to_owned(),
