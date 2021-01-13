@@ -253,7 +253,7 @@ impl FeedRacer {
 
             item.set_pub_date(racer_pub_date);
             let new_description = item.description().unwrap_or("").to_owned()
-                    + "<br><br>" + "Originally published on "
+                    + "\n\n" + "Originally published on "
                     + &format!("{}", original_pub_date);
             item.set_description(new_description);
         }
