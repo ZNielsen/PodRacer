@@ -252,9 +252,9 @@ impl FeedRacer {
             };
 
             item.set_pub_date(racer_pub_date);
-            let new_description = item.description().unwrap_or("").to_owned()
-                    + "\n\n" + "Originally published on "
-                    + &format!("{}", original_pub_date);
+            let description = item.description().unwrap_or("").to_owned();
+            let mut new_description = description.replace("\r\n", "\n");
+            new_description.push_str(&format!("\n\nOriginally published on {}", original_pub_date));
             item.set_description(new_description);
         }
         // Now that we have the items we want, overwrite the objects items.
