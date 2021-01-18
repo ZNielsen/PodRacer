@@ -250,12 +250,20 @@ impl FeedRacer {
                 Ok(val) => val.with_timezone(&Local).format("%d %b %Y"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
-
             item.set_pub_date(racer_pub_date);
+
+            //
+            // Set description (and content)
+            //
             let description = item.description().unwrap_or("").to_owned();
             let mut new_description = description.replace("\r\n", "\n");
             new_description.push_str(&format!("\n\nOriginally published on {}", original_pub_date));
             item.set_description(new_description);
+
+            let content = item.content().unwrap_or("");
+            let mut new_content = content.replace("\r\n", "\n");
+            new_content.push_str(&format!("<br><br>Originally published on {}", original_pub_date));
+            item.set_content(new_content);
         }
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
