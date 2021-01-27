@@ -883,7 +883,13 @@ pub fn scrub_xml_file(file_name: &PathBuf) {
     .expect("Failed to overwrite file");
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  NAME:   correct_known_rss_issues
+//
+//  NOTES:  Attempt to fix things that I know are wrong in the feeds that I use.
+//  ARGS:   rss - The rss channel to edit
+//  RETURN: None
+//
 pub fn correct_known_rss_issues(rss: &mut rss::Channel) {
     // Check  for itunes:owner element itunes:email
     match &mut rss.itunes_ext {
