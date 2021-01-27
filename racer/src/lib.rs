@@ -903,6 +903,15 @@ pub fn correct_known_rss_issues(rss: &mut rss::Channel) {
     }
 
     // Remove <media:rights status="userCreated" />
+    for item in &mut rss.items {
+        let ext = &mut item.extensions;
+        match ext.get_mut("media") {
+            Some(media) => {
+                media.remove("rights");
+            },
+            None => (),
+        }
+    }
 }
 
 //
