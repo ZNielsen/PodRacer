@@ -253,13 +253,13 @@ impl FeedRacer {
             item.set_pub_date(racer_pub_date);
 
             //
-            // Set description (and content)
+            // Set description + content
             //
             let description = item.description().unwrap_or("").to_owned();
             let mut new_description = description.replace("\r\n", "\n");
             new_description.push_str(&format!("\n\nOriginally published on {}", original_pub_date));
             item.set_description(new_description);
-
+            // Only do content if it is present
             match item.content() {
                 Some(content) => {
                     let mut new_content = content.replace("\r\n", "\n");
@@ -271,6 +271,8 @@ impl FeedRacer {
         }
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
+
+        correct_known_rss_issues(&mut rss);
 
         // Write out the racer.file
         match self.write_to_file() {
@@ -879,6 +881,28 @@ pub fn scrub_xml_file(file_name: &PathBuf) {
         std::path::Path::new(&file_name),
     )
     .expect("Failed to overwrite file");
+}
+
+
+pub fn correct_known_rss_issues(rss: &mut rss::Channel) {
+    // Check  for itunes:owner element itunes:email
+    match &mut rss.itunes_ext {
+        Some(itunes) => {
+            match &mut itunes.owner {
+                Some(owner) => {
+                    if owner.name.is_some() {
+                        if owner.email.is_none() {
+                            owner.set_email("example@example.com".to_owned());
+                        }
+                    }
+                },
+                None => (),
+            }
+        },
+        None => (),
+    }
+
+    // Remove <media:rights status="userCreated" />
 }
 
 //
