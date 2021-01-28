@@ -272,7 +272,7 @@ impl FeedRacer {
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
 
-        correct_known_rss_issues(&mut rss);
+        rss.correct_known_rss_issues();
 
         // Write out the racer.file
         match self.write_to_file() {
@@ -883,39 +883,44 @@ pub fn scrub_xml_file(file_name: &PathBuf) {
     .expect("Failed to overwrite file");
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//  NAME:   correct_known_rss_issues
-//
-//  NOTES:  Attempt to fix things that I know are wrong in the feeds that I use.
-//  ARGS:   rss - The rss channel to edit
-//  RETURN: None
-//
-pub fn correct_known_rss_issues(rss: &mut rss::Channel) {
-    // Check  for itunes:owner element itunes:email
-    match &mut rss.itunes_ext {
-        Some(itunes) => {
-            match &mut itunes.owner {
-                Some(owner) => {
-                    if owner.name.is_some() {
-                        if owner.email.is_none() {
-                            owner.set_email("example@example.com".to_owned());
+trait RssExt {
+    fn correct_known_rss_issues(&mut self);
+}
+impl RssExt for rss::Channel {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   correct_known_rss_issues
+    //
+    //  NOTES:  Attempt to fix things that I know are wrong in the feeds that I use.
+    //  ARGS:   rss - The rss channel to edit
+    //  RETURN: None
+    //
+    fn correct_known_rss_issues(&mut self) {
+        // Check  for itunes:owner element itunes:email
+        match &mut self.itunes_ext {
+            Some(itunes) => {
+                match &mut itunes.owner {
+                    Some(owner) => {
+                        if owner.name.is_some() {
+                            if owner.email.is_none() {
+                                owner.set_email("example@example.com".to_owned());
+                            }
                         }
-                    }
+                    },
+                    None => (),
+                }
+            },
+            None => (),
+        }
+
+        // Remove <media:rights status="userCreated" />
+        for item in &mut self.items {
+            let ext = &mut item.extensions;
+            match ext.get_mut("media") {
+                Some(media) => {
+                    media.remove("rights");
                 },
                 None => (),
             }
-        },
-        None => (),
-    }
-
-    // Remove <media:rights status="userCreated" />
-    for item in &mut rss.items {
-        let ext = &mut item.extensions;
-        match ext.get_mut("media") {
-            Some(media) => {
-                media.remove("rights");
-            },
-            None => (),
         }
     }
 }
