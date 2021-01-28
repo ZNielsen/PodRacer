@@ -263,7 +263,7 @@ impl FeedRacer {
             match item.content() {
                 Some(content) => {
                     let mut new_content = content.replace("\r\n", "\n");
-                    new_content.push_str(&format!("<br><br>Originally published on {}", original_pub_date));
+                    new_content.push_str(&format!("<br>Originally published on {}", original_pub_date));
                     item.set_content(new_content);
                 },
                 None => (),
