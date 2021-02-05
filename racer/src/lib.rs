@@ -895,22 +895,25 @@ impl RssExt for rss::Channel {
     //  RETURN: None
     //
     fn correct_known_rss_issues(&mut self) {
-        // Check  for itunes:owner element itunes:email
-        match &mut self.itunes_ext {
-            Some(itunes) => {
-                match &mut itunes.owner {
-                    Some(owner) => {
-                        if owner.name.is_some() {
-                            if owner.email.is_none() {
-                                owner.set_email("example@example.com".to_owned());
-                            }
-                        }
-                    },
-                    None => (),
-                }
-            },
-            None => (),
-        }
+        //// Check  for itunes:owner element itunes:email
+        //match &mut self.itunes_ext {
+        //    Some(itunes) => {
+        //        match &mut itunes.owner {
+        //            Some(owner) => {
+        //                if owner.name.is_some() {
+        //                    if owner.email.is_none() {
+        //                        owner.set_email("example@example.com".to_owned());
+        //                    }
+        //                }
+        //            },
+        //            None => (),
+        //        }
+        //    },
+        //    None => (),
+        //}
+
+        // Remove iTunes stuff
+        self.set_itunes_ext(None);
 
         // Remove <media:rights status="userCreated" />
         for item in &mut self.items {
