@@ -198,6 +198,10 @@ impl FeedRacer {
 
         // Tack on a `- PodRacer` to the title
         rss.set_title(String::from(rss.title()) + " - PodRacer");
+        match &mut rss.image {
+            Some(image) => image.set_title(String::from(image.title()) + " - PodRacer"),
+            None => (),
+        };
 
         // Drain the items we aren't publishing yet
         let mut items_to_publish: Vec<rss::Item> =
@@ -272,7 +276,7 @@ impl FeedRacer {
         // Now that we have the items we want, overwrite the objects items.
         rss.set_items(items_to_publish);
 
-        rss.correct_known_rss_issues();
+        rss.correct_known_rss_issues(&self.subscribe_url);
 
         // Write out the racer.file
         match self.write_to_file() {
@@ -884,7 +888,7 @@ pub fn scrub_xml_file(file_name: &PathBuf) {
 }
 
 trait RssExt {
-    fn correct_known_rss_issues(&mut self);
+    fn correct_known_rss_issues(&mut self, url: &str);
 }
 impl RssExt for rss::Channel {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -894,26 +898,51 @@ impl RssExt for rss::Channel {
     //  ARGS:   rss - The rss channel to edit
     //  RETURN: None
     //
-    fn correct_known_rss_issues(&mut self) {
-        // Check  for itunes:owner element itunes:email
-        match &mut self.itunes_ext {
-            Some(itunes) => {
-                match &mut itunes.owner {
-                    Some(owner) => {
-                        if owner.name.is_some() {
-                            if owner.email.is_none() {
-                                owner.set_email("example@example.com".to_owned());
-                            }
+    fn correct_known_rss_issues(&mut self, url: &str) {
+        //// Check  for itunes:owner element itunes:email
+        //match &mut self.itunes_ext {
+        //    Some(itunes) => {
+        //        match &mut itunes.owner {
+        //            Some(owner) => {
+        //                if owner.name.is_some() {
+        //                    if owner.email.is_none() {
+        //                        owner.set_email("example@example.com".to_owned());
+        //                    }
+        //                }
+        //            },
+        //            None => (),
+        //        }
+        //    },
+        //    None => (),
+        //}
+
+        // Remove iTunes stuff
+        self.set_itunes_ext(None);
+
+        // Correct self links
+        let ext = &mut self.extensions;
+        match ext.get_mut("atom") {
+            Some(atom) => {
+                for links in atom.get_mut("link") {
+                    for link in links {
+                        match &mut link.attrs.get_mut("rel") {
+                            Some(val) => {
+                                if val.to_lowercase() == "self" {
+                                    link.attrs.insert("href".to_owned(), url.to_owned());
+                                }
+                            },
+                            None => (),
                         }
-                    },
-                    None => (),
+                    }
                 }
             },
             None => (),
-        }
+        };
 
         // Remove <media:rights status="userCreated" />
         for item in &mut self.items {
+            // Remove iTunes stuff
+            item.set_itunes_ext(None);
             let ext = &mut item.extensions;
             match ext.get_mut("media") {
                 Some(media) => {
