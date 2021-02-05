@@ -917,6 +917,7 @@ impl RssExt for rss::Channel {
 
         // Remove <media:rights status="userCreated" />
         for item in &mut self.items {
+            item.set_itunes_ext(None);
             let ext = &mut item.extensions;
             match ext.get_mut("media") {
                 Some(media) => {
