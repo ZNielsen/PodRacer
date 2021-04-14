@@ -25,8 +25,7 @@ use std::path::{Path, PathBuf};
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 pub const SCHEMA_VERSION: &'static str = "1.0.0";
-// pub const PODRACER_DIR: &'static str = ".podracer";
-pub const PODRACER_DIR: &'static str = ".config/pod_racer";
+pub const PODRACER_DIR: &'static str = "/etc/pod_racer";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";
@@ -551,19 +550,15 @@ fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result
 //  NAME:   get_all_podcast_dirs
 //
 //  NOTES:
-//      Gets all the dirs in the PODRACER_DIR (~/.podracer). Each of these dirs has info for one
+//      Gets all the dirs in PODRACER_DIR. Each of these dirs has info for one
 //      feed.
 //      This function must not panic, as it's used in the update thread.
 //  ARGS:   None
 //  RETURN: All the items in the podracer dir
 //
 pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
-    let mut dir = match dirs::home_dir() {
-        Some(val) => val,
-        None => return Err(format!("Error retrieving home dir")),
-    };
-    dir.push(PODRACER_DIR);
-    match Path::read_dir(dir.as_path()) {
+    let dir = String::from(PODRACER_DIR);
+    match Path::read_dir(Path::new(&dir)) {
         Ok(val) => Ok(val),
         Err(e) => return Err(format!("Cannot access dir: {:?}.\nError: {}", dir, e)),
     }
@@ -688,9 +683,7 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
         .replace(" ", "-")
         .replace("/", "-")
         .replace(":", "");
-    let mut dir = String::from(dirs::home_dir().unwrap().to_str().unwrap());
-    dir.push_str("/");
-    dir.push_str(PODRACER_DIR);
+    let mut dir = String::from(PODRACER_DIR);
     dir.push_str("/");
     dir.push_str(scrubbed_pod_name);
     dir.push_str("_");
@@ -747,14 +740,7 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
 //  RETURN: A FeedRacer or None
 //
 pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
-    let mut dir = match dirs::home_dir() {
-        Some(val) => val,
-        None => {
-            println!("Error retrieving home dir");
-            return None;
-        }
-    };
-    dir.push(PODRACER_DIR);
+    let mut dir = PathBuf::from(PODRACER_DIR);
     dir.push(target_dir);
     if dir.is_dir() {
         let racer = get_racer_at_path(dir.as_path().to_str().unwrap()).unwrap();
