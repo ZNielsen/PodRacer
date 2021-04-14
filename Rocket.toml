@@ -1,6 +1,7 @@
 [global]
 template_dir = "server/web/templates/"
-#template_dir = "server/templates/"
+tls.certs = "/etc/letsencrypt/live/podracer.zachn.me/fullchain.pem"
+tls.key = "/etc/letsencrypt/live/podracer.zachn.me/privkey.pem"
 
 [development]
 address = "localhost"
@@ -13,7 +14,7 @@ host = "http://localhost:42069"
 
 [staging]
 address = "0.0.0.0"
-port = 42069
+port = 80
 keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
@@ -22,7 +23,7 @@ host = "http://podracer.zachn.me"
 
 [production]
 address = "0.0.0.0"
-port = 42069
+port = 80
 keep_alive = 5
 log = "normal"
 limits = { forms = 32768 }
