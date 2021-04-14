@@ -167,7 +167,7 @@ pub fn create_feed_cli_handler(
 //  NAME:   create_feed_cli_ep_handler
 //
 //  NOTES:
-//      Creatse a new PodRacer feed, but includes a start episode. This is
+//      Creates a new PodRacer feed, but includes a start episode. This is
 //      probably from the form.
 //  ARGS:
 //      config -
@@ -234,7 +234,7 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
 //
 //  NOTES:  Forces update of all podcast feeds on this server
 //  ARGS:   None
-//  RETURN: A result. If errored, a string containing some error info
+//  RETURN: A result. If error, a string containing some error info
 //
 #[post("/update")]
 pub fn update_all_handler() -> Result<(), String> {
@@ -243,36 +243,6 @@ pub fn update_all_handler() -> Result<(), String> {
         Err(string) => Err(format!("Error in update_all_handler: {}", string)),
     }
 }
-////////////////////////////////////////////////////////////////////////////////
-//  NAME:   delete_feed_handler
-//
-//  NOTES:
-//      Deletes the sepecified feed. No authentication required, so anyone can
-//      get in there and cause havoc. Probs should change that.
-//  ARGS:   podcast - the podcast to delete. Can be a dir name or PodRacer URL
-//  RETURN: Result - strings with info either way
-//
-// Eventually want to expand this to be a button on the web UI after listing all podcasts
-//#[post("/delete_feed?<podcast>")]
-//pub fn delete_feed_handler(podcast: String) -> Result<String, String> {
-//Err(format!("Need to put this behind some sort of auth so random people can't delete things"))
-// // Try dir name first
-// let mut dir = dirs::home_dir().unwrap();
-// dir.push(racer::PODRACER_DIR);
-// dir.push(&podcast);
-// if dir.is_dir() {
-//     // Delete it and return Ok
-//     match std::fs::remove_dir_all(dir.as_path()) {
-//         Ok(_) => return Ok(format!("Podcast deleted from server: {}", &podcast)),
-//         Err(e) => {
-//             println!("Error removing podcast {} from sever: {}", &podcast, e);
-//             return Err(format!("Error removing podcast from server."));
-//         },
-//     };
-// }
-// Not a dir, search for a FeedRacer that has this URL
-// Err(format!("TODO: search racers for this url: {}", podcast))
-//}
 
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   list_feeds_handler
@@ -323,9 +293,7 @@ pub fn list_feeds_handler() -> Result<String, String> {
 pub fn serve_rss_handler(podcast: String) -> Option<File> {
     println!("Serving at {}", chrono::Utc::now().to_rfc3339());
     // Serve the rss file
-    let home = dirs::home_dir()?;
     let path: PathBuf = [
-        home.to_str()?,
         racer::PODRACER_DIR,
         &podcast,
         racer::RACER_RSS_FILE,

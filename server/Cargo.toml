@@ -1,5 +1,5 @@
 [package]
-name = "server"
+name = "pod_racer"
 version = "0.1.0"
 authors = ["Zach Nielsen <zach@zachn.me>"]
 edition = "2018"
