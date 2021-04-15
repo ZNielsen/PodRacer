@@ -16,16 +16,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
+use std::io::{BufRead, BufReader, Write};
+use std::fs::File;
+use std::fmt;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 pub const SCHEMA_VERSION: &'static str = "1.0.0";
-pub const PODRACER_DIR: &'static str = "/etc/pod_racer";
+pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";

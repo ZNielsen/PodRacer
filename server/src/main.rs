@@ -26,7 +26,7 @@ use routes::*;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 // `web` is a symlink to the OUT_DIR location, see build.rs
-const STATIC_FILE_DIR: &'static str = "server/web/static";
+const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,17 @@ const STATIC_FILE_DIR: &'static str = "server/web/static";
 //  RETURN: None
 //
 fn main() {
-    let rocket = rocket::ignite()
+    let config = rocket::Config::build(rocket::config::Environment::Production)
+        .root(std::path::Path::new("/etc/podracer/config"))
+        .address("0.0.0.0")
+        .port(42069)
+        .keep_alive(5)
+        .log_level(rocket::config::LoggingLevel::Normal)
+        .extra("update_factor", 45)
+        .extra("host", "http://podracer.zachn.me")
+        .finalize().expect("Config is valid");
+
+    let rocket = rocket::custom(config)
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![update_one_handler])
@@ -55,7 +65,7 @@ fn main() {
         .mount("/", StaticFiles::from(STATIC_FILE_DIR))
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
-            // Parse out custom config values
+            // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
                 address: rocket.config().get_str("host").unwrap().to_owned(),
                 port: rocket.config().port as u64,
