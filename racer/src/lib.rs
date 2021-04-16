@@ -371,7 +371,7 @@ impl FeedRacer {
     // TODO -> Wrap this return in an option for the case where there is no stored file and the
     //         network request fails.
     //  ARGS:
-    //      preferred_mode - the requested mode. We don't always honnor it, but it lets us know if the asker
+    //      preferred_mode - the requested mode. We don't always honor it, but it lets us know if the asker
     //      wants to go to the network or not.
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
@@ -623,7 +623,7 @@ pub fn update_all() -> Result<UpdateMetadata, String> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed
 //
-//  NOTES:  Creates a new feedracer object + sets up the diretcory and files
+//  NOTES:  Creates a new feedracer object + sets up the directory and files
 //  ARGS:   params - All the params needed to make a racer
 //  RETURN: A FeedRacer or error String
 //
@@ -668,7 +668,7 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_racer_dir
 //
-//  NOTES:  Creates the direcotry for a racer with these parameters
+//  NOTES:  Creates the directory for a racer with these parameters
 //  ARGS:
 //      ch - An rss channel (used for the title of the show)
 //      params - Input parameters

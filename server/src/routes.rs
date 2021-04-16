@@ -73,9 +73,6 @@ pub struct FormParams {
 //  RETURN: The new podcast form file
 //
 #[get("/")]
-// pub fn create_feed_form_handler() -> Template {
-//     Template::render("create_feed_form", &Context::new().into_json())
-// }
 pub fn create_feed_form_handler() -> File {
     File::open(format!(
         "{}/{}",
@@ -86,11 +83,6 @@ pub fn create_feed_form_handler() -> File {
 }
 
 #[catch(404)]
-// pub fn not_found_handler(req: &Request) -> Template {
-//     println!("404 served to: {:?}", req.client_ip());
-//     println!("\t{:?} requested {}", req.real_ip(), req.uri());
-//     Template::render("404", Context::new().into_json())
-// }
 pub fn not_found_handler(req: &Request) -> File {
     println!("404 served to: {:?}", req.client_ip());
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
