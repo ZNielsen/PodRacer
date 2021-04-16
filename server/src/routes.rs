@@ -31,6 +31,8 @@ const FAILURE_FILE: &'static str = "submit_failure";
 // Structs for Rocket config
 //
 pub struct RocketConfig {
+    pub static_file_dir: String,
+    pub podracer_dir: String,
     pub address: String,
     pub port: u64,
 }

@@ -25,7 +25,7 @@ use std::fmt;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 pub const SCHEMA_VERSION: &'static str = "1.0.0";
-pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
+// pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";

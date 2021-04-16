@@ -26,7 +26,7 @@ use routes::*;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 // `web` is a symlink to the OUT_DIR location, see build.rs
-const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
+// const STATIC_FILE_DIR: &'static str = "";
 // const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,6 +48,8 @@ fn main() {
         .log_level(rocket::config::LoggingLevel::Normal)
         .extra("update_factor", 45)
         .extra("host", "http://podracer.zachn.me")
+        .extra("static_file_dir", "/etc/podracer/config/server/web/static")
+        .extra("podracer_dir", "/etc/podracer/podcasts")
         .finalize().expect("Config is valid");
 
     let rocket = rocket::custom(config)
@@ -67,6 +69,8 @@ fn main() {
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
+                static_file_dir: rocket.config().get_str("static_file_dir").unwrap().to_owned(),
+                podracer_dir: rocket.config().get_str("podracer_dir").unwrap().to_owned(),
                 address: rocket.config().get_str("host").unwrap().to_owned(),
                 port: rocket.config().port as u64,
             };
