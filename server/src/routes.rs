@@ -55,16 +55,6 @@ pub struct FormParams {
 //
 // Rocket Routes
 //
-
-// mod manual {
-//     use rocket::response::NamedFile;
-
-//     #[rocket::get("/rocket-icon.jpg")]
-//     pub async fn icon() -> Option<NamedFile> {
-//         NamedFile::open("static/rocket-icon.jpg").ok()
-//     }
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_form_handler
 //
