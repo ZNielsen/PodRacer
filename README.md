@@ -19,7 +19,7 @@ I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to t
 - **Integrates new episodes** - Once you catch up, PodRacer integrates the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
 - **Self hosted** - complete autonomy over your feeds.
 
-PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just lisen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
+PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just listen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
 
 
 Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have quirks I didn't see. Feel free to file a github issue and I'll do what I can to fix it up.
