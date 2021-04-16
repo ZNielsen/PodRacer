@@ -293,10 +293,16 @@ pub fn serve_rss_handler(podcast: String) -> Option<File> {
     .iter()
     .collect();
     println!("Getting podcast from path: {:?}", path);
-    match std::fs::File::open(path) {
-        Ok(file) => Some(file),
-        Err(_) => None,
+    // Try a couple times to get the file
+    for _ in 0..5 {
+        match std::fs::File::open(path) {
+            Ok(file) => return Some(file),
+            Err(_) => {
+                std::thread::sleep_ms(300);
+            },
+        }
     }
+    None
 }
 
 //
