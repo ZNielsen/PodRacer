@@ -25,7 +25,7 @@ use std::fmt;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 pub const SCHEMA_VERSION: &'static str = "1.0.0";
-pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
+// pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
 pub const RACER_RSS_FILE: &'static str = "racer.rss";
@@ -35,11 +35,13 @@ pub const SPACE_CHAR: u8 = 32; // ASCII ' '
 
 // All parameters we need to create a PodRacer feed
 pub struct RacerCreationParams {
+    pub static_file_dir: String,
+    pub podracer_dir: String,
     pub address: String,
-    pub port: u64,
     pub url: String,
-    pub rate: f32,
     pub start_ep: usize,
+    pub port: u64,
+    pub rate: f32,
 }
 
 pub struct UpdateMetadata {
@@ -550,14 +552,14 @@ fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result
 //  NAME:   get_all_podcast_dirs
 //
 //  NOTES:
-//      Gets all the dirs in PODRACER_DIR. Each of these dirs has info for one
+//      Gets all the dirs in base_dir. Each of these dirs has info for one
 //      feed.
 //      This function must not panic, as it's used in the update thread.
 //  ARGS:   None
 //  RETURN: All the items in the podracer dir
 //
-pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
-    let dir = String::from(PODRACER_DIR);
+pub fn get_all_podcast_dirs(base_dir: &str) -> Result<std::fs::ReadDir, String> {
+    let dir = String::from(base_dir);
     match Path::read_dir(Path::new(&dir)) {
         Ok(val) => Ok(val),
         Err(e) => return Err(format!("Cannot access dir: {:?}.\nError: {}", dir, e)),
@@ -573,11 +575,11 @@ pub fn get_all_podcast_dirs() -> Result<std::fs::ReadDir, String> {
 //  ARGS:   None
 //  RETURN: A result containing some metadata about the update or an error string
 //
-pub fn update_all() -> Result<UpdateMetadata, String> {
+pub fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
     let mut num_with_new_eps = 0;
-    let podcast_dirs = match get_all_podcast_dirs() {
+    let podcast_dirs = match get_all_podcast_dirs(base_dir) {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
@@ -683,7 +685,7 @@ fn create_feed_racer_dir(ch: &rss::Channel, params: &RacerCreationParams) -> Str
         .replace(" ", "-")
         .replace("/", "-")
         .replace(":", "");
-    let mut dir = String::from(PODRACER_DIR);
+    let mut dir = String::from(&params.podracer_dir);
     dir.push_str("/");
     dir.push_str(scrubbed_pod_name);
     dir.push_str("_");
@@ -739,8 +741,8 @@ fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::E
 //  ARGS:   target_dir: the name of the directory to check
 //  RETURN: A FeedRacer or None
 //
-pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
-    let mut dir = PathBuf::from(PODRACER_DIR);
+pub fn get_by_dir_name(base_dir: &str, target_dir: &str) -> Option<FeedRacer> {
+    let mut dir = PathBuf::from(base_dir);
     dir.push(target_dir);
     if dir.is_dir() {
         let racer = get_racer_at_path(dir.as_path().to_str().unwrap()).unwrap();
@@ -757,8 +759,8 @@ pub fn get_by_dir_name(target_dir: &str) -> Option<FeedRacer> {
 //  ARGS:   url - the racer url to check for
 //  RETURN: A FeedRacer or None
 //
-pub fn get_by_url(url: &str) -> Option<FeedRacer> {
-    let dirs = get_all_podcast_dirs().unwrap();
+pub fn get_by_url(base_dir: &str, url: &str) -> Option<FeedRacer> {
+    let dirs = get_all_podcast_dirs(&base_dir).unwrap();
     for dir_res in dirs {
         let dir = dir_res.unwrap();
         let racer = get_racer_at_path(dir.path().to_str().unwrap()).unwrap();
@@ -776,11 +778,11 @@ pub fn get_by_url(url: &str) -> Option<FeedRacer> {
 //  ARGS:   None
 //  RETURN: A vector of the racers on this server, or an error.
 //
-pub fn get_all_racers() -> Result<Vec<FeedRacer>, String> {
+pub fn get_all_racers(base_dir: &str) -> Result<Vec<FeedRacer>, String> {
     let mut racers = Vec::new();
 
     // Get all folders in the podracer dir
-    let podcast_dirs = match get_all_podcast_dirs() {
+    let podcast_dirs = match get_all_podcast_dirs(&base_dir) {
         Ok(val) => val,
         Err(str) => {
             println!("Error in list_feeds_handler: {}", str);

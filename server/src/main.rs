@@ -26,7 +26,7 @@ use routes::*;
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 // `web` is a symlink to the OUT_DIR location, see build.rs
-const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
+// const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,17 +40,10 @@ const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
 //  RETURN: None
 //
 fn main() {
-    let config = rocket::Config::build(rocket::config::Environment::Production)
-        .root(std::path::Path::new("/etc/podracer/config"))
-        .address("0.0.0.0")
-        .port(42069)
-        .keep_alive(5)
-        .log_level(rocket::config::LoggingLevel::Normal)
-        .extra("update_factor", 45)
-        .extra("host", "http://podracer.zachn.me")
-        .finalize().expect("Config is valid");
-
-    let rocket = rocket::custom(config)
+    let rocket = rocket::ignite();
+    let static_file_dir = rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned();
+    let podracer_dir = rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned();
+    let rocket = rocket
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![update_one_handler])
@@ -62,11 +55,13 @@ fn main() {
         .mount("/", routes![create_feed_cli_handler])
         .mount("/", routes![create_feed_cli_ep_handler])
         // .mount("/", routes![manual::icon])
-        .mount("/", StaticFiles::from(STATIC_FILE_DIR))
+        .mount("/", StaticFiles::from(&static_file_dir))
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
+                static_file_dir: rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned(),
+                podracer_dir: rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned(),
                 address: rocket.config().get_str("host").unwrap().to_owned(),
                 port: rocket.config().port as u64,
             };
@@ -79,7 +74,7 @@ fn main() {
         }));
 
     // Manually update on start
-    match racer::update_all() {
+    match racer::update_all(&podracer_dir) {
         Ok(update_metadata) => println!(
             "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
             update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
@@ -100,7 +95,7 @@ fn main() {
         .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(duration));
             print!("Updating all feeds... ");
-            match racer::update_all() {
+            match racer::update_all(&podracer_dir) {
                 Ok(update_metadata) => {
                     println!(
                         "Done. Did {} feeds in {:?} ({} feeds with new episodes).",
@@ -116,3 +111,5 @@ fn main() {
         });
     rocket.launch();
 }
+
+
