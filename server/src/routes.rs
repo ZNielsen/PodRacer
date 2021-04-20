@@ -83,7 +83,9 @@ pub fn not_found_handler(req: &Request) -> File {
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
     let static_file_dir = req.guard::<State<RocketConfig>>()
         .map(|config| String::from(&config.static_file_dir));
-    File::open(format!("{}/{}", static_file_dir, "404.html")).unwrap()
+    let filename = format!("{}/{}", static_file_dir, "404.html");
+    println!("\tServing 404 file at {}", filename);
+    File::open(&filename).unwrap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

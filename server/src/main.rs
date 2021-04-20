@@ -41,8 +41,8 @@ use routes::*;
 //
 fn main() {
     let rocket = rocket::ignite();
-    let static_file_dir = rocket.config().get_str("static_file_dir").unwrap_or("/etc/podracer/config/server/web/static").to_owned();
-    let podracer_dir = rocket.config().get_str("podracer_dir").unwrap_or("/etc/podracer/podcasts").clone().to_owned();
+    let static_file_dir = rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned();
+    let podracer_dir = rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned();
     let rocket = rocket
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
@@ -60,8 +60,8 @@ fn main() {
         .attach(AdHoc::on_attach("Asset Config", |rocket| {
             // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
-                static_file_dir: rocket.config().get_str("static_file_dir").unwrap().to_owned(),
-                podracer_dir: rocket.config().get_str("podracer_dir").unwrap().to_owned(),
+                static_file_dir: rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned(),
+                podracer_dir: rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned(),
                 address: rocket.config().get_str("host").unwrap().to_owned(),
                 port: rocket.config().port as u64,
             };
