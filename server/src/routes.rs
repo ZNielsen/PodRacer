@@ -81,8 +81,9 @@ pub fn create_feed_form_handler(config: State<RocketConfig>) -> File {
 pub fn not_found_handler(req: &Request) -> File {
     println!("404 served to: {:?}", req.client_ip());
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
-    let static_file_dir = req.guard::<State<RocketConfig>>()
-        .map(|config| String::from(&config.static_file_dir));
+    let static_file_dir: String = req.guard::<State<RocketConfig>>()
+        .map(|config| String::from(&config.static_file_dir))
+        .expect("request's rocket config has a static file dir");
     let filename = format!("{}/{}", static_file_dir, "404.html");
     println!("\tServing 404 file at {}", filename);
     File::open(&filename).unwrap()

@@ -34,3 +34,4 @@ update_factor = 45
 host = "http://podracer.zachn.me"
 static_file_dir = "/etc/podracer/config/server/web/static"
 podracer_dir = "/etc/podracer/podcasts"
+
