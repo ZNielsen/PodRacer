@@ -41,8 +41,8 @@ use routes::*;
 //
 fn main() {
     let rocket = rocket::ignite();
-    let static_file_dir = rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned();
-    let podracer_dir = rocket.config().get_str("podracer_dir").expect("podracer_dir in config").clone().to_owned();
+    let static_file_dir = rocket.config().get_str("static_file_dir").unwrap_or("/etc/podracer/config/server/web/static").to_owned();
+    let podracer_dir = rocket.config().get_str("podracer_dir").unwrap_or("/etc/podracer/podcasts").clone().to_owned();
     let rocket = rocket
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
