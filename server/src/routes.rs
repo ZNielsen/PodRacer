@@ -303,7 +303,9 @@ pub fn serve_rss_handler(config: State<RocketConfig>, podcast: String) -> Option
     for _ in 0..5 {
         match std::fs::File::open(&path) {
             Ok(file) => return Some(file),
-            Err(_) => {
+            Err(e) => {
+                println!("Got error: {}", e);
+                println!("Retrying...");
                 let backoff = std::time::Duration::from_millis(300);
                 std::thread::sleep(backoff);
             },
