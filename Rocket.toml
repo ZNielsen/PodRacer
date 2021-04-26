@@ -1,5 +1,5 @@
 [global]
-workers=128
+workers=32
 template_dir = "server/web/templates/"
 #template_dir = "server/templates/"
 
