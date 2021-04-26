@@ -288,7 +288,7 @@ pub fn list_feeds_handler(config: State<RocketConfig>) -> Result<String, String>
 //  RETURN: Our PodRacer RSS file
 //
 #[get("/podcasts/<podcast>/racer.rss")]
-pub fn serve_rss_handler(config: State<RocketConfig>, podcast: String) -> Option<File> {
+pub fn serve_rss_handler(config: State<RocketConfig>, podcast: String) -> Result<File, std::io::Error> {
     println!("Serving at {}", chrono::Utc::now().to_rfc3339());
     // Serve the rss file
     let path: PathBuf = [
@@ -299,19 +299,7 @@ pub fn serve_rss_handler(config: State<RocketConfig>, podcast: String) -> Option
     .iter()
     .collect();
     println!("Getting podcast from path: {:?}", path);
-    // Try a couple times to get the file
-    for _ in 0..5 {
-        match std::fs::File::open(&path) {
-            Ok(file) => return Some(file),
-            Err(e) => {
-                println!("Got error: {}", e);
-                println!("Retrying...");
-                let backoff = std::time::Duration::from_millis(300);
-                std::thread::sleep(backoff);
-            },
-        }
-    }
-    None
+    std::fs::File::open(&path)
 }
 
 //
