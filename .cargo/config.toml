@@ -1,0 +1,8 @@
+[build]
+#target = "armv7-unknown-linux-gnueabihf"
+
+# Had to grab from https://thinkski.github.io/osx-arm-linux-toolchains/ to
+# cross compile for raspberry pi on MacOS
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+

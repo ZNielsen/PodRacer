@@ -31,6 +31,8 @@ const FAILURE_FILE: &'static str = "submit_failure";
 // Structs for Rocket config
 //
 pub struct RocketConfig {
+    pub static_file_dir: String,
+    pub podracer_dir: String,
     pub address: String,
     pub port: u64,
 }
@@ -55,16 +57,6 @@ pub struct FormParams {
 //
 // Rocket Routes
 //
-
-// mod manual {
-//     use rocket::response::NamedFile;
-
-//     #[rocket::get("/rocket-icon.jpg")]
-//     pub async fn icon() -> Option<NamedFile> {
-//         NamedFile::open("static/rocket-icon.jpg").ok()
-//     }
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_form_handler
 //
@@ -73,28 +65,28 @@ pub struct FormParams {
 //  RETURN: The new podcast form file
 //
 #[get("/")]
-// pub fn create_feed_form_handler() -> Template {
-//     Template::render("create_feed_form", &Context::new().into_json())
-// }
-pub fn create_feed_form_handler() -> File {
-    File::open(format!(
-        "{}/{}",
-        super::STATIC_FILE_DIR,
-        "create_feed_form.html"
-    ))
-    .unwrap()
+pub fn create_feed_form_handler(config: State<RocketConfig>) -> File {
+    let file = format!("{}/{}", &config.static_file_dir, "create_feed_form.html");
+    match File::open(&file) {
+        Ok(f) => f,
+        Err(e) => {
+            println!("Error: {}", e);
+            println!("Attempted to access {}", file);
+            File::open(format!("{}/{}", &config.static_file_dir, "404.html")).unwrap()
+        }
+    }
 }
 
 #[catch(404)]
-// pub fn not_found_handler(req: &Request) -> Template {
-//     println!("404 served to: {:?}", req.client_ip());
-//     println!("\t{:?} requested {}", req.real_ip(), req.uri());
-//     Template::render("404", Context::new().into_json())
-// }
 pub fn not_found_handler(req: &Request) -> File {
     println!("404 served to: {:?}", req.client_ip());
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
-    File::open(format!("{}/{}", super::STATIC_FILE_DIR, "404.html")).unwrap()
+    let static_file_dir: String = req.guard::<State<RocketConfig>>()
+        .map(|config| String::from(&config.static_file_dir))
+        .expect("request's rocket config has a static file dir");
+    let filename = format!("{}/{}", static_file_dir, "404.html");
+    println!("\tServing 404 file at {}", filename);
+    File::open(&filename).unwrap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,11 +103,13 @@ pub fn not_found_handler(req: &Request) -> File {
 pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormParams>) -> Template {
     let mut context = Context::new();
     match create_feed(racer::RacerCreationParams {
+        static_file_dir: config.static_file_dir.clone(),
+        podracer_dir: config.podracer_dir.clone(),
+        start_ep: form_data.start_ep,
         address: config.address.clone(),
+        rate: form_data.rate,
         port: config.port,
         url: form_data.url.clone(),
-        rate: form_data.rate,
-        start_ep: form_data.start_ep,
     }) {
         Ok(fun_facts) => {
             let catch_up_date = format!("{}", fun_facts.catch_up_date.format("%d %b, %Y"));
@@ -152,6 +146,8 @@ pub fn create_feed_cli_handler(
     rate: f32,
 ) -> Result<String, String> {
     match create_feed(racer::RacerCreationParams {
+        static_file_dir: config.static_file_dir.clone(),
+        podracer_dir: config.podracer_dir.clone(),
         address: config.address.clone(),
         port: config.port,
         url: url,
@@ -186,6 +182,8 @@ pub fn create_feed_cli_ep_handler(
     start_ep: usize,
 ) -> Result<String, String> {
     match create_feed(racer::RacerCreationParams {
+        static_file_dir: config.static_file_dir.clone(),
+        podracer_dir: config.podracer_dir.clone(),
         address: config.address.clone(),
         port: config.port,
         url: url,
@@ -207,17 +205,17 @@ pub fn create_feed_cli_ep_handler(
 //  RETURN:
 //
 #[post("/update/<podcast>")]
-pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
+pub fn update_one_handler(config: State<RocketConfig>, podcast: String) -> std::io::Result<()> {
     // Update the specified podcast
     // Check if podcast is folder name
-    if let Some(mut racer) = racer::get_by_dir_name(&podcast) {
+    if let Some(mut racer) = racer::get_by_dir_name(&config.podracer_dir, &podcast) {
         return match racer.update(&racer::RssFile::Download) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         };
     }
     // Check if subscribe url
-    if let Some(mut racer) = racer::get_by_url(&podcast) {
+    if let Some(mut racer) = racer::get_by_url(&config.podracer_dir, &podcast) {
         return match racer.update(&racer::RssFile::Download) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
@@ -237,8 +235,8 @@ pub fn update_one_handler(podcast: String) -> std::io::Result<()> {
 //  RETURN: A result. If error, a string containing some error info
 //
 #[post("/update")]
-pub fn update_all_handler() -> Result<(), String> {
-    match racer::update_all() {
+pub fn update_all_handler(config: State<RocketConfig>) -> Result<(), String> {
+    match racer::update_all(&config.podracer_dir) {
         Ok(_) => Ok(()),
         Err(string) => Err(format!("Error in update_all_handler: {}", string)),
     }
@@ -254,9 +252,9 @@ pub fn update_all_handler() -> Result<(), String> {
 //  RETURN: Result string - either the feeds or info on what failed
 //
 #[get("/list_feeds")]
-pub fn list_feeds_handler() -> Result<String, String> {
+pub fn list_feeds_handler(config: State<RocketConfig>) -> Result<String, String> {
     let mut ret = String::new();
-    let racers = match racer::get_all_racers() {
+    let racers = match racer::get_all_racers(&config.podracer_dir) {
         Ok(val) => val,
         Err(e) => return Err(format!("Error getting racers: {}", e)),
     };
@@ -290,21 +288,18 @@ pub fn list_feeds_handler() -> Result<String, String> {
 //  RETURN: Our PodRacer RSS file
 //
 #[get("/podcasts/<podcast>/racer.rss")]
-pub fn serve_rss_handler(podcast: String) -> Option<File> {
+pub fn serve_rss_handler(config: State<RocketConfig>, podcast: String) -> Result<File, std::io::Error> {
     println!("Serving at {}", chrono::Utc::now().to_rfc3339());
     // Serve the rss file
     let path: PathBuf = [
-        racer::PODRACER_DIR,
+        &config.podracer_dir,
         &podcast,
         racer::RACER_RSS_FILE,
     ]
     .iter()
     .collect();
     println!("Getting podcast from path: {:?}", path);
-    match std::fs::File::open(path) {
-        Ok(file) => Some(file),
-        Err(_) => None,
-    }
+    std::fs::File::open(&path)
 }
 
 //
