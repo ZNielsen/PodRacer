@@ -24,9 +24,11 @@ use tera::Context;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
-const EDIT_FEED_FILE: &'static str = "edit_feed";
-const SUCCESS_FILE:   &'static str = "submit_success";
-const FAILURE_FILE:   &'static str = "submit_failure";
+
+const FEED_NOT_FOUND_FILE: &'static str = "feed_not_found";
+const EDIT_FEED_FILE:      &'static str = "edit_feed";
+const SUCCESS_FILE:        &'static str = "submit_success";
+const FAILURE_FILE:        &'static str = "submit_failure";
 
 //
 // Structs for Rocket config
@@ -159,8 +161,9 @@ pub fn edit_feed_handler(config: State<RocketConfig>, uuid: Uuid) -> Template {
             Template::render(EDIT_FEED_FILE, &context.into_json())
         }
         Err(e) => {
-            context.insert("error_string", &e);
-            Template::render(FAILURE_FILE, &context.into_json())
+            println!("Error getting feed: {}", e);
+            context.insert("uuid", &uuid.to_string());
+            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
         }
     }
 }

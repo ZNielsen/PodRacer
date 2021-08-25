@@ -46,6 +46,7 @@ fn main() {
     let rocket = rocket
         .register(catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
+        .mount("/", routes![edit_feed_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
         //.mount("/", routes![delete_feed_handler])
