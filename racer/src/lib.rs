@@ -68,15 +68,18 @@ pub struct RacerEpisode {
 // All the fields of our racer file. Info we might want across sessions.
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
-    schema_version: String,
-    podcast_title: Option<String>,
-    racer_path: PathBuf,
-    source_url: String,
-    subscribe_url: String,
-    anchor_date: DateTime<chrono::Utc>,
-    first_pubdate: DateTime<chrono::FixedOffset>,
-    rate: f32,
-    release_dates: Vec<RacerEpisode>,
+    pub schema_version: String,
+    pub racer_path: PathBuf,
+    pub source_url: String,
+    pub subscribe_url: String,
+    pub anchor_date: DateTime<chrono::Utc>,
+    pub first_pubdate: DateTime<chrono::FixedOffset>,
+    pub rate: f32,
+    pub release_dates: Vec<RacerEpisode>,
+    pub podcast_title: Option<String>,
+    pub old_rate: Option<f32>,
+    pub pause_date: Option<DateTime<chrono::Utc>>,
+    pub uuid: Option<String>
 }
 // Basic getter functions
 impl FeedRacer {
@@ -124,7 +127,7 @@ impl FeedRacer {
     //  NAME:   FeedRacer::new
     //
     //  NOTES:
-    //      Creates a new feedracer object. This involves parsing all the items from
+    //      Creates a new FeedRacer object. This involves parsing all the items from
     //      a feed + creating a transformed list of publish dates (shift + squish/stretch).
     //      The returned object is all ready to be written to disk as a json.
     //  ARGS:
@@ -164,7 +167,6 @@ impl FeedRacer {
 
         let mut racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
-            podcast_title: None,
             racer_path: PathBuf::from(dir),
             source_url: params.url.to_owned(),
             subscribe_url: subscribe_url.to_str().unwrap().to_owned(),
@@ -172,6 +174,10 @@ impl FeedRacer {
             anchor_date: anchor_date,
             first_pubdate: first_pubdate,
             release_dates: Vec::new(),
+            podcast_title: None,
+            old_rate: None,
+            pause_date: None,
+            uuid: None
         };
         racer_data.render_release_dates(items);
 

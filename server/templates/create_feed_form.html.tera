@@ -18,6 +18,14 @@
     </label><br>
     <input type="submit" value="Submit">
 </form>
+<br><br><br>
+<form action="/edit_feed">
+    <label for="uuid">
+    Feed UUID:
+    <input type="text" style="width:90%" id="url" name="url" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
+    </label><br>
+    <input type="submit" value="Edit">
+</form>
 {{ macros::static_post_close() }}
 
 {{ macros::static_footer() }}
