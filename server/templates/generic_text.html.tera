@@ -1,0 +1,11 @@
+{% import "macros" as macros %}
+
+{{ macros::static_header() }}
+
+{{ macros::static_post_open() }}
+
+{{ text }}
+
+{{ macros::static_post_close() }}
+
+{{ macros::static_footer() }}

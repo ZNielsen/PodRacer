@@ -16,4 +16,5 @@ chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 dirs = "3.0.1"
+uuid = { version = "*", features = ["v4"] }
 rss = "1.10"

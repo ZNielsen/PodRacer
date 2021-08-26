@@ -26,6 +26,7 @@ use tera::Context;
 ////////////////////////////////////////////////////////////////////////////////
 
 const FEED_NOT_FOUND_FILE: &'static str = "feed_not_found";
+const GENERIC_TEXT_FILE:   &'static str = "generic_text";
 const EDIT_FEED_FILE:      &'static str = "edit_feed";
 const SUCCESS_FILE:        &'static str = "submit_success";
 const FAILURE_FILE:        &'static str = "submit_failure";
@@ -143,22 +144,70 @@ pub fn create_feed_handler(config: State<RocketConfig>, form_data: Form<FormPara
 pub fn edit_feed_handler(config: State<RocketConfig>, uuid: Uuid) -> Template {
     let mut context = Context::new();
     match get_feed_by_uuid(&config, &uuid) {
-        Ok(racer_params) => {
-            context.insert("source_url",    &racer_params.source_url);
-            context.insert("subscribe_url", &racer_params.subscribe_url);
-            context.insert("anchor_date",   &racer_params.anchor_date);
-            context.insert("first_pubdate", &racer_params.first_pubdate);
-            context.insert("rate",          &racer_params.rate);
-            if let Some(podcast_title) = racer_params.podcast_title {
-                context.insert("podcast_title", &podcast_title);
-            }
-            if let Some(old_rate) = racer_params.old_rate {
+        Ok(racer) => {
+            context.insert("podcast_title", &racer.get_podcast_title());
+            context.insert("subscribe_url", &racer.get_subscribe_url());
+            context.insert("first_pubdate", &racer.get_first_pubdate());
+            context.insert("anchor_date",   &racer.get_anchor_date());
+            context.insert("source_url",    &racer.get_source_url());
+            context.insert("rate",          &racer.get_rate());
+            if let Some(old_rate) = racer.get_old_rate() {
                 context.insert("old_rate", &old_rate);
             }
-            if let Some(pause_date) = racer_params.pause_date {
+            if let Some(pause_date) = racer.get_pause_date() {
                 context.insert("pause_date", &pause_date);
             }
             Template::render(EDIT_FEED_FILE, &context.into_json())
+        }
+        Err(e) => {
+            println!("Error getting feed: {}", e);
+            context.insert("uuid", &uuid.to_string());
+            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//  NAME:   pause_feed_handler
+//
+//  NOTES:
+//  ARGS:
+//  RETURN:
+//
+#[get("/pause_feed?<uuid>")]
+pub fn pause_feed_handler(config: State<RocketConfig>, uuid: Uuid) -> Template {
+    let mut context = Context::new();
+    match get_feed_by_uuid(&config, &uuid) {
+        Ok(mut racer) => {
+            racer.pause_feed();
+            context.insert("text", "Feed has been paused. No new episodes will be published \
+                until you unpause this feed.");
+            Template::render(GENERIC_TEXT_FILE, &context.into_json())
+        }
+        Err(e) => {
+            println!("Error getting feed: {}", e);
+            context.insert("uuid", &uuid.to_string());
+            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//  NAME:   unpause_feed_handler
+//
+//  NOTES:
+//  ARGS:
+//  RETURN:
+//
+#[get("/unpause_feed?<uuid>")]
+pub fn unpause_feed_handler(config: State<RocketConfig>, uuid: Uuid) -> Template {
+    let mut context = Context::new();
+    match get_feed_by_uuid(&config, &uuid) {
+        Ok(mut racer) => {
+            racer.unpause_feed();
+            context.insert("text", "Feed has been unpaused. The next episode has \
+                been published (but give it a couple minutes to show up in your podcatcher)");
+            Template::render(GENERIC_TEXT_FILE, &context.into_json())
         }
         Err(e) => {
             println!("Error getting feed: {}", e);
@@ -301,7 +350,7 @@ pub fn list_feeds_handler(config: State<RocketConfig>) -> Result<String, String>
 
     // Parse into a string to be fed back to curl
     for mut racer in racers {
-        ret += &format!("Podcast: {}", racer.get_podcast_title());
+        ret += &format!("Podcast: {}", racer.get_or_create_podcast_title());
         ret += &format!(
             "\tpodcast folder: {:?}\n",
             racer.get_racer_path().file_name().unwrap()
@@ -422,8 +471,8 @@ fn get_feed_by_uuid(config: &State<RocketConfig>, uuid: &Uuid) -> Result<racer::
 
     // Parse into a string to be fed back to curl
     for racer in racers {
-        if let Some(ref racer_uuid) = racer.uuid {
-            if racer_uuid == &uuid.to_string() {
+        if let Some(ref racer_uuid) = racer.get_uuid() {
+            if racer_uuid == &&uuid.to_string() {
                 return Ok(racer)
             }
         }
