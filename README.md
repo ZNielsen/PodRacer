@@ -43,7 +43,7 @@ cargo run --release
 Podcast clients will need to access the server remotely, so you will have to set up [port forwarding](https://www.howtogeek.com/66214/how-to-forward-ports-on-your-router/) in your router.
 
 ### Keeping the process alive
-You can either run in a tmux instance or use `nohup` and send it to the background.
+You can either run in a tmux instance or use `nohup` and send it to the background. I've set it up as a `systemd` service, but that is beyond the scope of this README.
 
 ## Usage
 Beyond the web UI, you can communicate with the server via HTTP methods (mostly just `POST` and `GET`). The included `create_feed.sh` bash script makes a `curl` request to the server, you can customize the arguments via command line, or change up the following examples (assuming your server is at `0.0.0.0`, listening on port `1234`)
