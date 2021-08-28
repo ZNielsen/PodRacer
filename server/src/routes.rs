@@ -396,16 +396,19 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
     let next_pub_date_string = if next <= now {
         String::from("Caught up, whenever they publish another one")
     }
+    else if let Some(_) = racer.get_pause_date() {
+        String::from("Feed paused, unpause to publish next episode")
+    }
     else {
         next.to_rfc2822()
     };
     cx.insert("next_pub_date_string", &next_pub_date_string);
     cx.insert("podcast_title", &racer.get_podcast_title());
     cx.insert("subscribe_url", &racer.get_subscribe_url());
-    cx.insert("first_pubdate", &racer.get_first_pubdate());
+    cx.insert("first_pubdate", &racer.get_first_pubdate().to_rfc2822());
     cx.insert("num_published", &racer.get_num_to_publish());
     cx.insert("num_episodes",  &racer.get_num_episodes());
-    cx.insert("anchor_date",   &racer.get_anchor_date());
+    cx.insert("anchor_date",   &racer.get_anchor_date().to_rfc2822());
     cx.insert("source_url",    &racer.get_source_url());
     cx.insert("rate",          &format!("{:.2}", racer.get_rate()));
     cx.insert("uuid",          &racer.get_uuid_string());
@@ -413,7 +416,7 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
         cx.insert("old_rate", &format!("{:.2}", old_rate));
     }
     if let Some(pause_date) = racer.get_pause_date() {
-        cx.insert("pause_date", &pause_date);
+        cx.insert("pause_date", &pause_date.to_rfc2822());
     }
 }
 

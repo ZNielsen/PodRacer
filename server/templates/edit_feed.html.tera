@@ -32,6 +32,14 @@
     <td>Next Publish Date</td>
     <td>{{ next_pub_date_string }}</td>
   </tr>
+
+  {% if pause_date %}
+  <tr>
+    <td>Date Paused</td>
+    <td>{{ pause_date }}</td>
+  </tr>
+  {% endif %}
+
   <tr>
     <td>Anchor Date</td>
     <td>{{ anchor_date }}</td>
@@ -44,13 +52,6 @@
     <td>Current PodRacer Rate</td>
     <td>{{ rate }}</td>
   </tr>
-
-  {% if pause_date %}
-  <tr>
-    <td>Date Paused</td>
-    <td>{{ pause_date }}</td>
-  </tr>
-  {% endif %}
 
   {% if old_rate %}
   <tr>
