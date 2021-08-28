@@ -253,11 +253,11 @@ impl FeedRacer {
                 Ok(val) => val.with_timezone(&Local).format("%d %b %Y at %I:%M%P"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
-            format!("Next episode publishes {}.", s)
+            format!("Next episode publishes {}", s)
         } else {
-            format!("PodRacer feed has caught up.")
+            format!("PodRacer feed has caught up")
         };
-        description_addition += " PodRacer UUID: ";
+        description_addition += " -- PodRacer UUID: ";
         description_addition += self.get_or_create_uuid_str();
         rss.set_description(format!("{} -- {}", rss.description(), &description_addition));
 
@@ -310,7 +310,7 @@ impl FeedRacer {
             match item.content() {
                 Some(content) => {
                     let mut new_content = content.replace("\r\n", "\n");
-                    new_content.push_str(&format!("<br>Originally published on {}<br>Feed UUID:{}",
+                    new_content.push_str(&format!("<br>Originally published on {}<br><br>Feed UUID:<br>{}",
                             original_pub_date, feed_uuid));
                     item.set_content(new_content);
                 },
@@ -321,9 +321,6 @@ impl FeedRacer {
         rss.set_items(items_to_publish);
 
         rss.correct_known_rss_issues(&self.subscribe_url);
-
-        let uuid_str = self.get_or_create_uuid_str().to_owned();
-        println!("DEBUG: About to write out to racer.file, uuid: {:?}, uuid_str: {}", self.get_uuid(), uuid_str);
 
         // Write out the racer.file
         match self.write_to_file() {
@@ -630,7 +627,6 @@ impl FeedRacer {
     //  RETURN:
     //
     pub fn pause_feed(&mut self) {
-        println!("DEBUG: pausing feed");
         match self.pause_date {
             None => {
                 // Save old rate
@@ -658,7 +654,6 @@ impl FeedRacer {
     //  RETURN:
     //
     pub fn unpause_feed(&mut self) {
-        println!("DEBUG: unpausing feed");
         match self.pause_date {
             Some(pause_date) => {
                 // Restore rate

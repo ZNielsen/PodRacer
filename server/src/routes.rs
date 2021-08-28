@@ -26,7 +26,7 @@ use tera::Context;
 ////////////////////////////////////////////////////////////////////////////////
 
 const FEED_NOT_FOUND_FILE: &'static str = "feed_not_found";
-const GENERIC_TEXT_FILE:   &'static str = "generic_text";
+// const GENERIC_TEXT_FILE:   &'static str = "generic_text";
 const EDIT_FEED_FILE:      &'static str = "edit_feed";
 const SUCCESS_FILE:        &'static str = "submit_success";
 const FAILURE_FILE:        &'static str = "submit_failure";
