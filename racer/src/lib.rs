@@ -16,11 +16,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
+use uuid;
 use std::path::{Path, PathBuf};
 use std::io::{BufRead, BufReader, Write};
 use std::fs::File;
 use std::fmt;
-use uuid;
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
@@ -70,17 +70,17 @@ pub struct RacerEpisode {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
+    podcast_title: Option<String>,
+    uuid: Option<String>,
+    rate: f32,
+    old_rate: Option<f32>,
     racer_path: PathBuf,
     source_url: String,
     subscribe_url: String,
     anchor_date: DateTime<chrono::Utc>,
-    first_pubdate: DateTime<chrono::FixedOffset>,
-    rate: f32,
-    release_dates: Vec<RacerEpisode>,
-    podcast_title: Option<String>,
-    old_rate: Option<f32>,
     pause_date: Option<DateTime<chrono::Utc>>,
-    uuid: Option<String>
+    first_pubdate: DateTime<chrono::FixedOffset>,
+    release_dates: Vec<RacerEpisode>
 }
 // Basic getter functions
 impl FeedRacer {
@@ -133,6 +133,12 @@ impl FeedRacer {
     pub fn get_uuid(&self) -> Option<&String> {
         self.uuid.as_ref()
     }
+    pub fn get_uuid_string(&self) -> String {
+        match &self.uuid {
+            Some(uuid) => uuid.to_string(),
+            None => String::from("No UUID"),
+        }
+    }
 }
 
 impl FeedRacer {
@@ -170,6 +176,7 @@ impl FeedRacer {
         let first_pubdate = DateTime::parse_from_rfc2822(start_date).expect("Can parse first item's date");
         let anchor_date = chrono::Utc::now();
         let uuid = uuid::Uuid::new_v4().to_string();
+
         let scrubbed_pod_name = &rss
             .title()
             .to_lowercase()
@@ -177,11 +184,14 @@ impl FeedRacer {
             .replace("/", "-")
             .replace(":", "");
         let podcast_dir_base = format!("{}_{}", scrubbed_pod_name, uuid);
-        let podcast_dir_name = Path::new(&podcast_dir_base).file_name().unwrap().to_str().unwrap();
+        let mut podcast_dir_path = String::from(&params.podracer_dir);
+        podcast_dir_path.push_str("/");
+        podcast_dir_path.push_str(&podcast_dir_base);
+
         let subscribe_url: PathBuf = [
             &params.address,
             "podcasts",
-            podcast_dir_name,
+            &podcast_dir_base,
             RACER_RSS_FILE,
         ]
         .iter()
@@ -189,7 +199,7 @@ impl FeedRacer {
 
         let mut racer_data = FeedRacer {
             schema_version: SCHEMA_VERSION.to_owned(),
-            racer_path: PathBuf::from(podcast_dir_name),
+            racer_path: PathBuf::from(podcast_dir_path),
             source_url: params.url.to_owned(),
             subscribe_url: subscribe_url.to_str().unwrap().to_owned(),
             rate: params.rate.to_owned(),
@@ -248,11 +258,11 @@ impl FeedRacer {
             format!("PodRacer feed has caught up.")
         };
         description_addition += " PodRacer UUID: ";
-        description_addition += self.get_uuid_str();
+        description_addition += self.get_or_create_uuid_str();
         rss.set_description(format!("{} -- {}", rss.description(), &description_addition));
 
         // Append racer publish date to the end of the description
-        let feed_uuid = self.get_uuid_str().to_owned();
+        let feed_uuid = self.get_or_create_uuid_str().to_owned();
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
             //
             // Get all the DateTime's we need
@@ -311,6 +321,9 @@ impl FeedRacer {
         rss.set_items(items_to_publish);
 
         rss.correct_known_rss_issues(&self.subscribe_url);
+
+        let uuid_str = self.get_or_create_uuid_str().to_owned();
+        println!("DEBUG: About to write out to racer.file, uuid: {:?}, uuid_str: {}", self.get_uuid(), uuid_str);
 
         // Write out the racer.file
         match self.write_to_file() {
@@ -516,7 +529,7 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN: The number of items that should be published.
     //
-    fn get_num_to_publish(&self) -> usize {
+    pub fn get_num_to_publish(&self) -> usize {
         let mut ret = 0;
 
         // Get today's date (or pause date if paused)
@@ -537,25 +550,57 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::publish_next_ep_now
+    //  NAME:   FeedRacer::get_num_episodes
+    //
+    //  NOTES:
+    //  ARGS:   None
+    //  RETURN: The total number of items in the
+    //
+    pub fn get_num_episodes(&self) -> usize {
+        self.release_dates.len()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   FeedRacer::get_next_episode_pub_date
     //
     //  NOTES:
     //  ARGS:   None
     //  RETURN:
     //
-    fn publish_next_ep_now(&mut self) {
+    pub fn get_next_episode_pub_date(&self) -> DateTime<chrono::Utc> {
         let now = chrono::Utc::now();
-        // Get the date for the next episode to publish
-        let mut next_ep_publish_date = now;
         for release_date in &self.release_dates {
             let date = chrono::DateTime::parse_from_rfc2822(&release_date.date).unwrap();
             if date.signed_duration_since(now) > chrono::Duration::zero() {
-                next_ep_publish_date = date.into();
+                return date.into();
             }
         }
-        let time_to_publish_next = next_ep_publish_date - now;
-        // Move the anchor_date forward by the difference
-        self.anchor_date = self.anchor_date + time_to_publish_next;
+        now
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   FeedRacer::publish_next_ep_now
+    //
+    //  NOTES:  Publish next episode by moving the Anchor Date back
+    //  ARGS:   None
+    //  RETURN:
+    //
+    fn publish_next_ep_now(&mut self) {
+        // Get the date for the next episode to publish
+        let now = chrono::Utc::now();
+        let next_ep_publish_date = self.get_next_episode_pub_date();
+
+        // Move the anchor_date back by the difference
+        let time_to_publish_next = next_ep_publish_date.signed_duration_since(now)
+                                    .checked_add(&Duration::seconds(30)).expect("Can add a few seconds");
+        self.anchor_date = match self.anchor_date.checked_sub_signed(time_to_publish_next) {
+            Some(time) => time,
+            None => {
+                println!("ERROR: Time addition overflow");
+                self.anchor_date
+            }
+        };
+
         // Update now
         match self.update(&RssFile::FromStorage) {
             Ok(_) => (),
@@ -564,13 +609,13 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::get_uuid_str
+    //  NAME:   FeedRacer::get_or_create_uuid_str
     //
     //  NOTES:  Gets the UUID as a string, creating it if it's missing
     //  ARGS:   None
     //  RETURN:
     //
-    fn get_uuid_str(&mut self) -> &str {
+    fn get_or_create_uuid_str(&mut self) -> &str {
         if self.uuid == None {
             self.uuid = Some(uuid::Uuid::new_v4().to_string());
         }
@@ -585,12 +630,24 @@ impl FeedRacer {
     //  RETURN:
     //
     pub fn pause_feed(&mut self) {
-        // Save old rate
-        self.old_rate = Some(self.rate);
-        // Save current date
-        self.pause_date = Some(chrono::Utc::now());
-        // Set rate to 0
-        self.rate = 0.0;
+        println!("DEBUG: pausing feed");
+        match self.pause_date {
+            None => {
+                // Save old rate
+                self.old_rate = Some(self.rate);
+                // Set rate to 0
+                self.rate = 0.0;
+                // Save current date
+                self.pause_date = Some(chrono::Utc::now());
+
+                // Update to write to file
+                match self.update(&RssFile::FromStorage) {
+                    Ok(_) => (),
+                    Err(e) => println!("Error updating after pausing: {}", e),
+                }
+            }
+            Some(_) => println!("Error! Attempt to pause feed with a saved pause_date. Not doing anything."),
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -601,22 +658,33 @@ impl FeedRacer {
     //  RETURN:
     //
     pub fn unpause_feed(&mut self) {
-        // Restore rate
-        match self.old_rate {
-            Some(val) => self.rate = val,
-            None => println!("Error! Unpausing feed with no saved rate!"),
+        println!("DEBUG: unpausing feed");
+        match self.pause_date {
+            Some(pause_date) => {
+                // Restore rate
+                self.rate = self.old_rate.expect("Old rate saved");
+
+                // Set old rate to None
+                self.old_rate = None;
+
+                // Adjust our anchor date to resume
+                let now = chrono::Utc::now();
+                let time_paused = now.signed_duration_since(pause_date);
+                self.anchor_date = match self.anchor_date.checked_add_signed(time_paused) {
+                    Some(time) => time,
+                    None => {
+                        println!("ERROR: Time addition overflow");
+                        self.anchor_date
+                    }
+                };
+
+                self.pause_date = None;
+
+                // Fast forward to the next episode
+                self.publish_next_ep_now();
+            }
+            None => println!("Error! Attempt to unpause feed with no saved pause_date. Not doing anything."),
         }
-
-        // Set old rate to None
-        self.old_rate = None;
-
-        // Adjust our anchor date to resume
-        let now = chrono::Utc::now();
-        let time_paused = now - self.pause_date.expect("Paused feed has pause date");
-        self.anchor_date = self.anchor_date + time_paused;
-
-        // Fast forward to the next episode
-        self.publish_next_ep_now();
     }
 }
 

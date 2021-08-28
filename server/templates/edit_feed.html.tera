@@ -4,6 +4,10 @@
 
 {{ macros::static_post_open() }}
 
+{% if top_text %}
+    {{ top_text }}<br><br>
+{% endif %}
+
 <table>
   {% if podcast_title %}
   <tr>
@@ -11,6 +15,10 @@
     <td>{{ podcast_title }}</td>
   </tr>
   {% endif %}
+  <tr>
+    <td>Feed UUID</td>
+    <td>{{ uuid }}</td>
+  </tr>
 
   <tr>
     <td>Source URL</td>
@@ -19,6 +27,10 @@
   <tr>
     <td>Subscribe URL</td>
     <td>{{ subscribe_url }}</td>
+  </tr>
+  <tr>
+    <td>Next Publish Date</td>
+    <td>{{ next_pub_date_string }}</td>
   </tr>
   <tr>
     <td>Anchor Date</td>
@@ -46,23 +58,27 @@
     <td>{{ old_rate }}</td>
   </tr>
   {% endif %}
+  <tr>
+    <td>Episodes Published</td>
+    <td>{{ num_published }}/{{ num_episodes }}</td>
+  </tr>
 </table>
 
 {% if pause_date %}
-<form action="/unpause_feed?uuid={{ uuid }}">
+<form action="/unpause_feed?uuid={{ uuid }}" method="post">
     <input type="submit" value="Resume Feed">
 </form>
 {% else %}
-<form action="/pause_feed?uuid={{ uuid }}">
+<form action="/pause_feed?uuid={{ uuid }}" method="post">
     <input type="submit" value="Pause Feed">
 </form>
-<form action="/update_feed_rate?uuid={{ uuid }}">
+<!-- <form action="/update_feed_rate?uuid={{ uuid }}">
     <label for="rate">
     Rate:
     <input type="number" size="4" id="rate" name="rate" placeholder="1.2" step=0.001 required>
     </label><br>
     <input type="submit" value="Update Feed Rate">
-</form>
+</form> -->
 {% endif %}
 
 

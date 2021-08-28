@@ -12,7 +12,7 @@ limits = { forms = 32768 }
 update_factor = 1
 host = "http://localhost:42069"
 static_file_dir = "/Users/znielsen/code/PodRacer/server/web/static"
-podracer_dir = "/Users/znielsen/.config/pod_racer"
+podracer_dir = "/Users/znielsen/.config/podcasts.dev"
 
 [staging]
 address = "0.0.0.0"
@@ -23,7 +23,7 @@ limits = { forms = 32768 }
 update_factor = 45
 host = "http://podracer.zachn.me"
 static_file_dir = "/etc/podracer/config/server/web/static"
-podracer_dir = "/etc/podracer/podcasts"
+podracer_dir = "/etc/podracer/podcasts.staging"
 
 [production]
 address = "0.0.0.0"
