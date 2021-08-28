@@ -154,7 +154,6 @@ impl FeedRacer {
     //      params - The input parameters for this feed
     //  RETURN: A new, initialized FeedRacer object.
     //
-    // fn new(rss_title: &str, items: &mut Vec<rss::Item>, params: &RacerCreationParams) -> FeedRacer {
     fn new(rss: &rss::Channel, params: &RacerCreationParams) -> FeedRacer {
         let mut items = rss.items().to_owned();
         // Reverse the items so the oldest entry is first
@@ -833,7 +832,6 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
     };
 
     // Make racer
-    // let racer = FeedRacer::new(&rss.title(), &mut rss.items().to_owned(), &params);
     let racer = FeedRacer::new(&rss, &params);
     // Make directory
     std::fs::create_dir_all(&racer.racer_path).expect("Creating racer dir");
