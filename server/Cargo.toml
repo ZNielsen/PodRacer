@@ -1,6 +1,6 @@
 [package]
 name = "podracer"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Zach Nielsen <zach@zachn.me>"]
 edition = "2018"
 
@@ -21,4 +21,4 @@ rss = "1.10.0"
 [dependencies.rocket_contrib]
 version = "*"
 default-features = false
-features = ["serve", "tera_templates", "serde"]
+features = ["serve", "tera_templates", "serde", "uuid"]

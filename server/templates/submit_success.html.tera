@@ -8,6 +8,7 @@ Success!<br>
 Subscribe to this URL in your pod-catcher of choice:<br>
 <a href="{{ subscribe_url }}">{{ subscribe_url }}</a><br>
 <br>
+Feed UUID: {{ uuid }}<br><br>
 You have {{num_items}} episodes to catch up on.<br>
 You are {{ weeks_behind }} weeks behind.<br>
 It will take you about {{ weeks_to_catch_up }} weeks ({{ days_to_catch_up }}

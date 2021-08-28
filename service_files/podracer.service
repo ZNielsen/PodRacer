@@ -1,0 +1,16 @@
+[Unit]
+Description=A podcast catch-up service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi1
+WorkingDirectory=/etc/podracer/config
+Environment=ROCKET_CONFIG=/etc/podracer/config/Rocket.toml
+ExecStart=/usr/local/bin/podracer
+
+[Install]
+WantedBy=multi-user.target
