@@ -57,10 +57,29 @@ struct FeedFunFacts {
 }
 
 #[derive(FromForm)]
-pub struct FormParams {
+pub struct CreateFeedForm {
     pub url: String,
     pub rate: f32,
     pub start_ep: usize,
+}
+
+#[derive(FromFormValue)]
+pub enum FeedAction {
+    EditFeed,
+    EditRate,
+    Pause,
+    Unpause,
+    FastForward,
+    Rewind,
+    PublishNextEp,
+}
+
+#[derive(FromForm)]
+pub struct EditFeedForm {
+    pub uuid: Uuid,
+    pub racer_action: FeedAction,
+    pub days: Option<usize>,
+    pub rate: Option<f32>
 }
 
 //
@@ -105,9 +124,8 @@ pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
 //  ARGS:
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
-// #[get("/create_feed?<form_data..>")]
-#[post("/create_feed", data = "<form_data>")]
-pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<FormParams>) -> Template {
+#[get("/create_feed?<form_data..>")]
+pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateFeedForm>) -> Template {
     let mut context = Context::new();
     match create_feed(racer::RacerCreationParams {
         static_file_dir: config.static_file_dir.clone(),
@@ -144,74 +162,40 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<FormPar
 //      uuid - The UUID of the feed to edit
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
-#[get("/edit_feed?<uuid>")]
-pub fn edit_feed_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
-    let mut context = Context::new();
-    match get_feed_by_uuid(&config, &uuid) {
-        Ok(racer) => {
-            fill_edit_feed_data_from_racer(&mut context, &racer);
-            Template::render(EDIT_FEED_FILE, &context.into_json())
-        }
+#[get("/edit_feed?<edit_form..>")]
+pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
+    let mut ctx = Context::new();
+
+    let mut racer = match get_feed_by_uuid(&config, &edit_form.uuid) {
+        Ok(racer) => racer,
         Err(e) => {
             println!("Error getting feed: {}", e);
-            context.insert("uuid", &uuid.to_string());
-            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
+            ctx.insert("uuid", &edit_form.uuid.to_string());
+            return Template::render(FEED_NOT_FOUND_FILE, &ctx.into_json());
         }
-    }
-}
+    };
 
-////////////////////////////////////////////////////////////////////////////////
-//  NAME:   pause_feed_handler
-//
-//  NOTES:
-//  ARGS:
-//  RETURN:
-//
-#[post("/pause_feed?<uuid>")]
-pub fn pause_feed_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
-    let mut context = Context::new();
-    match get_feed_by_uuid(&config, &uuid) {
-        Ok(mut racer) => {
+    // Parse by action
+    match edit_form.racer_action {
+        FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
+        FeedAction::EditRate => racer.set_rate(edit_form.rate.expect("Form has rate")),
+        FeedAction::Pause => {
             racer.pause_feed();
-
-            fill_edit_feed_data_from_racer(&mut context, &racer);
-            context.insert("top_text", "Feed has been paused. No new episodes will be published \
+            ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
                 until you unpause this feed.");
-            Template::render(EDIT_FEED_FILE, &context.into_json())
-        }
-        Err(e) => {
-            println!("Error getting feed: {}", e);
-            context.insert("uuid", &uuid.to_string());
-            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//  NAME:   unpause_feed_handler
-//
-//  NOTES:
-//  ARGS:
-//  RETURN:
-//
-#[post("/unpause_feed?<uuid>")]
-pub fn unpause_feed_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
-    let mut context = Context::new();
-    match get_feed_by_uuid(&config, &uuid) {
-        Ok(mut racer) => {
+        },
+        FeedAction::Unpause => {
             racer.unpause_feed();
-
-            fill_edit_feed_data_from_racer(&mut context, &racer);
-            context.insert("top_text", "Feed has been unpaused. The next episode has \
+            ctx.insert("top_text", "Feed has been unpaused. The next episode has \
                 been published (but give it a couple minutes to show up in your podcatcher)");
-            Template::render(EDIT_FEED_FILE, &context.into_json())
-        }
-        Err(e) => {
-            println!("Error getting feed: {}", e);
-            context.insert("uuid", &uuid.to_string());
-            Template::render(FEED_NOT_FOUND_FILE, &context.into_json())
-        }
+        },
+        FeedAction::PublishNextEp => racer.publish_next_ep_now(),
+        FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
+        FeedAction::FastForward   => racer.fastforward_by_days(edit_form.days.expect("Form has days")),
     }
+
+    fill_edit_feed_data_from_racer(&mut ctx, &racer);
+    Template::render(EDIT_FEED_FILE, &ctx.into_json())
 }
 
 ////////////////////////////////////////////////////////////////////////////////

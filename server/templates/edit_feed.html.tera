@@ -66,40 +66,48 @@
 </table>
 
 {% if pause_date %}
-<form action="/edit_feed?uuid={{ uuid }}&action=unpause" method="post">
+<form action="/edit_feed">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="Unpause" />
     <input type="submit" value="Resume Feed">
 </form>
 {% else %}
-<form action="/edit_feed?uuid={{ uuid }}&action=pause" method="post">
+<form action="/edit_feed">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="Pause" />
     <input type="submit" value="Pause Feed">
 </form>
 
-<!-- <form action="/edit_feed?uuid={{ uuid }}&action=feed_rate" method="post">
+<form action="/edit_feed">
     <input type="submit" value="Update Feed Rate">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
     <label for="rate">
     Rate:
     <input type="number" size="4" id="rate" name="rate" placeholder="1.2" step=0.001 required>
     </label><br>
-</form> -->
+</form>
 
-<form action="/edit_feed?uuid={{ uuid }}&action=publish_next_ep" method="post">
+<form action="/edit_feed">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="PublishNextEp" />
     <input type="submit" value="Publish Next Episode Now">
 </form>
 
-<form action="/edit_feed?uuid={{ uuid }}&action=publish_next_ep" method="post">
-    <input type="submit" value="Publish Next Episode Now">
-</form>
-
-<form action="/edit_feed?uuid={{ uuid }}&action=fast_forward" method="post">
+<form action="/edit_feed">
     <input type="submit" value="Fast-Forward # of Days">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="FastForward" />
     <label for="days">
     Days:
     <input type="number" size="4" id="days" name="days" placeholder="1" step=1 required>
     </label>
 </form>
 
-<form action="/edit_feed?uuid={{ uuid }}&action=rewind" method="post">
+<form action="/edit_feed">
     <input type="submit" value="Rewind # of Days">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="Rewind" />
     <label for="days">
     Days:
     <input type="number" size="4" id="days" name="days" placeholder="1" step=1 required>

@@ -82,8 +82,11 @@ pub struct FeedRacer {
     first_pubdate: DateTime<chrono::FixedOffset>,
     release_dates: Vec<RacerEpisode>
 }
-// Basic getter functions
+// Basic getter/setter functions
 impl FeedRacer {
+    ////////////////////////////////////////////////////////////////////////////////
+    // Getters
+    ////////////////////////////////////////////////////////////////////////////////
     // pub fn get_schema_version(&self) -> &str { &self.schema_version }
     // pub fn get_release_dates(&self) -> &Vec<RacerEpisode> { &self.release_dates }
     pub fn get_first_pubdate(&self) -> DateTime<chrono::FixedOffset> {
@@ -138,6 +141,17 @@ impl FeedRacer {
             Some(uuid) => uuid.to_string(),
             None => String::from("No UUID"),
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Setters
+    ////////////////////////////////////////////////////////////////////////////////
+    pub fn set_rate(&mut self, new_rate: f32) {
+        self.rate = new_rate;
+    }
+    pub fn rewind_by_days(&mut self, days: usize) {
+    }
+    pub fn fastforward_by_days(&mut self, days: usize) {
     }
 }
 
@@ -581,7 +595,7 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN:
     //
-    fn publish_next_ep_now(&mut self) {
+    pub fn publish_next_ep_now(&mut self) {
         // Get the date for the next episode to publish
         let now = chrono::Utc::now();
         let next_ep_publish_date = self.get_next_episode_pub_date();
@@ -673,9 +687,6 @@ impl FeedRacer {
                 };
 
                 self.pause_date = None;
-
-                // Fast forward to the next episode
-                self.publish_next_ep_now();
             }
             None => println!("Error! Attempt to unpause feed with no saved pause_date. Not doing anything."),
         }

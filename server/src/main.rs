@@ -62,8 +62,6 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
         .register("/", catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![edit_feed_handler])
-        .mount("/", routes![pause_feed_handler])
-        .mount("/", routes![unpause_feed_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
         .mount("/", routes![list_feeds_handler])

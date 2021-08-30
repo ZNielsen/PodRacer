@@ -3,6 +3,7 @@
 {{ macros::static_header() }}
 
 {{ macros::static_post_open() }}
+
 Create a new PodRacer feed:
 <form action="/create_feed">
     <label for="fname">
@@ -19,16 +20,22 @@ Create a new PodRacer feed:
     </label><br>
     <input type="submit" value="Submit">
 </form>
+
 <br><br><br>
+
 Or
+
 <br><br><br>
-<form action="/edit_feed" method="post">
+
+<form action="/edit_feed">
     <label for="uuid">
     Edit existing feed by UUID (found in the podcast description):
     <input type="text" style="width:90%" id="uuid" name="uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
     </label><br>
+    <input type="hidden" id="racer_action" name="racer_action" value="EditFeed" />
     <input type="submit" value="Edit">
 </form>
+
 {{ macros::static_post_close() }}
 
 {{ macros::static_footer() }}
