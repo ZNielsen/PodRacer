@@ -66,20 +66,46 @@
 </table>
 
 {% if pause_date %}
-<form action="/unpause_feed?uuid={{ uuid }}" method="post">
+<form action="/edit_feed?uuid={{ uuid }}&action=unpause" method="post">
     <input type="submit" value="Resume Feed">
 </form>
 {% else %}
-<form action="/pause_feed?uuid={{ uuid }}" method="post">
+<form action="/edit_feed?uuid={{ uuid }}&action=pause" method="post">
     <input type="submit" value="Pause Feed">
 </form>
-<!-- <form action="/update_feed_rate?uuid={{ uuid }}">
+
+<!-- <form action="/edit_feed?uuid={{ uuid }}&action=feed_rate" method="post">
+    <input type="submit" value="Update Feed Rate">
     <label for="rate">
     Rate:
     <input type="number" size="4" id="rate" name="rate" placeholder="1.2" step=0.001 required>
     </label><br>
-    <input type="submit" value="Update Feed Rate">
 </form> -->
+
+<form action="/edit_feed?uuid={{ uuid }}&action=publish_next_ep" method="post">
+    <input type="submit" value="Publish Next Episode Now">
+</form>
+
+<form action="/edit_feed?uuid={{ uuid }}&action=publish_next_ep" method="post">
+    <input type="submit" value="Publish Next Episode Now">
+</form>
+
+<form action="/edit_feed?uuid={{ uuid }}&action=fast_forward" method="post">
+    <input type="submit" value="Fast-Forward # of Days">
+    <label for="days">
+    Days:
+    <input type="number" size="4" id="days" name="days" placeholder="1" step=1 required>
+    </label>
+</form>
+
+<form action="/edit_feed?uuid={{ uuid }}&action=rewind" method="post">
+    <input type="submit" value="Rewind # of Days">
+    <label for="days">
+    Days:
+    <input type="number" size="4" id="days" name="days" placeholder="1" step=1 required>
+    </label>
+</form>
+
 {% endif %}
 
 
