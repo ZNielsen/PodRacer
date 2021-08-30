@@ -18,8 +18,8 @@ mod routes;
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
 use rocket::fairing::AdHoc;
-use rocket_contrib::serve::StaticFiles;
-use rocket_contrib::templates::Template;
+use rocket::fs::FileServer;
+use rocket_dyn_templates::Template;
 use routes::*;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,41 +39,47 @@ use routes::*;
 //  ARGS:   None
 //  RETURN: None
 //
-fn main() {
-    let rocket = rocket::ignite();
-    let static_file_dir = rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned();
-    let podracer_dir = rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned();
+#[launch]
+fn rocket() -> rocket::Rocket<rocket::Build> {
+    let rocket = rocket::build();
+    let figment = rocket::Config::figment();
+    // TODO - don't extract everything peicewise, just have a podracer config struct
+    let static_file_dir: String = figment.extract_inner::<String>("static_file_dir")
+            .expect("static_file_dir in config");
+    let podracer_dir = figment.extract_inner::<String>("podracer_dir")
+            .expect("podracer_dir in config");
+    let podracer_dir_for_closure = podracer_dir.clone();
     let rocket = rocket
-        .register(catchers![not_found_handler])
+        .register("/", catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![edit_feed_handler])
         .mount("/", routes![pause_feed_handler])
         .mount("/", routes![unpause_feed_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
-        //.mount("/", routes![delete_feed_handler])
         .mount("/", routes![list_feeds_handler])
         .mount("/", routes![serve_rss_handler])
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_cli_handler])
         .mount("/", routes![create_feed_cli_ep_handler])
-        // .mount("/", routes![manual::icon])
-        .mount("/", StaticFiles::from(&static_file_dir))
+        .mount("/", FileServer::from(&static_file_dir))
         .attach(Template::fairing())
-        .attach(AdHoc::on_attach("Asset Config", |rocket| {
+        .attach(AdHoc::on_ignite("Asset Config", |rocket| async move {
             // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
-                static_file_dir: rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned(),
-                podracer_dir: rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned(),
-                address: rocket.config().get_str("host").unwrap().to_owned(),
-                port: rocket.config().port as u64,
+                // static_file_dir: rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned(),
+                // podracer_dir: rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned(),
+                static_file_dir: static_file_dir,
+                podracer_dir: podracer_dir_for_closure,
+                address: figment.extract_inner::<String>("host").unwrap(),
+                port: figment.extract_inner::<u64>("port").unwrap(),
             };
-            let update_factor = rocket.config().get_int("update_factor").unwrap() as u64;
+            let update_factor = figment.extract_inner::<u64>("update_factor").unwrap();
 
             // Add custom configs to the State manager - only one of each type is allowed
-            Ok(rocket
+            rocket
                 .manage(rocket_config)
-                .manage(routes::UpdateFactor(update_factor)))
+                .manage(routes::UpdateFactor(update_factor))
         }));
 
     // Manually update on start
@@ -112,6 +118,6 @@ fn main() {
                 }
             };
         });
-    rocket.launch();
+    rocket
 }
 

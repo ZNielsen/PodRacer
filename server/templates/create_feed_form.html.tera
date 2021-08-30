@@ -22,7 +22,7 @@ Create a new PodRacer feed:
 <br><br><br>
 Or
 <br><br><br>
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <label for="uuid">
     Edit existing feed by UUID (found in the podcast description):
     <input type="text" style="width:90%" id="uuid" name="uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
