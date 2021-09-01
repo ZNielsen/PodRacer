@@ -22,12 +22,23 @@ use rocket::fs::FileServer;
 use rocket_dyn_templates::Template;
 use routes::*;
 
+use serde::Deserialize;
+
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
 // `web` is a symlink to the OUT_DIR location, see build.rs
 // const STATIC_FILE_DIR: &'static str = "/etc/podracer/config/server/web/static";
 // const STATIC_FILE_DIR: &'static str = "server/static";
+
+#[derive(Clone, Deserialize)]
+struct PodRacerRocketConfig {
+    static_file_dir: String,
+    podracer_dir: String,
+    address: String,
+    port: u32,
+    update_factor: u32,
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   main
@@ -42,13 +53,10 @@ use routes::*;
 #[launch]
 fn rocket() -> rocket::Rocket<rocket::Build> {
     let rocket = rocket::build();
-    let figment = rocket::Config::figment();
-    // TODO - don't extract everything peicewise, just have a podracer config struct
-    let static_file_dir: String = figment.extract_inner::<String>("static_file_dir")
-            .expect("static_file_dir in config");
-    let podracer_dir = figment.extract_inner::<String>("podracer_dir")
-            .expect("podracer_dir in config");
-    let podracer_dir_for_closure = podracer_dir.clone();
+    let custom_config: PodRacerRocketConfig = rocket::Config::figment().extract()
+        .expect("Can extract custom config from rocket");
+    let config_for_closure = custom_config.clone();
+
     let rocket = rocket
         .register("/", catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
@@ -62,28 +70,25 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
         .mount("/", routes![create_feed_handler])
         .mount("/", routes![create_feed_cli_handler])
         .mount("/", routes![create_feed_cli_ep_handler])
-        .mount("/", FileServer::from(&static_file_dir))
+        .mount("/", FileServer::from(&custom_config.static_file_dir))
         .attach(Template::fairing())
         .attach(AdHoc::on_ignite("Asset Config", |rocket| async move {
             // Parse out config values we need to tell users about
             let rocket_config = routes::RocketConfig {
-                // static_file_dir: rocket.config().get_str("static_file_dir").expect("static_file_dir in config").to_owned(),
-                // podracer_dir: rocket.config().get_str("podracer_dir").expect("podracer_dir in config").to_owned(),
-                static_file_dir: static_file_dir,
-                podracer_dir: podracer_dir_for_closure,
-                address: figment.extract_inner::<String>("host").unwrap(),
-                port: figment.extract_inner::<u64>("port").unwrap(),
+                static_file_dir: config_for_closure.static_file_dir,
+                podracer_dir: config_for_closure.podracer_dir,
+                address: config_for_closure.address,
+                port: config_for_closure.port,
             };
-            let update_factor = figment.extract_inner::<u64>("update_factor").unwrap();
 
             // Add custom configs to the State manager - only one of each type is allowed
             rocket
                 .manage(rocket_config)
-                .manage(routes::UpdateFactor(update_factor))
+                .manage(routes::UpdateFactor(config_for_closure.update_factor))
         }));
 
     // Manually update on start
-    match racer::update_all(&podracer_dir) {
+    match racer::update_all(&custom_config.podracer_dir) {
         Ok(update_metadata) => println!(
             "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
             update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
@@ -91,7 +96,7 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
-    let duration: u64 = match rocket.state::<UpdateFactor>() {
+    let duration: u32 = match rocket.state::<UpdateFactor>() {
         Some(val) => (val.0 * 60),
         None => (59 * 60),
     };
@@ -102,9 +107,9 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
     let _update_thread = std::thread::Builder::new()
         .name("Updater".to_owned())
         .spawn(move || loop {
-            std::thread::sleep(std::time::Duration::from_secs(duration));
+            std::thread::sleep(std::time::Duration::from_secs(duration as u64));
             print!("Updating all feeds... ");
-            match racer::update_all(&podracer_dir) {
+            match racer::update_all(&custom_config.podracer_dir) {
                 Ok(update_metadata) => {
                     println!(
                         "Done. Did {} feeds in {:?} ({} feeds with new episodes).",

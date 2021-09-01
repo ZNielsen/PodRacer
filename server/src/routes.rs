@@ -15,12 +15,14 @@ use super::racer;
 
 use rocket::serde::uuid::Uuid;
 use rocket::form::Form;
+use rocket::fs::NamedFile;
 use rocket::{Request, State};
+
 use rocket_dyn_templates::Template;
 
-use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
+
 use tera::Context;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,9 +42,9 @@ pub struct RocketConfig {
     pub static_file_dir: String,
     pub podracer_dir: String,
     pub address: String,
-    pub port: u64,
+    pub port: u32,
 }
-pub struct UpdateFactor(pub u64);
+pub struct UpdateFactor(pub u32);
 
 struct FeedFunFacts {
     num_items: usize,
@@ -72,20 +74,20 @@ pub struct FormParams {
 //  RETURN: The new podcast form file
 //
 #[get("/")]
-pub fn create_feed_form_handler(config: &State<RocketConfig>) -> File {
+pub async fn create_feed_form_handler(config: &State<RocketConfig>) -> NamedFile {
     let file = format!("{}/{}", &config.static_file_dir, "create_feed_form.html");
-    match File::open(&file) {
+    match NamedFile::open(&file).await {
         Ok(f) => f,
         Err(e) => {
             println!("Error: {}", e);
             println!("Attempted to access {}", file);
-            File::open(format!("{}/{}", &config.static_file_dir, "404.html")).unwrap()
+            NamedFile::open(format!("{}/{}", &config.static_file_dir, "404.html")).await.unwrap()
         }
     }
 }
 
 #[catch(404)]
-pub fn not_found_handler(req: &Request) -> File {
+pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
     println!("404 served to: {:?}", req.client_ip());
     println!("\t{:?} requested {}", req.real_ip(), req.uri());
     let static_file_dir: String = req.rocket().figment()
@@ -93,7 +95,7 @@ pub fn not_found_handler(req: &Request) -> File {
             .expect("static_file_dir in config");
     let filename = format!("{}/{}", static_file_dir, "404.html");
     println!("\tServing 404 file at {}", filename);
-    File::open(&filename).unwrap()
+    NamedFile::open(&filename).await.unwrap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -372,7 +374,7 @@ pub fn list_feeds_handler(config: &State<RocketConfig>) -> Result<String, String
 //  RETURN: Our PodRacer RSS file
 //
 #[get("/podcasts/<podcast>/racer.rss")]
-pub fn serve_rss_handler(config: &State<RocketConfig>, podcast: String) -> Result<File, std::io::Error> {
+pub async fn serve_rss_handler(config: &State<RocketConfig>, podcast: String) -> Result<NamedFile, std::io::Error> {
     println!("Serving at {}", chrono::Utc::now().to_rfc3339());
     // Serve the rss file
     let path: PathBuf = [
@@ -383,7 +385,7 @@ pub fn serve_rss_handler(config: &State<RocketConfig>, podcast: String) -> Resul
     .iter()
     .collect();
     println!("Getting podcast from path: {:?}", path);
-    std::fs::File::open(&path)
+    NamedFile::open(&path).await
 }
 
 //
@@ -453,7 +455,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     racer::scrub_xml_file(&path);
 
     println!("Getting stats from file at {}", path.display());
-    let file = File::open(&path).unwrap();
+    let file = std::fs::File::open(&path).expect("File exists at racer path");
     let mut buf = std::io::BufReader::new(&file);
     let feed = rss::Channel::read_from(&mut buf).unwrap();
     let num_items = feed.items().len() - &params.start_ep;

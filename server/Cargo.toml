@@ -11,6 +11,7 @@ fail-on-warnings = []
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
 racer = { path = "../racer" }
 tera = "1"
 dirs = "3.0.1"

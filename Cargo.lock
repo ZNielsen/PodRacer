@@ -1387,6 +1387,7 @@ dependencies = [
  "rocket",
  "rocket_dyn_templates",
  "rss",
+ "serde",
  "tera",
 ]
 

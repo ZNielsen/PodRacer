@@ -41,7 +41,7 @@ pub struct RacerCreationParams {
     pub address: String,
     pub url: String,
     pub start_ep: usize,
-    pub port: u64,
+    pub port: u32,
     pub rate: f32,
 }
 
