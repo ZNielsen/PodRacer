@@ -18,7 +18,9 @@ mod routes;
 ////////////////////////////////////////////////////////////////////////////////
 use rocket::fairing::AdHoc;
 use rocket::fs::FileServer;
+
 use rocket_dyn_templates::Template;
+
 use routes::*;
 
 use serde::Deserialize;
@@ -33,10 +35,10 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize)]
 struct PodRacerRocketConfig {
     static_file_dir: String,
+    update_factor: u32,
     podracer_dir: String,
     address: String,
     port: u32,
-    update_factor: u32,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
