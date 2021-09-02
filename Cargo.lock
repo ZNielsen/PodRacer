@@ -1332,6 +1332,7 @@ dependencies = [
  "rss",
  "serde",
  "tera",
+ "tokio",
 ]
 
 [[package]]

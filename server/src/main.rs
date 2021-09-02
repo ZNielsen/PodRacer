@@ -26,6 +26,8 @@ use routes::*;
 
 use serde::Deserialize;
 
+use tokio;
+
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,15 +99,11 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
         Err(string) => println!("Error in update_all on boot: {}", string),
     };
 
-    let duration: u32 = match rocket.state::<UpdateFactor>() {
-        Some(val) => (val.0 * 60),
-        None => (59 * 60),
-    };
-
+    let duration: u32 = custom_config.update_factor * 60;
     println!("Spawning update thread. Will run every {} seconds.", duration);
 
-    // Create update thread - update every <duration> (default to every hour if not specified in Rocket.toml)
-    let looping_update_fn = async move || {
+    // Create update thread - update every `duration`
+    tokio::spawn(async move {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(duration as u64));
             print!("Updating all feeds... ");
@@ -123,10 +121,8 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
                 }
             };
         };
-    };
-    let _update_thread = std::thread::Builder::new()
-        .name("Updater".to_owned())
-        .spawn(looping_update_fn);
+    });
+
     rocket
 }
 
