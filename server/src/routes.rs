@@ -405,7 +405,7 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
         String::from("Feed paused, unpause to publish next episode")
     }
     else {
-        next.to_rfc2822()
+        next.with_timezone(&chrono_tz::US::Pacific).to_rfc2822()
     };
     cx.insert("next_pub_date_string", &next_pub_date_string);
     cx.insert("podcast_title", &racer.get_podcast_title());
