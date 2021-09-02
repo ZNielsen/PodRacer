@@ -191,8 +191,7 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
         },
         FeedAction::Unpause => {
             racer.unpause_feed();
-            ctx.insert("top_text", "Feed has been unpaused. The next episode has \
-                been published (but give it a couple minutes to show up in your podcatcher)");
+            ctx.insert("top_text", "Feed has been unpaused.");
         },
         FeedAction::PublishNextEp => racer.publish_next_ep_now().await,
         FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
