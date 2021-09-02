@@ -4,8 +4,8 @@
 
 {{ macros::static_post_open() }}
 
-Failure...<br>
-{{ url }}
+Failure subscribing to {{ url }}<br>
+{{ error_string }}
 
 {{ macros::static_post_close() }}
 

@@ -4,6 +4,7 @@
 //  © Zach Nielsen 2020
 //  Main server code
 //
+#![feature(async_closure)]
 ////////////////////////////////////////////////////////////////////////////////
 //  Included Modules
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +53,7 @@ struct PodRacerRocketConfig {
 //  RETURN: None
 //
 #[launch]
-fn rocket() -> rocket::Rocket<rocket::Build> {
+async fn rocket() -> rocket::Rocket<rocket::Build> {
     let rocket = rocket::build();
     let custom_config: PodRacerRocketConfig = rocket::Config::figment().extract()
         .expect("Can extract custom config from rocket");
@@ -61,7 +62,8 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
     let rocket = rocket
         .register("/", catchers![not_found_handler])
         .mount("/", routes![create_feed_form_handler])
-        .mount("/", routes![edit_feed_handler])
+        .mount("/", routes![edit_feed_get_handler])
+        .mount("/", routes![edit_feed_post_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
         .mount("/", routes![list_feeds_handler])
@@ -87,7 +89,7 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
         }));
 
     // Manually update on start
-    match racer::update_all(&custom_config.podracer_dir) {
+    match racer::update_all(&custom_config.podracer_dir).await {
         Ok(update_metadata) => println!(
             "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
             update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
@@ -103,12 +105,11 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
     println!("Spawning update thread. Will run every {} seconds.", duration);
 
     // Create update thread - update every <duration> (default to every hour if not specified in Rocket.toml)
-    let _update_thread = std::thread::Builder::new()
-        .name("Updater".to_owned())
-        .spawn(move || loop {
+    let looping_update_fn = async move || {
+        loop {
             std::thread::sleep(std::time::Duration::from_secs(duration as u64));
             print!("Updating all feeds... ");
-            match racer::update_all(&custom_config.podracer_dir) {
+            match racer::update_all(&custom_config.podracer_dir).await {
                 Ok(update_metadata) => {
                     println!(
                         "Done. Did {} feeds in {:?} ({} feeds with new episodes).",
@@ -121,7 +122,11 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
                     println!("Error in update_all in update thread: {}", string);
                 }
             };
-        });
+        };
+    };
+    let _update_thread = std::thread::Builder::new()
+        .name("Updater".to_owned())
+        .spawn(looping_update_fn);
     rocket
 }
 

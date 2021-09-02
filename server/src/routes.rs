@@ -57,8 +57,8 @@ struct FeedFunFacts {
 }
 
 #[derive(FromForm)]
-pub struct CreateFeedForm<'a> {
-    pub url: &'a str,
+pub struct CreateFeedForm {
+    pub url: String,
     pub rate: f32,
     pub start_ep: usize,
 }
@@ -122,11 +122,14 @@ pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
 //
 //  NOTES:  Creates a new PodRacer feed. From the web ui.
 //  ARGS:
-//  RETURN: A result with string information either way. Tailored for a curl response
+//  RETURN:
 //
-#[get("/create_feed", data = "<form_data>")]
-pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateFeedForm>) -> Template {
+#[post("/create_feed", data = "<form_data>")]
+pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateFeedForm>) -> Template {
     let mut context = Context::new();
+
+    println!("in create_feed_handler");
+
     match create_feed(racer::RacerCreationParams {
         static_file_dir: config.static_file_dir.clone(),
         podracer_dir: config.podracer_dir.clone(),
@@ -134,9 +137,10 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateF
         address: config.address.clone(),
         rate: form_data.rate,
         port: config.port,
-        url: String::from(form_data.url),
-    }) {
+        url: form_data.url.clone(),
+    }).await {
         Ok(fun_facts) => {
+            println!("Created feed");
             let catch_up_date = format!("{}",   &fun_facts.catch_up_date.format("%d %b, %Y"));
             context.insert("weeks_to_catch_up", &fun_facts.weeks_to_catch_up);
             context.insert("days_to_catch_up",  &fun_facts.days_to_catch_up);
@@ -148,7 +152,9 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateF
             Template::render(SUCCESS_FILE, &context.into_json())
         }
         Err(e) => {
+            println!("errored");
             context.insert("error_string", &e);
+            context.insert("url", &form_data.url);
             Template::render(FAILURE_FILE, &context.into_json())
         }
     }
@@ -161,8 +167,8 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateF
 //  ARGS:
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
-#[get("/edit_feed", data = "<edit_form>")]
-pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
+#[post("/edit_feed", data = "<edit_form>")]
+pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
     let mut ctx = Context::new();
 
     let mut racer = match get_feed_by_uuid(&config, &edit_form.uuid) {
@@ -179,7 +185,7 @@ pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedF
         FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
         FeedAction::EditRate => racer.set_rate(edit_form.rate.expect("Form has rate")),
         FeedAction::Pause => {
-            racer.pause_feed();
+            racer.pause_feed().await;
             ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
                 until you unpause this feed.");
         },
@@ -188,11 +194,26 @@ pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedF
             ctx.insert("top_text", "Feed has been unpaused. The next episode has \
                 been published (but give it a couple minutes to show up in your podcatcher)");
         },
-        FeedAction::PublishNextEp => racer.publish_next_ep_now(),
+        FeedAction::PublishNextEp => racer.publish_next_ep_now().await,
         FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
         FeedAction::FastForward   => racer.fastforward_by_days(edit_form.days.expect("Form has days")),
     }
 
+    fill_edit_feed_data_from_racer(&mut ctx, &racer);
+    Template::render(EDIT_FEED_FILE, &ctx.into_json())
+}
+#[get("/edit_feed/<uuid>")]
+pub async fn edit_feed_get_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
+    let mut ctx = Context::new();
+
+    let racer = match get_feed_by_uuid(&config, &uuid) {
+        Ok(racer) => racer,
+        Err(e) => {
+            println!("Error getting feed: {}", e);
+            ctx.insert("uuid", &uuid.to_string());
+            return Template::render(FEED_NOT_FOUND_FILE, &ctx.into_json());
+        }
+    };
     fill_edit_feed_data_from_racer(&mut ctx, &racer);
     Template::render(EDIT_FEED_FILE, &ctx.into_json())
 }
@@ -209,7 +230,7 @@ pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedF
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[post("/create_feed_cli?<url>&<rate>", rank = 2)]
-pub fn create_feed_cli_handler(
+pub async fn create_feed_cli_handler(
     config: &State<RocketConfig>,
     url: String,
     rate: f32,
@@ -222,7 +243,7 @@ pub fn create_feed_cli_handler(
         url: url,
         rate: rate,
         start_ep: 1,
-    }) {
+    }).await {
         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
         Err(e) => Err(e),
     }
@@ -244,7 +265,7 @@ pub fn create_feed_cli_handler(
 //      If Ok(), the File will have the subscribe url to display to the user
 //
 #[post("/create_feed_cli?<url>&<rate>&<start_ep>", rank = 1)]
-pub fn create_feed_cli_ep_handler(
+pub async fn create_feed_cli_ep_handler(
     config: &State<RocketConfig>,
     url: String,
     rate: f32,
@@ -258,7 +279,7 @@ pub fn create_feed_cli_ep_handler(
         url: url,
         rate: rate,
         start_ep: start_ep,
-    }) {
+    }).await {
         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
         Err(e) => Err(e),
     }
@@ -274,18 +295,18 @@ pub fn create_feed_cli_ep_handler(
 //  RETURN:
 //
 #[post("/update/<podcast>")]
-pub fn update_one_handler(config: &State<RocketConfig>, podcast: String) -> std::io::Result<()> {
+pub async fn update_one_handler(config: &State<RocketConfig>, podcast: String) -> std::io::Result<()> {
     // Update the specified podcast
     // Check if podcast is folder name
     if let Some(mut racer) = racer::get_by_dir_name(&config.podracer_dir, &podcast) {
-        return match racer.update(&racer::RssFile::Download) {
+        return match racer.update(&racer::RssFile::Download).await {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         };
     }
     // Check if subscribe url
     if let Some(mut racer) = racer::get_by_url(&config.podracer_dir, &podcast) {
-        return match racer.update(&racer::RssFile::Download) {
+        return match racer.update(&racer::RssFile::Download).await {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         };
@@ -304,8 +325,8 @@ pub fn update_one_handler(config: &State<RocketConfig>, podcast: String) -> std:
 //  RETURN: A result. If error, a string containing some error info
 //
 #[post("/update")]
-pub fn update_all_handler(config: &State<RocketConfig>) -> Result<(), String> {
-    match racer::update_all(&config.podracer_dir) {
+pub async fn update_all_handler(config: &State<RocketConfig>) -> Result<(), String> {
+    match racer::update_all(&config.podracer_dir).await {
         Ok(_) => Ok(()),
         Err(string) => Err(format!("Error in update_all_handler: {}", string)),
     }
@@ -418,8 +439,8 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
 //      A result. If Ok(), contains a bunch of stats for the user. If Err(),
 //      contains info for why it failed
 //
-fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, String> {
-    let feed_racer = match racer::create_feed(&mut params) {
+async fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, String> {
+    let feed_racer = match racer::create_feed(&mut params).await {
         Ok(val) => val,
         Err(e) => return Err(e),
     };
@@ -428,7 +449,7 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
 
     // Grab some info to return
     let path: PathBuf = [
-        feed_racer.get_racer_path().to_str().unwrap(),
+        feed_racer.get_racer_path().to_str().expect("racer_path can go to str"),
         racer::ORIGINAL_RSS_FILE,
     ].iter().collect();
 
@@ -440,7 +461,10 @@ fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, S
     println!("Getting stats from file at {}", path.display());
     let file = std::fs::File::open(&path).expect("File exists at racer path");
     let mut buf = std::io::BufReader::new(&file);
-    let feed = rss::Channel::read_from(&mut buf).unwrap();
+    let feed = match rss::Channel::read_from(&mut buf) {
+        Ok(f) => f,
+        Err(e) => return Err(e.to_string()),
+    };
     let num_items = feed.items().len() - &params.start_ep;
     let weeks_behind = feed_racer
         .get_first_pubdate()

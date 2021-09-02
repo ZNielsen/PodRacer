@@ -66,19 +66,19 @@
 </table>
 
 {% if pause_date %}
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="Unpause" />
     <input type="submit" value="Resume Feed">
 </form>
 {% else %}
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="Pause" />
     <input type="submit" value="Pause Feed">
 </form>
 
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="submit" value="Update Feed Rate">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
@@ -88,13 +88,13 @@
     </label><br>
 </form>
 
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="PublishNextEp" />
     <input type="submit" value="Publish Next Episode Now">
 </form>
 
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="submit" value="Fast-Forward # of Days">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="FastForward" />
@@ -104,7 +104,7 @@
     </label>
 </form>
 
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <input type="submit" value="Rewind # of Days">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="Rewind" />

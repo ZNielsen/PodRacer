@@ -5,7 +5,7 @@
 {{ macros::static_post_open() }}
 
 Create a new PodRacer feed:
-<form action="/create_feed">
+<form action="/create_feed" method="post">
     <label for="fname">
     URL:
     <input type="text" style="width:90%" id="url" name="url" placeholder="https://atp.fm/rss" required>
@@ -27,7 +27,7 @@ Or
 
 <br><br><br>
 
-<form action="/edit_feed">
+<form action="/edit_feed" method="post">
     <label for="uuid">
     Edit existing feed by UUID (found in the podcast description):
     <input type="text" style="width:90%" id="uuid" name="uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>

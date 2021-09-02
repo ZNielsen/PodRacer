@@ -149,9 +149,11 @@ impl FeedRacer {
     pub fn set_rate(&mut self, new_rate: f32) {
         self.rate = new_rate;
     }
-    pub fn rewind_by_days(&mut self, days: usize) {
+    pub fn rewind_by_days(&mut self, _days: usize) {
+        // TODO
     }
-    pub fn fastforward_by_days(&mut self, days: usize) {
+    pub fn fastforward_by_days(&mut self, _days: usize) {
+        // TODO
     }
 }
 
@@ -237,9 +239,9 @@ impl FeedRacer {
     //  ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
     //  RETURN: Result - I/O successful or not
     //
-    pub fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
+    pub async fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
         // Get original rss feed
-        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode)?;
+        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode).await?;
 
         // Re-render in case of rate change
         // Probably won't need this in the future
@@ -443,7 +445,7 @@ impl FeedRacer {
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
 
-    fn get_original_rss(
+    async fn get_original_rss(
         &mut self,
         preferred_mode: &RssFile,
     ) -> std::io::Result<(rss::Channel, bool)> {
@@ -482,7 +484,7 @@ impl FeedRacer {
 
         match functional_mode {
             RssFile::Download => {
-                match download_rss_channel(&self.source_url) {
+                match download_rss_channel(&self.source_url).await {
                     Ok(network_file) => {
                         // Compare to stored file - update if we need to
                         let num_to_update = match &stored_rss {
@@ -595,14 +597,14 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN:
     //
-    pub fn publish_next_ep_now(&mut self) {
+    pub async fn publish_next_ep_now(&mut self) {
         // Get the date for the next episode to publish
         let now = chrono::Utc::now();
         let next_ep_publish_date = self.get_next_episode_pub_date();
 
         // Move the anchor_date back by the difference
-        let time_to_publish_next = next_ep_publish_date.signed_duration_since(now)
-                                    .checked_add(&Duration::seconds(30)).expect("Can add a few seconds");
+        let time_to_publish_next = next_ep_publish_date.signed_duration_since(now);
+                                   // .checked_add(&Duration::seconds(30)).expect("Can add a few seconds");
         self.anchor_date = match self.anchor_date.checked_sub_signed(time_to_publish_next) {
             Some(time) => time,
             None => {
@@ -612,7 +614,7 @@ impl FeedRacer {
         };
 
         // Update now
-        match self.update(&RssFile::FromStorage) {
+        match self.update(&RssFile::FromStorage).await {
             Ok(_) => (),
             Err(e) => println!("Error updating after fast-forward: {}", e),
         }
@@ -639,7 +641,7 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN:
     //
-    pub fn pause_feed(&mut self) {
+    pub async fn pause_feed(&mut self) {
         match self.pause_date {
             None => {
                 // Save old rate
@@ -650,7 +652,7 @@ impl FeedRacer {
                 self.pause_date = Some(chrono::Utc::now());
 
                 // Update to write to file
-                match self.update(&RssFile::FromStorage) {
+                match self.update(&RssFile::FromStorage).await {
                     Ok(_) => (),
                     Err(e) => println!("Error updating after pausing: {}", e),
                 }
@@ -745,11 +747,11 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 //      preferred_mode - Whether we prefer to download a fresh copy or not.
 //  RETURN: A result. Typically only fails on I/O or network stuff.
 //
-fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
+async fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
     // Load in racer file
     let mut racer = get_racer_at_path(path)?;
 
-    racer.update(preferred_mode)
+    racer.update(preferred_mode).await
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -779,7 +781,7 @@ pub fn get_all_podcast_dirs(base_dir: &str) -> Result<std::fs::ReadDir, String> 
 //  ARGS:   None
 //  RETURN: A result containing some metadata about the update or an error string
 //
-pub fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
+pub async fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
     let mut num_with_new_eps = 0;
@@ -796,7 +798,7 @@ pub fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
             Some(val) => val,
             None => return Err(format!("Tried to open empty path")),
         };
-        match update_racer_at_path(path_str, &RssFile::Download) {
+        match update_racer_at_path(path_str, &RssFile::Download).await {
             Ok(new_eps) => {
                 if new_eps {
                     num_with_new_eps += 1;
@@ -833,11 +835,11 @@ pub fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
 //  ARGS:   params - All the params needed to make a racer
 //  RETURN: A FeedRacer or error String
 //
-pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
+pub async fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
     if None == params.url.find("http") {
         params.url = String::from("https://") + &params.url;
     }
-    let rss = match download_rss_channel(&params.url) {
+    let rss = match download_rss_channel(&params.url).await {
         Ok(val) => val,
         Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
     };
@@ -862,7 +864,7 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
     };
 
     // Run update() on this directory. We just created it, so no need to refresh the rss file
-    match update_racer_at_path(&racer_path, &RssFile::FromStorage) {
+    match update_racer_at_path(&racer_path, &RssFile::FromStorage).await {
         Ok(_) => println!(
             "Subscribe to this URL in your pod catcher: {}",
             racer.get_subscribe_url()
@@ -881,9 +883,9 @@ pub fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String
 //  ARGS:   url - the url of the file to get
 //  RETURN: A channel or error information
 //
-fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
-    let content = match reqwest::blocking::get(url) {
-        Ok(val) => match val.bytes() {
+async fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
+    let content = match reqwest::get(url).await {
+        Ok(val) => match val.bytes().await {
             Ok(val) => val,
             Err(e) => return Err(Box::new(e)),
         },
