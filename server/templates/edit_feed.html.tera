@@ -17,7 +17,7 @@
   {% endif %}
   <tr>
     <td>Feed UUID</td>
-    <td>{{ uuid }}</td>
+    <td><a href="/edit_feed/{{ uuid }}">{{ uuid }}</a></td>
   </tr>
 
   <tr>
