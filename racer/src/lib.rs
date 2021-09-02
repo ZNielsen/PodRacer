@@ -146,8 +146,12 @@ impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
     // Setters
     ////////////////////////////////////////////////////////////////////////////////
-    pub fn set_rate(&mut self, new_rate: f32) {
+    pub async fn set_rate(&mut self, new_rate: f32) {
         self.rate = new_rate;
+        match self.update(&RssFile::FromStorage).await {
+            Ok(_) => (),
+            Err(e) => println!("Error updating after setting rate: {}", e),
+        };
     }
     pub fn rewind_by_days(&mut self, _days: usize) {
         // TODO
