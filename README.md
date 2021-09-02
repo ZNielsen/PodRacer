@@ -45,42 +45,6 @@ Podcast clients will need to access the server remotely, so you will have to set
 ### Keeping the process alive
 You can either run in a tmux instance or use `nohup` and send it to the background. I've set it up as a `systemd` service, but that is beyond the scope of this README.
 
-## Usage
-Beyond the web UI, you can communicate with the server via HTTP methods (mostly just `POST` and `GET`). The included `create_feed.sh` bash script makes a `curl` request to the server, you can customize the arguments via command line, or change up the following examples (assuming your server is at `0.0.0.0`, listening on port `1234`)
-
-### Create a new PodRacer feed
-- POST to 0.0.0.0:1234/create_feed
-  - parameters:
-    - url [string] - The actual RSS feed for the podcast.
-    - rate [float] - Used to scale the time between episodes.
-        For a weekly podcast, a rate of 2.0 will give episodes every 3.5 days. A rate of 1.2 will give episodes roughly every 6 days. A rate of 1.0 will just time shift the podcast as if the first episode was published today.
-    - start_ep [int] - The episode number to start on.
-        This episode will appear to come out the day you create the feed. All previous episodes will appear published as well.
-        Note this argument selects from the number of episodes published in the feed, and may not match the publisher's self reported numbering.
-        I have also noticed some podcast players take a bit to organize the "back catalog" correctly, so episodes may appear out of order for a bit. In my experience it resolves in an hour or so, which I assume correlates with the player's next "update feed" call.
-  - example call:
-    ```bash
-    curl -X POST -G \
-        --data-urlencode "url=http://example.com" \
-        --data-urlencode "rate=1.2" \
-        --data-urlencode "start_ep=1" \
-        ${hostname}:${port}/${slug}
-    ```
-
-### Force update of the specified podcast
-- POST to 0.0.0.0:1234/update/<url>
-  - parameters:
-    - url [string] - Either the folder name of the podcast to update, or the racer subscribe url of the podcast to update.
-
-### Force update of all podcasts on this server
-- POST to 0.0.0.0:1234/update
-  - parameters: none
-
-### List all the PodRacer feeds on this server
-- GET to 0.0.0.0:1234/list_feeds
-  - parameters: none
-  - example call:
-
 ## Contributing
 
 ### License
