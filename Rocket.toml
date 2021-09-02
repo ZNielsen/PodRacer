@@ -3,33 +3,29 @@ workers=128
 template_dir = "server/web/templates/"
 #template_dir = "server/templates/"
 
-[development]
-address = "localhost"
+[debug]
 port = 42069
 keep_alive = 5
-log = "normal"
 limits = { forms = 32768 }
 update_factor = 1
 host = "http://localhost:42069"
-static_file_dir = "/Users/znielsen/code/PodRacer/server/web/static"
-podracer_dir = "/Users/znielsen/.config/podcasts.dev"
+static_file_dir = "/Users/z/code/PodRacer/server/web/static"
+podracer_dir = "/Users/z/.config/podcasts.dev"
 
 [staging]
 address = "0.0.0.0"
 port = 42069
 keep_alive = 5
-log = "normal"
 limits = { forms = 32768 }
 update_factor = 45
 host = "http://podracer.zachn.me"
 static_file_dir = "/etc/podracer/config/server/web/static"
 podracer_dir = "/etc/podracer/podcasts.staging"
 
-[production]
+[release]
 address = "0.0.0.0"
 port = 42069
 keep_alive = 5
-log = "normal"
 limits = { forms = 32768 }
 update_factor = 45
 host = "http://podracer.zachn.me"
