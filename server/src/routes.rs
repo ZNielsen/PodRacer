@@ -13,6 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 use super::racer;
 
+use rocket::response::Redirect;
 use rocket::serde::uuid::Uuid;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
@@ -168,39 +169,34 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[post("/edit_feed", data = "<edit_form>")]
-pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
-    let mut ctx = Context::new();
-
+pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Redirect {
     let mut racer = match get_feed_by_uuid(&config, &edit_form.uuid) {
-        Ok(racer) => racer,
+        Ok(racer) => {
+            // Parse by action
+            match edit_form.racer_action {
+                FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
+                FeedAction::EditRate => racer.set_rate(edit_form.rate.expect("Form has rate")).await,
+                FeedAction::Pause => {
+                    racer.pause_feed().await;
+                    ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
+                        until you unpause this feed.");
+                },
+                FeedAction::Unpause => {
+                    racer.unpause_feed();
+                    ctx.insert("top_text", "Feed has been unpaused. The next episode has \
+                        been published (but give it a couple minutes to show up in your podcatcher)");
+                },
+                FeedAction::PublishNextEp => racer.publish_next_ep_now().await,
+                FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
+                FeedAction::FastForward   => racer.fastforward_by_days(edit_form.days.expect("Form has days")),
+            }
+        }
         Err(e) => {
             println!("Error getting feed: {}", e);
-            ctx.insert("uuid", &edit_form.uuid.to_string());
-            return Template::render(FEED_NOT_FOUND_FILE, &ctx.into_json());
         }
     };
 
-    // Parse by action
-    match edit_form.racer_action {
-        FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
-        FeedAction::EditRate => racer.set_rate(edit_form.rate.expect("Form has rate")).await,
-        FeedAction::Pause => {
-            racer.pause_feed().await;
-            ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
-                until you unpause this feed.");
-        },
-        FeedAction::Unpause => {
-            racer.unpause_feed();
-            ctx.insert("top_text", "Feed has been unpaused. The next episode has \
-                been published (but give it a couple minutes to show up in your podcatcher)");
-        },
-        FeedAction::PublishNextEp => racer.publish_next_ep_now().await,
-        FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
-        FeedAction::FastForward   => racer.fastforward_by_days(edit_form.days.expect("Form has days")),
-    }
-
-    fill_edit_feed_data_from_racer(&mut ctx, &racer);
-    Template::render(EDIT_FEED_FILE, &ctx.into_json())
+    Redirect::to(uri!(edit_feed: edit_form.uuid))
 }
 #[get("/edit_feed/<uuid>")]
 pub async fn edit_feed_get_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
@@ -324,7 +320,7 @@ pub async fn update_one_handler(config: &State<RocketConfig>, podcast: String) -
 //  ARGS:   None
 //  RETURN: A result. If error, a string containing some error info
 //
-#[post("/update")]
+#[post("/update_all")]
 pub async fn update_all_handler(config: &State<RocketConfig>) -> Result<(), String> {
     match racer::update_all(&config.podracer_dir).await {
         Ok(_) => Ok(()),
