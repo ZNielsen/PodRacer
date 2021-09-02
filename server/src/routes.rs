@@ -57,13 +57,13 @@ struct FeedFunFacts {
 }
 
 #[derive(FromForm)]
-pub struct CreateFeedForm {
-    pub url: String,
+pub struct CreateFeedForm<'a> {
+    pub url: &'a str,
     pub rate: f32,
     pub start_ep: usize,
 }
 
-#[derive(FromFormValue)]
+#[derive(FromFormField)]
 pub enum FeedAction {
     EditFeed,
     EditRate,
@@ -124,7 +124,7 @@ pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
 //  ARGS:
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
-#[get("/create_feed?<form_data..>")]
+#[get("/create_feed", data = "<form_data>")]
 pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateFeedForm>) -> Template {
     let mut context = Context::new();
     match create_feed(racer::RacerCreationParams {
@@ -134,7 +134,7 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateF
         address: config.address.clone(),
         rate: form_data.rate,
         port: config.port,
-        url: form_data.url.clone(),
+        url: String::from(form_data.url),
     }) {
         Ok(fun_facts) => {
             let catch_up_date = format!("{}",   &fun_facts.catch_up_date.format("%d %b, %Y"));
@@ -159,10 +159,9 @@ pub fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateF
 //
 //  NOTES:  Edits a PodRacer feed by uuid. From the web ui.
 //  ARGS:
-//      uuid - The UUID of the feed to edit
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
-#[get("/edit_feed?<edit_form..>")]
+#[get("/edit_feed", data = "<edit_form>")]
 pub fn edit_feed_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
     let mut ctx = Context::new();
 
