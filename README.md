@@ -10,7 +10,7 @@
 
 A podcast catch-up service running on your very own server!
 
-I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to take the service for a spin. I'm planning on keeping this up and available for free, but I'm not making any promises until this project becomes a bit more stable.
+I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to take the service for a spin. I'm planning on keeping this up and available for free, but I'm not making any promises -- if it starts to get swamped I'll have to figure out something more scalable.
 
 ## Features
 - **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
