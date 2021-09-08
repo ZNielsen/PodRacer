@@ -8,3 +8,4 @@ target/
 ### Mine
 /server/web
 .vim/
+output.log

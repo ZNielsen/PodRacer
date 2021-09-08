@@ -786,7 +786,6 @@ pub fn get_all_podcast_dirs(base_dir: &str) -> Result<std::fs::ReadDir, String> 
 //  RETURN: A result containing some metadata about the update or an error string
 //
 pub async fn update_all<'a>(base_dir: &str, client: &'a reqwest::Client) -> Result<UpdateMetadata, String> {
-    static mut DEBUG_SWITCHER: u64 = 0;
     let start = std::time::SystemTime::now();
     let mut counter = 0;
     let mut num_with_new_eps = 0;
@@ -795,90 +794,49 @@ pub async fn update_all<'a>(base_dir: &str, client: &'a reqwest::Client) -> Resu
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
 
-    let do_async;
-    unsafe {
-        if DEBUG_SWITCHER % 2 == 0 {
-            do_async = true;
-        }
-        else {
-            do_async = false;
-        }
-        DEBUG_SWITCHER += 1;
-    }
+    // Create asyncable tasks
+    let parallel_gets = 5;
+    let results = stream::iter(podcast_dirs)
+        .map(|podcast_dir| {
+            let client = &client;
+            async move {
+                let mut has_new_eps = false;
+                let path = match podcast_dir {
+                    Ok(val) => val.path(),
+                    Err(e) => {
+                        println!("Error iterating over path from read_dir: {}", e);
+                        return has_new_eps;
+                    },
+                };
+                let path_str = match path.to_str() {
+                    Some(val) => val,
+                    None => {
+                        println!("Tried to open empty path");
+                        return has_new_eps;
+                    },
+                };
 
-    if do_async {
-        println!("Doing async");
-        // Create asyncable tasks
-        let parallel_gets = 5;
-        let results = stream::iter(podcast_dirs)
-            .map(|podcast_dir| {
-                let client = &client;
-                async move {
-                    let mut has_new_eps = false;
-                    let path = match podcast_dir {
-                        Ok(val) => val.path(),
-                        Err(e) => {
-                            println!("Error iterating over path from read_dir: {}", e);
-                            return has_new_eps;
-                        },
-                    };
-                    let path_str = match path.to_str() {
-                        Some(val) => val,
-                        None => {
-                            println!("Tried to open empty path");
-                            return has_new_eps;
-                        },
-                    };
-
-                    match update_racer_at_path(path_str, &RssFile::Download, client).await {
-                        Ok(new_eps) => {
-                            if new_eps {
-                                has_new_eps = true;
-                            }
+                match update_racer_at_path(path_str, &RssFile::Download, client).await {
+                    Ok(new_eps) => {
+                        if new_eps {
+                            has_new_eps = true;
                         }
-                        Err(e) => {
-                            println!("Could not update path {}. Error was: {}", path_str, e);
-                            return has_new_eps;
-                        }
-                    };
-
-                    has_new_eps
-                }
-            })
-            .buffer_unordered(parallel_gets);
-
-        let new_eps_vec = results.collect::<Vec<bool>>().await;
-        for new_ep in new_eps_vec {
-            if new_ep { num_with_new_eps += 1; }
-            counter += 1;
-        }
-    }
-    else {
-        println!("Doing non-async");
-        for podcast_dir in podcast_dirs {
-            let path = match podcast_dir {
-                Ok(val) => val.path(),
-                Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
-            };
-            let path_str = match path.to_str() {
-                Some(val) => val,
-                None => return Err(format!("Tried to open empty path")),
-            };
-            match update_racer_at_path(path_str, &RssFile::Download, &client).await {
-                Ok(new_eps) => {
-                    if new_eps {
-                        num_with_new_eps += 1;
                     }
-                }
-                Err(e) => {
-                    return Err(format!(
-                        "Could not update path {}. Error was: {}",
-                        path_str, e
-                    ))
-                }
-            };
-            counter += 1;
-        }
+                    Err(e) => {
+                        println!("Could not update path {}. Error was: {}", path_str, e);
+                        return has_new_eps;
+                    }
+                };
+
+                has_new_eps
+            }
+        })
+        .buffer_unordered(parallel_gets);
+
+    let new_eps_vec = results.collect::<Vec<bool>>().await;
+    for new_ep in new_eps_vec {
+        if new_ep { num_with_new_eps += 1; }
+        counter += 1;
     }
 
     let end = std::time::SystemTime::now();
