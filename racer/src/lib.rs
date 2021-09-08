@@ -166,9 +166,9 @@ impl FeedRacer {
         // Update the rate then adjust the feed
         self.rate = new_rate;
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
-            Ok(_) => (()),
+            Ok(_) => Ok(()),
             Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
-        };
+        }
     }
     pub fn rewind_by_days(&mut self, _days: usize) {
         // TODO
@@ -286,7 +286,7 @@ impl FeedRacer {
         let mut description_addition = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
             let s = match DateTime::parse_from_rfc2822(&next_item.date) {
-                Ok(val) => val.with_timezone(&Local).format("%d %b %Y at %I:%M%P"),
+                Ok(val) => val.with_timezone(&Local).format("%a, %d %b %Y at %I:%M%P"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
             format!("Next episode publishes {}", s)
