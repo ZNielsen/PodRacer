@@ -9,6 +9,11 @@ edition = "2018"
 [features]
 fail-on-warnings = []
 
+# If compiling on a system without OpenSSL installed, or cross-compiling for a different
+# architecture, enable this feature to compile OpenSSL as part of the build.
+# See https://docs.rs/openssl/#vendored for more.
+static_ssl = ['openssl/vendored']
+
 [dependencies]
 reqwest = { version = "0.11" }
 openssl = { version = "*", features = ["vendored"] }
@@ -20,3 +25,9 @@ tokio = { version = "1" }
 dirs = "3.0.1"
 uuid = { version = "*", features = ["v4"] }
 rss = "1.10"
+
+[dependencies.openssl]
+version = "*"
+optional = true
+features = ["vendored"]
+
