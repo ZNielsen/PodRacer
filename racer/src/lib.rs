@@ -6,6 +6,7 @@
 //  © Zach Nielsen 2020
 //  Items pertaining to rss manipulation
 //
+#![feature(async_closure)]
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Included Modules
@@ -14,9 +15,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 //  Namespaces
 ////////////////////////////////////////////////////////////////////////////////
+use futures::{stream, StreamExt};
 use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use uuid;
+
 use std::path::{Path, PathBuf};
 use std::io::{BufRead, BufReader, Write};
 use std::fs::File;
@@ -148,7 +151,7 @@ impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
     pub async fn set_rate(&mut self, new_rate: f32) {
         self.rate = new_rate;
-        match self.update(&RssFile::FromStorage).await {
+        match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => (),
             Err(e) => println!("Error updating after setting rate: {}", e),
         };
@@ -243,9 +246,9 @@ impl FeedRacer {
     //  ARGS:   preferred_mode - Whether we prefer to download or use the stored rss file
     //  RETURN: Result - I/O successful or not
     //
-    pub async fn update(&mut self, preferred_mode: &RssFile) -> std::io::Result<bool> {
+    pub async fn update(&mut self, preferred_mode: &RssFile, client: &reqwest::Client) -> std::io::Result<bool> {
         // Get original rss feed
-        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode).await?;
+        let (mut rss, new_episodes) = self.get_original_rss(preferred_mode, client).await?;
 
         // Re-render in case of rate change
         // Probably won't need this in the future
@@ -449,10 +452,7 @@ impl FeedRacer {
     //  RETURN: A tuple - the original rss channel + if there were new episodes to publish
     //
 
-    async fn get_original_rss(
-        &mut self,
-        preferred_mode: &RssFile,
-    ) -> std::io::Result<(rss::Channel, bool)> {
+    async fn get_original_rss(&mut self, preferred_mode: &RssFile, client: &reqwest::Client) -> std::io::Result<(rss::Channel, bool)> {
         let mut stored_rss_path = self.racer_path.clone();
         stored_rss_path.push(ORIGINAL_RSS_FILE);
         let stored_rss_file = match File::open(&stored_rss_path) {
@@ -488,7 +488,7 @@ impl FeedRacer {
 
         match functional_mode {
             RssFile::Download => {
-                match download_rss_channel(&self.source_url).await {
+                match download_rss_channel(client, &self.source_url).await {
                     Ok(network_file) => {
                         // Compare to stored file - update if we need to
                         let num_to_update = match &stored_rss {
@@ -618,7 +618,7 @@ impl FeedRacer {
         };
 
         // Update now
-        match self.update(&RssFile::FromStorage).await {
+        match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => (),
             Err(e) => println!("Error updating after fast-forward: {}", e),
         }
@@ -656,7 +656,7 @@ impl FeedRacer {
                 self.pause_date = Some(chrono::Utc::now());
 
                 // Update to write to file
-                match self.update(&RssFile::FromStorage).await {
+                match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
                     Ok(_) => (),
                     Err(e) => println!("Error updating after pausing: {}", e),
                 }
@@ -751,11 +751,11 @@ fn get_racer_at_path(path: &str) -> std::io::Result<FeedRacer> {
 //      preferred_mode - Whether we prefer to download a fresh copy or not.
 //  RETURN: A result. Typically only fails on I/O or network stuff.
 //
-async fn update_racer_at_path(path: &str, preferred_mode: &RssFile) -> std::io::Result<bool> {
+async fn update_racer_at_path(path: &str, preferred_mode: &RssFile, client: &reqwest::Client) -> std::io::Result<bool> {
     // Load in racer file
     let mut racer = get_racer_at_path(path)?;
 
-    racer.update(preferred_mode).await
+    racer.update(preferred_mode, client).await
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -785,7 +785,7 @@ pub fn get_all_podcast_dirs(base_dir: &str) -> Result<std::fs::ReadDir, String> 
 //  ARGS:   None
 //  RETURN: A result containing some metadata about the update or an error string
 //
-pub async fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
+pub async fn update_all<'a>(base_dir: &str, client: &'a reqwest::Client) -> Result<UpdateMetadata, String> {
     let start = std::time::SystemTime::now();
     let mut counter = 0;
     let mut num_with_new_eps = 0;
@@ -793,30 +793,52 @@ pub async fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
         Ok(val) => val,
         Err(str) => return Err(format!("Error in update_all: {}", str)),
     };
-    for podcast_dir in podcast_dirs {
-        let path = match podcast_dir {
-            Ok(val) => val.path(),
-            Err(e) => return Err(format!("Error iterating over path from read_dir: {}", e)),
-        };
-        let path_str = match path.to_str() {
-            Some(val) => val,
-            None => return Err(format!("Tried to open empty path")),
-        };
-        match update_racer_at_path(path_str, &RssFile::Download).await {
-            Ok(new_eps) => {
-                if new_eps {
-                    num_with_new_eps += 1;
-                }
+
+    // Create asyncable tasks
+    let parallel_gets = 5;
+    let results = stream::iter(podcast_dirs)
+        .map(|podcast_dir| {
+            let client = &client;
+            async move {
+                let mut has_new_eps = false;
+                let path = match podcast_dir {
+                    Ok(val) => val.path(),
+                    Err(e) => {
+                        println!("Error iterating over path from read_dir: {}", e);
+                        return has_new_eps;
+                    },
+                };
+                let path_str = match path.to_str() {
+                    Some(val) => val,
+                    None => {
+                        println!("Tried to open empty path");
+                        return has_new_eps;
+                    },
+                };
+
+                match update_racer_at_path(path_str, &RssFile::Download, client).await {
+                    Ok(new_eps) => {
+                        if new_eps {
+                            has_new_eps = true;
+                        }
+                    }
+                    Err(e) => {
+                        println!("Could not update path {}. Error was: {}", path_str, e);
+                        return has_new_eps;
+                    }
+                };
+
+                has_new_eps
             }
-            Err(e) => {
-                return Err(format!(
-                    "Could not update path {}. Error was: {}",
-                    path_str, e
-                ))
-            }
-        };
+        })
+        .buffer_unordered(parallel_gets);
+
+    let new_eps_vec = results.collect::<Vec<bool>>().await;
+    for new_ep in new_eps_vec {
+        if new_ep { num_with_new_eps += 1; }
         counter += 1;
     }
+
     let end = std::time::SystemTime::now();
     let duration = match end.duration_since(start) {
         Ok(val) => val,
@@ -839,11 +861,11 @@ pub async fn update_all(base_dir: &str) -> Result<UpdateMetadata, String> {
 //  ARGS:   params - All the params needed to make a racer
 //  RETURN: A FeedRacer or error String
 //
-pub async fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, String> {
+pub async fn create_feed(params: &mut RacerCreationParams, client: &reqwest::Client) -> Result<FeedRacer, String> {
     if None == params.url.find("http") {
         params.url = String::from("https://") + &params.url;
     }
-    let rss = match download_rss_channel(&params.url).await {
+    let rss = match download_rss_channel(client, &params.url).await {
         Ok(val) => val,
         Err(e) => return Err(format!("Error downloading rss feed: {}", e)),
     };
@@ -868,7 +890,7 @@ pub async fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, 
     };
 
     // Run update() on this directory. We just created it, so no need to refresh the rss file
-    match update_racer_at_path(&racer_path, &RssFile::FromStorage).await {
+    match update_racer_at_path(&racer_path, &RssFile::FromStorage, client).await {
         Ok(_) => println!(
             "Subscribe to this URL in your pod catcher: {}",
             racer.get_subscribe_url()
@@ -887,8 +909,8 @@ pub async fn create_feed(params: &mut RacerCreationParams) -> Result<FeedRacer, 
 //  ARGS:   url - the url of the file to get
 //  RETURN: A channel or error information
 //
-async fn download_rss_channel(url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
-    let content = match reqwest::get(url).await {
+async fn download_rss_channel(client: &reqwest::Client, url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
+    let content = match client.get(url).send().await {
         Ok(val) => match val.bytes().await {
             Ok(val) => val,
             Err(e) => return Err(Box::new(e)),

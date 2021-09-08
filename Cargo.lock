@@ -1328,6 +1328,7 @@ dependencies = [
  "chrono-tz",
  "dirs",
  "racer",
+ "reqwest",
  "rocket",
  "rocket_dyn_templates",
  "rss",
@@ -1401,11 +1402,13 @@ version = "0.2.1"
 dependencies = [
  "chrono",
  "dirs",
+ "futures",
  "openssl",
  "reqwest",
  "rss",
  "serde",
  "serde_json",
+ "tokio",
  "uuid",
 ]
 

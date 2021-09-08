@@ -130,15 +130,18 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
 
     println!("in create_feed_handler");
 
-    match create_feed(racer::RacerCreationParams {
-        static_file_dir: config.static_file_dir.clone(),
-        podracer_dir: config.podracer_dir.clone(),
-        start_ep: form_data.start_ep,
-        address: config.address.clone(),
-        rate: form_data.rate,
-        port: config.port,
-        url: form_data.url.clone(),
-    }).await {
+    match create_feed(
+        racer::RacerCreationParams {
+            static_file_dir: config.static_file_dir.clone(),
+            podracer_dir: config.podracer_dir.clone(),
+            start_ep: form_data.start_ep,
+            address: config.address.clone(),
+            rate: form_data.rate,
+            port: config.port,
+            url: form_data.url.clone(),
+        },
+        &reqwest::Client::new()
+    ).await {
         Ok(fun_facts) => {
             println!("Created feed");
             let catch_up_date = format!("{}",   &fun_facts.catch_up_date.format("%d %b, %Y"));
@@ -234,15 +237,18 @@ pub async fn create_feed_cli_handler(
     url: String,
     rate: f32,
 ) -> Result<String, String> {
-    match create_feed(racer::RacerCreationParams {
-        static_file_dir: config.static_file_dir.clone(),
-        podracer_dir: config.podracer_dir.clone(),
-        address: config.address.clone(),
-        port: config.port,
-        url: url,
-        rate: rate,
-        start_ep: 1,
-    }).await {
+    match create_feed(
+        racer::RacerCreationParams {
+            static_file_dir: config.static_file_dir.clone(),
+            podracer_dir: config.podracer_dir.clone(),
+            address: config.address.clone(),
+            port: config.port,
+            url: url,
+            rate: rate,
+            start_ep: 1,
+        },
+        &reqwest::Client::new()
+    ).await {
         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
         Err(e) => Err(e),
     }
@@ -270,15 +276,18 @@ pub async fn create_feed_cli_ep_handler(
     rate: f32,
     start_ep: usize,
 ) -> Result<String, String> {
-    match create_feed(racer::RacerCreationParams {
-        static_file_dir: config.static_file_dir.clone(),
-        podracer_dir: config.podracer_dir.clone(),
-        address: config.address.clone(),
-        port: config.port,
-        url: url,
-        rate: rate,
-        start_ep: start_ep,
-    }).await {
+    match create_feed(
+        racer::RacerCreationParams {
+            static_file_dir: config.static_file_dir.clone(),
+            podracer_dir: config.podracer_dir.clone(),
+            address: config.address.clone(),
+            port: config.port,
+            url: url,
+            rate: rate,
+            start_ep: start_ep,
+        },
+        &reqwest::Client::new()
+    ).await {
         Ok(val) => Ok(make_fun_fact_string_cli(&val)),
         Err(e) => Err(e),
     }
@@ -296,16 +305,17 @@ pub async fn create_feed_cli_ep_handler(
 #[post("/update/<podcast>")]
 pub async fn update_one_handler(config: &State<RocketConfig>, podcast: String) -> std::io::Result<()> {
     // Update the specified podcast
+    let client = reqwest::Client::new();
     // Check if podcast is folder name
     if let Some(mut racer) = racer::get_by_dir_name(&config.podracer_dir, &podcast) {
-        return match racer.update(&racer::RssFile::Download).await {
+        return match racer.update(&racer::RssFile::Download, &client).await {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         };
     }
     // Check if subscribe url
     if let Some(mut racer) = racer::get_by_url(&config.podracer_dir, &podcast) {
-        return match racer.update(&racer::RssFile::Download).await {
+        return match racer.update(&racer::RssFile::Download, &client).await {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         };
@@ -325,7 +335,8 @@ pub async fn update_one_handler(config: &State<RocketConfig>, podcast: String) -
 //
 #[post("/update")]
 pub async fn update_all_handler(config: &State<RocketConfig>) -> Result<(), String> {
-    match racer::update_all(&config.podracer_dir).await {
+    let client = reqwest::Client::new();
+    match racer::update_all(&config.podracer_dir, &client).await {
         Ok(_) => Ok(()),
         Err(string) => Err(format!("Error in update_all_handler: {}", string)),
     }
@@ -438,8 +449,8 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
 //      A result. If Ok(), contains a bunch of stats for the user. If Err(),
 //      contains info for why it failed
 //
-async fn create_feed(mut params: racer::RacerCreationParams) -> Result<FeedFunFacts, String> {
-    let feed_racer = match racer::create_feed(&mut params).await {
+async fn create_feed(mut params: racer::RacerCreationParams, client: &reqwest::Client) -> Result<FeedFunFacts, String> {
+    let feed_racer = match racer::create_feed(&mut params, client).await {
         Ok(val) => val,
         Err(e) => return Err(e),
     };

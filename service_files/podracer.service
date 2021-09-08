@@ -9,6 +9,9 @@ Restart=always
 RestartSec=1
 User=pi1
 WorkingDirectory=/etc/podracer/config
+StandardOutput=syslog
+StandardError=syslog
+SyslodIdentifier=podracer
 Environment=ROCKET_CONFIG=/etc/podracer/config/Rocket.toml
 ExecStart=/usr/local/bin/podracer
 

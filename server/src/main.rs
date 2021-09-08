@@ -90,8 +90,9 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
                 .manage(routes::UpdateFactor(config_for_closure.update_factor))
         }));
 
+    let client = reqwest::Client::new();
     // Manually update on start
-    match racer::update_all(&custom_config.podracer_dir).await {
+    match racer::update_all(&custom_config.podracer_dir, &client).await {
         Ok(update_metadata) => println!(
             "Manually updated on boot. Did {} feeds in {:?} ({} feeds with new episodes).",
             update_metadata.num_updated, update_metadata.time, update_metadata.num_with_new_eps
@@ -103,11 +104,12 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
     println!("Spawning update thread. Will run every {} seconds.", duration);
 
     // Create update thread - update every `duration`
-    tokio::spawn(async move {
+    tokio::spawn( async move {
+        let client = reqwest::Client::new();
         loop {
             std::thread::sleep(std::time::Duration::from_secs(duration as u64));
             print!("Updating all feeds... ");
-            match racer::update_all(&custom_config.podracer_dir).await {
+            match racer::update_all(&custom_config.podracer_dir, &client).await {
                 Ok(update_metadata) => {
                     println!(
                         "Done. Did {} feeds in {:?} ({} feeds with new episodes).",
