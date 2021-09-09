@@ -149,12 +149,26 @@ impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
     // Setters
     ////////////////////////////////////////////////////////////////////////////////
-    pub async fn set_rate(&mut self, new_rate: f32) {
+    pub async fn set_rate(&mut self, new_rate: f32) -> Result<(), String> {
+        let adjust_ratio = (self.rate / new_rate) as f64;
+
+        // Adjust the anchor date to keep the same episode count published
+        let now = chrono::Utc::now();
+        let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
+        let new_anchor_to_now = anchor_to_now * adjust_ratio;
+        let amount_to_adjust_anchor = anchor_to_now - new_anchor_to_now;
+        let adjust_duration = Duration::seconds(amount_to_adjust_anchor as i64);
+        self.anchor_date = match self.anchor_date.checked_add_signed(adjust_duration) {
+            Some(val) => val,
+            None => return Err(String::from("Anchor date adjustment overflow")),
+        };
+
+        // Update the rate then adjust the feed
         self.rate = new_rate;
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
-            Ok(_) => (),
-            Err(e) => println!("Error updating after setting rate: {}", e),
-        };
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
+        }
     }
     pub fn rewind_by_days(&mut self, _days: usize) {
         // TODO
@@ -272,7 +286,7 @@ impl FeedRacer {
         let mut description_addition = if items.len() > 0 {
             let next_item = self.release_dates[self.get_num_to_publish()].clone();
             let s = match DateTime::parse_from_rfc2822(&next_item.date) {
-                Ok(val) => val.with_timezone(&Local).format("%d %b %Y at %I:%M%P"),
+                Ok(val) => val.with_timezone(&Local).format("%a, %d %b %Y at %I:%M%P"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
             format!("Next episode publishes {}", s)
@@ -1185,3 +1199,4 @@ impl fmt::Display for FeedRacer {
         writeln!(f, "}}")
     }
 }
+

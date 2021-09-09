@@ -134,8 +134,14 @@ fn main() {
             let template_file = template_dir_name.clone() + file_name.file_name().to_str().unwrap();
             let dest_file = Path::new(&template_file);
             println!("Moving {:?} to {:?}", tmp_file_name, dest_file);
-            std::fs::rename(Path::new(&tmp_file_name), dest_file)
-                .expect("Could not copy template file");
+            match std::fs::rename(Path::new(&tmp_file_name), dest_file) {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("Error moving file: {}", e);
+                    // #[cfg(not(feature = "vendored-openssl"))]
+                    // panic!("Copy error occurred in non-vendored build");
+                },
+            }
         }
     }
 

@@ -59,6 +59,7 @@ struct FeedFunFacts {
 #[derive(FromForm)]
 pub struct CreateFeedForm {
     pub url: String,
+    #[field(validate = with(|rate| *rate > 0.0, "rate must be > 0"))]
     pub rate: f32,
     pub start_ep: usize,
 }
@@ -79,12 +80,38 @@ pub struct EditFeedForm {
     pub uuid: Uuid,
     pub racer_action: FeedAction,
     pub days: Option<usize>,
+    #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
     pub rate: Option<f32>
 }
 
 //
 // Rocket Routes
 //
+
+#[catch(404)]
+pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
+    println!("404 served to: {:?}", req.client_ip());
+    println!("\t{:?} requested {}", req.real_ip(), req.uri());
+    let static_file_dir: String = req.rocket().figment()
+            .extract_inner::<String>("static_file_dir")
+            .expect("static_file_dir in config");
+    let filename = format!("{}/{}", static_file_dir, "404.html");
+    println!("\tServing 404 file at {}", filename);
+    NamedFile::open(&filename).await.unwrap()
+}
+
+#[catch(422)]
+pub async fn invalid_data_range_handler(req: &Request<'_>) -> NamedFile {
+    println!("422 served to: {:?}", req.client_ip());
+    println!("\t{:?} requested {}", req.real_ip(), req.uri());
+    let static_file_dir: String = req.rocket().figment()
+            .extract_inner::<String>("static_file_dir")
+            .expect("static_file_dir in config");
+    let filename = format!("{}/{}", static_file_dir, "422.html");
+    println!("\tServing 422 file at {}", filename);
+    NamedFile::open(&filename).await.unwrap()
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_form_handler
 //
@@ -103,18 +130,6 @@ pub async fn create_feed_form_handler(config: &State<RocketConfig>) -> NamedFile
             NamedFile::open(format!("{}/{}", &config.static_file_dir, "404.html")).await.unwrap()
         }
     }
-}
-
-#[catch(404)]
-pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
-    println!("404 served to: {:?}", req.client_ip());
-    println!("\t{:?} requested {}", req.real_ip(), req.uri());
-    let static_file_dir: String = req.rocket().figment()
-            .extract_inner::<String>("static_file_dir")
-            .expect("static_file_dir in config");
-    let filename = format!("{}/{}", static_file_dir, "404.html");
-    println!("\tServing 404 file at {}", filename);
-    NamedFile::open(&filename).await.unwrap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +201,10 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
     // Parse by action
     match edit_form.racer_action {
         FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
-        FeedAction::EditRate => racer.set_rate(edit_form.rate.expect("Form has rate")).await,
+        FeedAction::EditRate => match racer.set_rate(edit_form.rate.expect("Form has rate")).await {
+                                    Ok(_) => (),
+                                    Err(e) => println!("Error setting rate: {}", e),
+                                },
         FeedAction::Pause => {
             racer.pause_feed().await;
             ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
