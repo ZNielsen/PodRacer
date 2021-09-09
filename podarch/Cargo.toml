@@ -1,0 +1,19 @@
+[package]
+name = "podarch"
+version = "0.1.0"
+authors = ["Zach Nielsen <zach@zachn.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+fail-on-warnings = []
+
+[dependencies]
+racer = { path = "../racer" }
+
+structopt = "0.3"
+reqwest = { version = "0.11", features = ["stream"] }
+futures = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+rss = "1.10"

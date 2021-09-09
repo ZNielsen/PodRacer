@@ -1,2 +1,2 @@
 [workspace]
-members = ["racer", "server"]
+members = ["racer", "server", "podarch"]

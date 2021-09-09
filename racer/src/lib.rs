@@ -923,7 +923,7 @@ pub async fn create_feed(params: &mut RacerCreationParams, client: &reqwest::Cli
 //  ARGS:   url - the url of the file to get
 //  RETURN: A channel or error information
 //
-async fn download_rss_channel(client: &reqwest::Client, url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
+pub async fn download_rss_channel(client: &reqwest::Client, url: &str) -> Result<rss::Channel, Box<dyn std::error::Error>> {
     let content = match client.get(url).send().await {
         Ok(val) => match val.bytes().await {
             Ok(val) => val,
