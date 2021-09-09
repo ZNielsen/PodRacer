@@ -87,6 +87,31 @@ pub struct EditFeedForm {
 //
 // Rocket Routes
 //
+
+#[catch(404)]
+pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
+    println!("404 served to: {:?}", req.client_ip());
+    println!("\t{:?} requested {}", req.real_ip(), req.uri());
+    let static_file_dir: String = req.rocket().figment()
+            .extract_inner::<String>("static_file_dir")
+            .expect("static_file_dir in config");
+    let filename = format!("{}/{}", static_file_dir, "404.html");
+    println!("\tServing 404 file at {}", filename);
+    NamedFile::open(&filename).await.unwrap()
+}
+
+#[catch(422)]
+pub async fn invalid_data_range_handler(req: &Request<'_>) -> NamedFile {
+    println!("422 served to: {:?}", req.client_ip());
+    println!("\t{:?} requested {}", req.real_ip(), req.uri());
+    let static_file_dir: String = req.rocket().figment()
+            .extract_inner::<String>("static_file_dir")
+            .expect("static_file_dir in config");
+    let filename = format!("{}/{}", static_file_dir, "422.html");
+    println!("\tServing 422 file at {}", filename);
+    NamedFile::open(&filename).await.unwrap()
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //  NAME:   create_feed_form_handler
 //
@@ -105,18 +130,6 @@ pub async fn create_feed_form_handler(config: &State<RocketConfig>) -> NamedFile
             NamedFile::open(format!("{}/{}", &config.static_file_dir, "404.html")).await.unwrap()
         }
     }
-}
-
-#[catch(404)]
-pub async fn not_found_handler(req: &Request<'_>) -> NamedFile {
-    println!("404 served to: {:?}", req.client_ip());
-    println!("\t{:?} requested {}", req.real_ip(), req.uri());
-    let static_file_dir: String = req.rocket().figment()
-            .extract_inner::<String>("static_file_dir")
-            .expect("static_file_dir in config");
-    let filename = format!("{}/{}", static_file_dir, "404.html");
-    println!("\tServing 404 file at {}", filename);
-    NamedFile::open(&filename).await.unwrap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
