@@ -138,8 +138,8 @@ fn main() {
                 Ok(_) => (),
                 Err(e) => {
                     println!("Error moving file: {}", e);
-                    #[cfg(feature = "vendored-openssl")]
-                    panic!("Copy error occured in non-vendored build");
+                    // #[cfg(not(feature = "vendored-openssl"))]
+                    // panic!("Copy error occurred in non-vendored build");
                 },
             }
         }
