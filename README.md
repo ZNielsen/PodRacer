@@ -35,6 +35,11 @@ It's going to take a very long time to build. That's Rust.
 
 Sometimes (not quite sure why only sometimes) my Pi3 struggles to build when multiple threads are enabled (the default). You can `cargo clean && cargo build --release -j 1` to force building with only one thread. This will take way longer, but you don't run out of memory.
 
+Builds go much faster on beefier hardware. Cross-compile by insalling `cross` (via `cargo install cross`), then building for the Pi:
+```
+cross build --release --target=armv7-unknown-linux-gnueabihf --features vendored-openssl
+```
+
 ### Start the server
 ```
 cargo run --release
