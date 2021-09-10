@@ -39,6 +39,7 @@ Builds go much faster on beefier hardware. Cross-compile by insalling `cross` (v
 ```
 cross build --release --target=armv7-unknown-linux-gnueabihf --features vendored-openssl
 ```
+The binary will end up in `target/armv7-unknown-linux-gnueabihf/release`.
 
 ### Start the server
 ```
