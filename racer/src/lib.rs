@@ -170,11 +170,29 @@ impl FeedRacer {
             Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
         }
     }
-    pub fn rewind_by_days(&mut self, _days: usize) {
-        // TODO
+    pub async fn rewind_by_days(&mut self, days: usize) {
+        let adjust_duration = Duration::days(days as i64);
+        self.anchor_date = match self.anchor_date.checked_add_signed(adjust_duration) {
+            Some(val) => val,
+            None => return,
+        };
+
+        match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
+            Ok(_) => (),
+            Err(e) => println!("Error updating feed after setting rate: {}", e),
+        };
     }
-    pub fn fastforward_by_days(&mut self, _days: usize) {
-        // TODO
+    pub async fn fastforward_by_days(&mut self, days: usize) {
+        let adjust_duration = Duration::days(days as i64);
+        self.anchor_date = match self.anchor_date.checked_sub_signed(adjust_duration) {
+            Some(val) => val,
+            None => return,
+        };
+
+        match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
+            Ok(_) => (),
+            Err(e) => println!("Error updating feed after setting rate: {}", e),
+        };
     }
 }
 

@@ -201,22 +201,40 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
     // Parse by action
     match edit_form.racer_action {
         FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
-        FeedAction::EditRate => match racer.set_rate(edit_form.rate.expect("Form has rate")).await {
-                                    Ok(_) => (),
-                                    Err(e) => println!("Error setting rate: {}", e),
-                                },
+        FeedAction::EditRate => {
+            let old_rate = racer.get_rate();
+            match racer.set_rate(edit_form.rate.expect("Form has rate")).await {
+                Ok(_) => (),
+                Err(e) => println!("Error setting rate: {}", e),
+            }
+            let new_rate = racer.get_rate();
+            ctx.insert("top_text", &format!("Rate has been changed. Old rate: {}, new rate: {}.", old_rate, new_rate));
+        }
         FeedAction::Pause => {
             racer.pause_feed().await;
             ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
                 until you unpause this feed.");
-        },
+        }
         FeedAction::Unpause => {
             racer.unpause_feed();
             ctx.insert("top_text", "Feed has been unpaused.");
-        },
-        FeedAction::PublishNextEp => racer.publish_next_ep_now().await,
-        FeedAction::Rewind        => racer.rewind_by_days(edit_form.days.expect("Form has days")),
-        FeedAction::FastForward   => racer.fastforward_by_days(edit_form.days.expect("Form has days")),
+        }
+        FeedAction::PublishNextEp => {
+            racer.publish_next_ep_now().await;
+            ctx.insert("top_text", "Feed has been fast forwarded to the next episode.");
+        }
+        FeedAction::Rewind => {
+            racer.rewind_by_days(edit_form.days.expect("Form has days")).await;
+            let pluralization = if edit_form.days.unwrap() == 1 { "day".to_owned() }
+                                else { "days".to_owned() };
+            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.days.unwrap(), pluralization));
+        }
+        FeedAction::FastForward   => {
+            racer.fastforward_by_days(edit_form.days.expect("Form has days")).await;
+            let pluralization = if edit_form.days.unwrap() == 1 { "day".to_owned() }
+                                else { "days".to_owned() };
+            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.days.unwrap(), pluralization));
+        }
     }
 
     fill_edit_feed_data_from_racer(&mut ctx, &racer);

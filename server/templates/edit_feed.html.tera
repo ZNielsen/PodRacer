@@ -94,7 +94,6 @@
     <input type="submit" value="Publish Next Episode Now">
 </form>
 
-<!--
 <form action="/edit_feed" method="post">
     <input type="submit" value="Fast-Forward # of Days">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
@@ -114,7 +113,6 @@
     <input type="number" size="4" id="days" name="days" placeholder="1" step=1 required>
     </label>
 </form>
--->
 
 {% endif %}
 
