@@ -302,12 +302,18 @@ impl FeedRacer {
 
         // Append the next item's publish date to the podcast description
         let mut description_addition = if items.len() > 0 {
-            let next_item = self.release_dates[self.get_num_to_publish()].clone();
-            let s = match DateTime::parse_from_rfc2822(&next_item.date) {
-                Ok(val) => val.with_timezone(&Local).format("%a, %d %b %Y at %I:%M%P"),
-                Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
-            };
-            format!("Next episode publishes {}", s)
+            // Check if feed is paused
+            if self.pause_date.is_some() {
+                format!("Feed paused")
+            }
+            else {
+                let next_item = self.release_dates[self.get_num_to_publish()].clone();
+                let s = match DateTime::parse_from_rfc2822(&next_item.date) {
+                    Ok(val) => val.with_timezone(&Local).format("%a, %d %b %Y at %I:%M%P"),
+                    Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+                };
+                format!("Next episode publishes {}", s)
+            }
         } else {
             format!("PodRacer feed has caught up")
         };
