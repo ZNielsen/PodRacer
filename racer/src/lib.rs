@@ -712,7 +712,7 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN:
     //
-    pub fn unpause_feed(&mut self) {
+    pub async fn unpause_feed(&mut self) -> Option<chrono::Duration> {
         match self.pause_date {
             Some(pause_date) => {
                 // Restore rate
@@ -733,8 +733,19 @@ impl FeedRacer {
                 };
 
                 self.pause_date = None;
+
+                // Update to write to file
+                match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
+                    Ok(_) => (),
+                    Err(e) => println!("Error updating after pausing: {}", e),
+                }
+
+                Some(time_paused)
             }
-            None => println!("Error! Attempt to unpause feed with no saved pause_date. Not doing anything."),
+            None => {
+                println!("Error! Attempt to unpause feed with no saved pause_date. Not doing anything.");
+                None
+            }
         }
     }
 }
