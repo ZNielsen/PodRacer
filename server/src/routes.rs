@@ -216,8 +216,12 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
                 until you unpause this feed.");
         }
         FeedAction::Unpause => {
-            racer.unpause_feed();
-            ctx.insert("top_text", "Feed has been unpaused.");
+            if let Some(time_paused) = racer.unpause_feed().await {
+                ctx.insert("top_text", &format!("Feed has been unpaused (paused for {} days).", time_paused.num_days()));
+            }
+            else {
+                ctx.insert("top_text", "Error unpausing feed. Please try again. If this continues to fail, please open a ticket on github.");
+            }
         }
         FeedAction::PublishNextEp => {
             racer.publish_next_ep_now().await;
@@ -242,6 +246,7 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
 }
 #[get("/edit_feed/<uuid>")]
 pub async fn edit_feed_get_handler(config: &State<RocketConfig>, uuid: Uuid) -> Template {
+    println!("Getting edit_feed/{}", &uuid);
     let mut ctx = Context::new();
 
     let racer = match get_feed_by_uuid(&config, &uuid) {
