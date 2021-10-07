@@ -40,7 +40,7 @@ struct PodRacerRocketConfig {
     static_file_dir: String,
     update_factor: u32,
     podracer_dir: String,
-    address: String,
+    host: String,
     port: u32,
 }
 
@@ -81,7 +81,7 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
             let rocket_config = routes::RocketConfig {
                 static_file_dir: config_for_closure.static_file_dir,
                 podracer_dir: config_for_closure.podracer_dir,
-                address: config_for_closure.address,
+                host: config_for_closure.host,
                 port: config_for_closure.port,
             };
 

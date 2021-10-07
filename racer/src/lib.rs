@@ -41,7 +41,7 @@ pub const SPACE_CHAR: u8 = 32; // ASCII ' '
 pub struct RacerCreationParams {
     pub static_file_dir: String,
     pub podracer_dir: String,
-    pub address: String,
+    pub host: String,
     pub url: String,
     pub start_ep: usize,
     pub port: u32,
@@ -243,7 +243,7 @@ impl FeedRacer {
         podcast_dir_path.push_str(&podcast_dir_base);
 
         let subscribe_url: PathBuf = [
-            &params.address,
+            &params.host,
             "podcasts",
             &podcast_dir_base,
             RACER_RSS_FILE,

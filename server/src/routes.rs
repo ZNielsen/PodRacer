@@ -41,7 +41,7 @@ const FAILURE_FILE:        &'static str = "submit_failure";
 pub struct RocketConfig {
     pub static_file_dir: String,
     pub podracer_dir: String,
-    pub address: String,
+    pub host: String,
     pub port: u32,
 }
 pub struct UpdateFactor(pub u32);
@@ -150,7 +150,7 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
             static_file_dir: config.static_file_dir.clone(),
             podracer_dir: config.podracer_dir.clone(),
             start_ep: form_data.start_ep,
-            address: config.address.clone(),
+            host: config.host.clone(),
             rate: form_data.rate,
             port: config.port,
             url: form_data.url.clone(),
@@ -277,7 +277,7 @@ pub async fn create_feed_cli_handler(
         racer::RacerCreationParams {
             static_file_dir: config.static_file_dir.clone(),
             podracer_dir: config.podracer_dir.clone(),
-            address: config.address.clone(),
+            host: config.host.clone(),
             port: config.port,
             url: url,
             rate: rate,
@@ -316,7 +316,7 @@ pub async fn create_feed_cli_ep_handler(
         racer::RacerCreationParams {
             static_file_dir: config.static_file_dir.clone(),
             podracer_dir: config.podracer_dir.clone(),
-            address: config.address.clone(),
+            host: config.host.clone(),
             port: config.port,
             url: url,
             rate: rate,

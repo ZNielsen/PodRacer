@@ -20,12 +20,14 @@ I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to t
 
 PodRacer is most useful if you prefer to listen to your podcasts as they are published (i.e. they are dropped into a feed, and you just listen in order). It lets legacy content seamlessly fit into the stream of contemporary content.
 
-
 Tests were done against [Overcast](https://apps.apple.com/us/app/overcast/id888422857) ([info](https://overcast.fm/podcasterinfo)). Other podcast players might have quirks I didn't see. Feel free to file a github issue and I'll do what I can to fix it up.
+
+## Podcast Archiver
+There is also a small utility tool `podarch`, used to archive all the episodes of a given feed. See `podarch -h` for usage.
 
 ## Installation
 
-I run this server on a Raspberry Pi 3.
+I run this service on a Raspberry Pi 3.
 
 You will need the rust nightly build for rocket.
 ```
@@ -35,7 +37,7 @@ It's going to take a very long time to build. That's Rust.
 
 Sometimes (not quite sure why only sometimes) my Pi3 struggles to build when multiple threads are enabled (the default). You can `cargo clean && cargo build --release -j 1` to force building with only one thread. This will take way longer, but you don't run out of memory.
 
-Builds go much faster on beefier hardware. Cross-compile by insalling `cross` (via `cargo install cross`), then building for the Pi:
+Builds go much faster on beefier hardware. Cross-compile by installing `cross` (via `cargo install cross`), then building for the Pi:
 ```
 cross build --release --target=armv7-unknown-linux-gnueabihf --features vendored-openssl
 ```
