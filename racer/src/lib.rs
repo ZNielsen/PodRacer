@@ -635,19 +635,55 @@ impl FeedRacer {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::publish_next_ep_now
+    //  NAME:   FeedRacer::get_next_episode_pub_date
     //
-    //  NOTES:  Publish next episode by moving the Anchor Date back
+    //  NOTES:
     //  ARGS:   None
     //  RETURN:
     //
-    pub async fn publish_next_ep_now(&mut self) {
+    pub fn get_next_episode_num(&self) -> usize {
+        let now = chrono::Utc::now();
+        let mut count: usize = 0;
+        for release_date in &self.release_dates {
+            let date = chrono::DateTime::parse_from_rfc2822(&release_date.date).unwrap();
+            if date.signed_duration_since(now) > chrono::Duration::zero() {
+                return count;
+            }
+            count += 1;
+        }
+        self.release_dates.len()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   FeedRacer::get_episode_pub_date
+    //
+    //  NOTES:
+    //  ARGS:   None
+    //  RETURN:
+    //
+    pub fn get_episode_pub_date(&self, num: usize) -> DateTime<chrono::Utc> {
+        let now = chrono::Utc::now();
+        let date = chrono::DateTime::parse_from_rfc2822(&self.release_dates[num].date).unwrap();
+        if date.signed_duration_since(now) > chrono::Duration::zero() {
+            return date.into();
+        }
+        now
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   FeedRacer::publish_episode_num
+    //
+    //  NOTES:  Publish next episode by moving the Anchor Date back
+    //  ARGS:   The episode number to set the publish date to (1 indexed)
+    //  RETURN:
+    //
+    pub async fn publish_episode_num(&mut self, num: usize) {
         // Get the date for the next episode to publish
         let now = chrono::Utc::now();
-        let next_ep_publish_date = self.get_next_episode_pub_date();
+        let ep_publish_date = self.get_episode_pub_date(num);
 
         // Move the anchor_date back by the difference
-        let time_to_publish_next = next_ep_publish_date.signed_duration_since(now);
+        let time_to_publish_next = ep_publish_date.signed_duration_since(now);
                                    // .checked_add(&Duration::seconds(30)).expect("Can add a few seconds");
         self.anchor_date = match self.anchor_date.checked_sub_signed(time_to_publish_next) {
             Some(time) => time,
@@ -662,6 +698,18 @@ impl FeedRacer {
             Ok(_) => (),
             Err(e) => println!("Error updating after fast-forward: {}", e),
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  NAME:   FeedRacer::publish_next_ep_now
+    //
+    //  NOTES:  Publish next episode by moving the Anchor Date back
+    //  ARGS:   None
+    //  RETURN:
+    //
+    pub async fn publish_next_ep_now(&mut self) {
+        let next_ep_num = self.get_next_episode_num();
+        self.publish_episode_num(next_ep_num).await;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

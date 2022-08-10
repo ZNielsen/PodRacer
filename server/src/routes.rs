@@ -81,7 +81,8 @@ pub struct EditFeedForm {
     pub racer_action: FeedAction,
     pub days: Option<usize>,
     #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
-    pub rate: Option<f32>
+    pub rate: Option<f32>,
+    pub next_episode_num: Option<usize>,
 }
 
 //
@@ -224,7 +225,13 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
             }
         }
         FeedAction::PublishNextEp => {
-            racer.publish_next_ep_now().await;
+            if let Some(next_ep_num) = edit_form.next_episode_num {
+                println!("publishing next episode, number {}", next_ep_num);
+                racer.publish_episode_num(next_ep_num).await;
+            }
+            else {
+                racer.publish_next_ep_now().await;
+            }
             ctx.insert("top_text", "Feed has been fast forwarded to the next episode.");
         }
         FeedAction::Rewind => {
