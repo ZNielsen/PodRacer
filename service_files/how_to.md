@@ -1,4 +1,5 @@
 - Symlink service file to `/etc/systemd/system/podracer.service`
-- Create `/etc/podracer/config`
+- Create `/etc/podracer/config` and change ownership
 - Symlink rocket config to `/etc/podracer/config/Rocket.toml`
 - Symlink binary to `/usr/local/bin/podracer`
+- Symlink web stuff to `/etc/podracer/config/server/web`
