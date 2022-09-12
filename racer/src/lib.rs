@@ -179,7 +179,7 @@ impl FeedRacer {
 
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => (),
-            Err(e) => println!("Error updating feed after setting rate: {}", e),
+            Err(e) => println!("Error updating feed after rewinding: {}", e),
         };
     }
     pub async fn fastforward_by_days(&mut self, days: usize) {
@@ -191,7 +191,7 @@ impl FeedRacer {
 
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => (),
-            Err(e) => println!("Error updating feed after setting rate: {}", e),
+            Err(e) => println!("Error updating feed after fast-forwarding: {}", e),
         };
     }
 }
@@ -1284,4 +1284,3 @@ impl fmt::Display for FeedRacer {
         writeln!(f, "}}")
     }
 }
-
