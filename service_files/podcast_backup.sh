@@ -11,10 +11,10 @@ port="$2"
 podcast_dir="/etc/podracer/podcasts"
 
 # Zip up podcast dir
-tmp_dir="$(mktemp -d)"
+tmp_dir="$(/bin/mktemp -d)"
 bak="$tmp_dir/podcast.bak.zip"
-zip -r "$bak"  "$podcast_dir"
+/bin/zip -r "$bak"  "$podcast_dir"
 
 # Push that zip to the backup location
 echo "Pushing $bak to $dest on port $port"
-scp -P $port "$bak" "$dest"
+/bin/scp -P $port "$bak" "$dest"
