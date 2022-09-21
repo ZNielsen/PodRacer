@@ -438,15 +438,13 @@ impl FeedRacer {
             let mut time_diff = DateTime::parse_from_rfc2822(pub_date)
                 .unwrap()
                 .signed_duration_since(self.first_pubdate)
-                .num_microseconds()
-                .unwrap_or(0); // Max microseconds in an i64 is 292 thousand years. If we encounter
-                               // that, something else is wrong, just don't crash.
+                .num_milliseconds();
             // Scale that diff
             time_diff = ((time_diff as f64) / protected_rate) as i64;
             // Add back to anchor date to get new publish date + convert to string
             let racer_date = self
                 .anchor_date
-                .checked_add_signed(Duration::microseconds(time_diff))
+                .checked_add_signed(Duration::milliseconds(time_diff))
                 .unwrap()
                 .to_rfc2822();
             // Add to vector of dates
