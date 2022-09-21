@@ -84,7 +84,7 @@
     <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
     <label for="rate">
     Rate:
-    <input type="number" size="4" id="rate" name="rate" placeholder="{{ rate }}" step=0.001 required>
+    <input type="number" size="4" id="rate" name="rate" placeholder="{{ rate }}" step=0.0000001 required>
     </label><br>
 </form>
 

@@ -45,7 +45,7 @@ pub struct RacerCreationParams {
     pub url: String,
     pub start_ep: usize,
     pub port: u32,
-    pub rate: f32,
+    pub rate: f64,
 }
 
 pub struct UpdateMetadata {
@@ -75,8 +75,8 @@ pub struct FeedRacer {
     schema_version: String,
     podcast_title: Option<String>,
     uuid: Option<String>,
-    rate: f32,
-    old_rate: Option<f32>,
+    rate: f64,
+    old_rate: Option<f64>,
     racer_path: PathBuf,
     source_url: String,
     subscribe_url: String,
@@ -127,10 +127,10 @@ impl FeedRacer {
     pub fn get_source_url(&self) -> &str {
         &self.source_url
     }
-    pub fn get_rate(&self) -> f32 {
+    pub fn get_rate(&self) -> f64 {
         self.rate
     }
-    pub fn get_old_rate(&self) -> Option<f32> {
+    pub fn get_old_rate(&self) -> Option<f64> {
         self.old_rate
     }
     pub fn get_pause_date(&self) -> Option<DateTime<chrono::Utc>> {
@@ -149,7 +149,7 @@ impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
     // Setters
     ////////////////////////////////////////////////////////////////////////////////
-    pub async fn set_rate(&mut self, new_rate: f32) -> Result<(), String> {
+    pub async fn set_rate(&mut self, new_rate: f64) -> Result<(), String> {
         let adjust_ratio = (self.rate / new_rate) as f64;
 
         // Adjust the anchor date to keep the same episode count published
@@ -257,8 +257,8 @@ impl FeedRacer {
             source_url: params.url.to_owned(),
             subscribe_url: subscribe_url.to_str().unwrap().to_owned(),
             rate: params.rate.to_owned(),
-            anchor_date: anchor_date,
-            first_pubdate: first_pubdate,
+            anchor_date,
+            first_pubdate,
             release_dates: Vec::new(),
             uuid: Some(uuid),
             podcast_title: Some(rss.title().to_owned()),
@@ -426,9 +426,9 @@ impl FeedRacer {
         // Need to protect against divide by 0 when paused. Just keep rendering
         // the projected release date as if we weren't paused, the actual publishing
         // is run elsewhere.
-        let protected_rate = match self.rate as i32 {
-            0 => self.old_rate.unwrap_or(1.0),
-            _ => self.rate,
+        let mut protected_rate = self.rate;
+        if self.rate == 0.0 {
+            protected_rate = self.old_rate.unwrap_or(1.0);
         };
 
         let mut item_counter = 1;
@@ -438,13 +438,15 @@ impl FeedRacer {
             let mut time_diff = DateTime::parse_from_rfc2822(pub_date)
                 .unwrap()
                 .signed_duration_since(self.first_pubdate)
-                .num_seconds();
+                .num_microseconds()
+                .unwrap_or(0); // Max microseconds in an i64 is 292 thousand years. If we encounter
+                               // that, something else is wrong, just don't crash.
             // Scale that diff
-            time_diff = ((time_diff as f32) / protected_rate) as i64;
+            time_diff = ((time_diff as f64) / protected_rate) as i64;
             // Add back to anchor date to get new publish date + convert to string
             let racer_date = self
                 .anchor_date
-                .checked_add_signed(Duration::seconds(time_diff))
+                .checked_add_signed(Duration::microseconds(time_diff))
                 .unwrap()
                 .to_rfc2822();
             // Add to vector of dates
@@ -949,7 +951,7 @@ pub async fn update_all<'a>(base_dir: &str, client: &'a reqwest::Client) -> Resu
     Ok(UpdateMetadata {
         num_updated: counter,
         time: duration,
-        num_with_new_eps: num_with_new_eps,
+        num_with_new_eps,
     })
 }
 
