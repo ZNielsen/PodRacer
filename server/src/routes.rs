@@ -60,7 +60,7 @@ struct FeedFunFacts {
 pub struct CreateFeedForm {
     pub url: String,
     #[field(validate = with(|rate| *rate > 0.0, "rate must be > 0"))]
-    pub rate: f32,
+    pub rate: f64,
     pub start_ep: usize,
 }
 
@@ -81,7 +81,7 @@ pub struct EditFeedForm {
     pub racer_action: FeedAction,
     pub days: Option<usize>,
     #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
-    pub rate: Option<f32>,
+    pub rate: Option<f64>,
     pub next_episode_num: Option<usize>,
 }
 
@@ -283,7 +283,7 @@ pub async fn edit_feed_get_handler(config: &State<RocketConfig>, uuid: Uuid) -> 
 pub async fn create_feed_cli_handler(
     config: &State<RocketConfig>,
     url: String,
-    rate: f32,
+    rate: f64,
 ) -> Result<String, String> {
     match create_feed(
         racer::RacerCreationParams {
@@ -291,8 +291,8 @@ pub async fn create_feed_cli_handler(
             podracer_dir: config.podracer_dir.clone(),
             host: config.host.clone(),
             port: config.port,
-            url: url,
-            rate: rate,
+            url,
+            rate,
             start_ep: 1,
         },
         &reqwest::Client::new()
@@ -321,7 +321,7 @@ pub async fn create_feed_cli_handler(
 pub async fn create_feed_cli_ep_handler(
     config: &State<RocketConfig>,
     url: String,
-    rate: f32,
+    rate: f64,
     start_ep: usize,
 ) -> Result<String, String> {
     match create_feed(
@@ -330,9 +330,9 @@ pub async fn create_feed_cli_ep_handler(
             podracer_dir: config.podracer_dir.clone(),
             host: config.host.clone(),
             port: config.port,
-            url: url,
-            rate: rate,
-            start_ep: start_ep,
+            url,
+            rate,
+            start_ep,
         },
         &reqwest::Client::new()
     ).await {
@@ -534,16 +534,16 @@ async fn create_feed(mut params: racer::RacerCreationParams, client: &reqwest::C
         .signed_duration_since(chrono::Utc::now())
         .num_days()
         .abs();
-    let weeks_to_catch_up = ((weeks_behind as f32) / feed_racer.get_rate()) as u32;
-    let days_to_catch_up = ((days_behind as f32) / feed_racer.get_rate()) as u32;
+    let weeks_to_catch_up = ((weeks_behind as f64) / feed_racer.get_rate()) as u32;
+    let days_to_catch_up = ((days_behind as f64) / feed_racer.get_rate()) as u32;
     let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
 
     Ok(FeedFunFacts {
-        num_items: num_items,
-        weeks_behind: weeks_behind,
-        weeks_to_catch_up: weeks_to_catch_up,
-        days_to_catch_up: days_to_catch_up,
-        catch_up_date: catch_up_date,
+        num_items,
+        weeks_behind,
+        weeks_to_catch_up,
+        days_to_catch_up,
+        catch_up_date,
         subscribe_url: feed_racer.get_subscribe_url().to_owned(),
         uuid: feed_racer.get_uuid_string(),
     })
