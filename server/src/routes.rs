@@ -467,15 +467,17 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
         next.with_timezone(&chrono_tz::US::Pacific).to_rfc2822()
     };
     cx.insert("next_pub_date_string", &next_pub_date_string);
-    cx.insert("podcast_title", &racer.get_podcast_title());
-    cx.insert("subscribe_url", &racer.get_subscribe_url());
-    cx.insert("first_pubdate", &racer.get_first_pubdate().with_timezone(&chrono_tz::US::Pacific).to_rfc2822());
-    cx.insert("num_published", &racer.get_num_to_publish());
-    cx.insert("num_episodes",  &racer.get_num_episodes());
-    cx.insert("anchor_date",   &racer.get_anchor_date().with_timezone(&chrono_tz::US::Pacific).to_rfc2822());
-    cx.insert("source_url",    &racer.get_source_url());
-    cx.insert("rate",          &format!("{:.2}", racer.get_rate()));
-    cx.insert("uuid",          &racer.get_uuid_string());
+    cx.insert("current_ep_title",     &racer.get_current_ep_title());
+    cx.insert("next_ep_title",        &racer.get_next_ep_title());
+    cx.insert("podcast_title",        &racer.get_podcast_title());
+    cx.insert("subscribe_url",        &racer.get_subscribe_url());
+    cx.insert("first_pubdate",        &racer.get_first_pubdate().with_timezone(&chrono_tz::US::Pacific).to_rfc2822());
+    cx.insert("num_published",        &racer.get_num_to_publish());
+    cx.insert("num_episodes",         &racer.get_num_episodes());
+    cx.insert("anchor_date",          &racer.get_anchor_date().with_timezone(&chrono_tz::US::Pacific).to_rfc2822());
+    cx.insert("source_url",           &racer.get_source_url());
+    cx.insert("rate",                 &format!("{:.2}", racer.get_rate()));
+    cx.insert("uuid",                 &racer.get_uuid_string());
     if let Some(old_rate) = racer.get_old_rate() {
         cx.insert("old_rate", &format!("{:.2}", old_rate));
     }
