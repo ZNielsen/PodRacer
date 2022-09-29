@@ -28,7 +28,7 @@ use std::fmt;
 ////////////////////////////////////////////////////////////////////////////////
 //  Code
 ////////////////////////////////////////////////////////////////////////////////
-pub const SCHEMA_VERSION: &'static str = "1.0.0";
+pub const SCHEMA_VERSION: &'static str = "1.1";
 // pub const PODRACER_DIR: &'static str = "/etc/podracer/podcasts";
 
 pub const ORIGINAL_RSS_FILE: &'static str = "original.rss";
@@ -36,6 +36,12 @@ pub const RACER_RSS_FILE: &'static str = "racer.rss";
 pub const RACER_FILE: &'static str = "racer.file";
 pub const INDENT_AMOUNT: usize = 2; // For pretty printing rss files
 pub const SPACE_CHAR: u8 = 32; // ASCII ' '
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum RacerType {
+    Rate(f64),
+    Days(u32)
+}
 
 // All parameters we need to create a PodRacer feed
 pub struct RacerCreationParams {
@@ -45,7 +51,7 @@ pub struct RacerCreationParams {
     pub url: String,
     pub start_ep: usize,
     pub port: u32,
-    pub rate: f64,
+    pub rate: RacerType,
 }
 
 pub struct UpdateMetadata {
@@ -64,19 +70,19 @@ pub enum RssFile {
 // Metadata about when each episode will be published
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct RacerEpisode {
-    ep_num: Option<i64>,
+    ep_num: i64,
     date: String,
-    title: Option<String>,
+    title: String,
 }
 
 // All the fields of our racer file. Info we might want across sessions.
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FeedRacer {
     schema_version: String,
-    podcast_title: Option<String>,
-    uuid: Option<String>,
-    rate: f64,
-    old_rate: Option<f64>,
+    podcast_title: String,
+    uuid: String,
+    rate: RacerType,
+    old_rate: Option<RacerType>,
     racer_path: PathBuf,
     source_url: String,
     subscribe_url: String,
@@ -108,42 +114,44 @@ impl FeedRacer {
         self.racer_path.file_name().unwrap()
     }
     pub fn get_podcast_title(&self) -> String {
-        self.podcast_title.clone().unwrap_or(String::from("NONE"))
+        self.podcast_title.clone()
     }
     pub fn get_or_create_podcast_title(&mut self) -> String {
-        if let Some(title) = &self.podcast_title {
-            title.to_owned()
-        }
-        else {
-            let racer_path = self.racer_path.to_str().unwrap();
-            let original_rss_path: PathBuf = [racer_path, ORIGINAL_RSS_FILE].iter().collect();
-            let original_rss_file = File::open(&original_rss_path).unwrap();
-            let buff = std::io::BufReader::new(&original_rss_file);
-            let rss = rss::Channel::read_from(buff).unwrap();
-            self.podcast_title = Some(rss.title().to_owned());
-            rss.title().to_owned()
-        }
+        self.podcast_title.clone()
+        // if let Some(title) = &self.podcast_title {
+        //     title.to_owned()
+        // }
+        // else {
+        //     let racer_path = self.racer_path.to_str().unwrap();
+        //     let original_rss_path: PathBuf = [racer_path, ORIGINAL_RSS_FILE].iter().collect();
+        //     let original_rss_file = File::open(&original_rss_path).unwrap();
+        //     let buff = std::io::BufReader::new(&original_rss_file);
+        //     let rss = rss::Channel::read_from(buff).unwrap();
+        //     self.podcast_title = Some(rss.title().to_owned());
+        //     rss.title().to_owned()
+        // }
     }
     pub fn get_source_url(&self) -> &str {
         &self.source_url
     }
-    pub fn get_rate(&self) -> f64 {
-        self.rate
+    pub fn get_rate(&self) -> RacerType {
+        self.rate.clone()
     }
-    pub fn get_old_rate(&self) -> Option<f64> {
-        self.old_rate
+    pub fn get_old_rate(&self) -> Option<RacerType> {
+        self.old_rate.clone()
     }
     pub fn get_pause_date(&self) -> Option<DateTime<chrono::Utc>> {
         self.pause_date
     }
-    pub fn get_uuid(&self) -> Option<&String> {
-        self.uuid.as_ref()
+    pub fn get_uuid(&self) -> String {
+        self.uuid.clone()
     }
     pub fn get_uuid_string(&self) -> String {
-        match &self.uuid {
-            Some(uuid) => uuid.to_string(),
-            None => String::from("No UUID"),
-        }
+        self.get_uuid()
+        // match &self.uuid {
+        //     Some(uuid) => uuid.to_string(),
+        //     None => String::from("No UUID"),
+        // }
     }
     pub fn get_current_ep_title(&self) -> String {
         self.release_dates[self.get_next_episode_num()-1].title.clone().unwrap_or(String::from("MISSING"))
@@ -156,9 +164,20 @@ impl FeedRacer {
     // Setters
     ////////////////////////////////////////////////////////////////////////////////
     pub async fn set_rate(&mut self, new_rate: f64) -> Result<(), String> {
-        let adjust_ratio = (self.rate / new_rate) as f64;
-
         // Adjust the anchor date to keep the same episode count published
+        let current_rate = match self.rate {
+            RacerType::Rate(rate) => rate,
+            RacerType::Days(_) => {
+                // Using days, need to convert to rate
+                let now = chrono::Utc::now();
+                let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
+                let current_episode_original_pub_date = self.get_episode_original_pub_date(self.get_num_to_publish());
+                let first_to_cur = self.first_pubdate.signed_duration_since(current_episode_original_pub_date).num_seconds() as f64;
+                anchor_to_now / first_to_cur
+            }
+        };
+
+        let adjust_ratio = (current_rate / new_rate) as f64;
         let now = chrono::Utc::now();
         let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
         let new_anchor_to_now = anchor_to_now * adjust_ratio;
@@ -170,7 +189,35 @@ impl FeedRacer {
         };
 
         // Update the rate then adjust the feed
-        self.rate = new_rate;
+        self.rate = RacerType::Rate(new_rate);
+        match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
+        }
+    }
+    pub async fn set_rate_days(&mut self, new_days_span: u32) -> Result<(), String> {
+        // Adjust the anchor date to keep the same episode count published
+        let current_days_span = match self.rate {
+            RacerType::Days(days) => days as i64,
+            RacerType::Rate(_) => {
+                // Get num days from anchor date to today
+                let now = chrono::Utc::now();
+                let anchor_to_now_in_days = now.signed_duration_since(self.anchor_date).num_days();
+                // Divide by the number of episodes
+                anchor_to_now_in_days / self.get_num_to_publish() as i64
+            }
+        };
+
+        let days_span_diff = new_days_span as i64 - current_days_span as i64;
+        let adjustment_days = self.get_num_to_publish() as i64 * days_span_diff;
+        let adjustment_duration = Duration::days(adjustment_days);
+        self.anchor_date = match self.anchor_date.checked_add_signed(adjustment_duration) {
+            Some(val) => val,
+            None => return Err(String::from("Anchor date adjustment overflow")),
+        };
+
+        // Adjust the racer type to days, then update
+        self.rate = RacerType::Days(new_days_span);
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
@@ -266,8 +313,8 @@ impl FeedRacer {
             anchor_date,
             first_pubdate,
             release_dates: Vec::new(),
-            uuid: Some(uuid),
-            podcast_title: Some(rss.title().to_owned()),
+            uuid,
+            podcast_title: rss.title().to_owned(),
             old_rate: None,
             pause_date: None,
         };
@@ -324,11 +371,11 @@ impl FeedRacer {
             format!("PodRacer feed has caught up")
         };
         description_addition += " -- PodRacer UUID: ";
-        description_addition += self.get_or_create_uuid_str();
+        description_addition += &self.get_uuid();
         rss.set_description(format!("{} -- {}", rss.description(), &description_addition));
 
         // Append racer publish date to the end of the description
-        let feed_uuid = self.get_or_create_uuid_str().to_owned();
+        let feed_uuid = self.get_uuid().to_owned();
         for (item, info) in items_to_publish.iter_mut().zip(self.release_dates.iter()) {
             //
             // Get all the DateTime's we need
@@ -427,15 +474,29 @@ impl FeedRacer {
     //  RETURN: None
     //
     fn render_release_dates(&mut self, items: &Vec<rss::Item>) {
-        self.release_dates = Vec::new();
-
         // Need to protect against divide by 0 when paused. Just keep rendering
         // the projected release date as if we weren't paused, the actual publishing
         // is run elsewhere.
-        let mut protected_rate = self.rate;
-        if self.rate == 0.0 {
-            protected_rate = self.old_rate.unwrap_or(1.0);
-        };
+        match self.rate {
+            RacerType::Rate(rate) => {
+                let protected_rate = if rate == 0.0 {
+                    if let RacerType::Rate(old_rate) = self.old_rate.clone().unwrap_or(RacerType::Rate(1.0)) {
+                        old_rate
+                    }
+                    else {
+                        1.0
+                    }
+                }
+                else {
+                    rate
+                };
+                self.render_release_dates_rate_based(items, protected_rate);
+            },
+            RacerType::Days(days) => self.render_release_dates_days_based(items, days),
+        }
+    }
+    fn render_release_dates_rate_based(&mut self, items: &Vec<rss::Item>, protected_rate: f64) {
+        self.release_dates = Vec::new();
 
         let mut item_counter = 1;
         for item in items {
@@ -455,8 +516,28 @@ impl FeedRacer {
                 .to_rfc2822();
             // Add to vector of dates
             self.release_dates.push(RacerEpisode {
-                ep_num: Some(item_counter),
-                title: Some(item.title().unwrap_or("[no title]").to_owned()),
+                ep_num: item_counter,
+                title: item.title().unwrap_or("[no title]").to_owned(),
+                date: racer_date,
+            });
+            item_counter += 1;
+        }
+    }
+
+    fn render_release_dates_days_based(&mut self, items: &Vec<rss::Item>, days: u32) {
+        self.release_dates = Vec::new();
+
+        let mut item_counter = 1;
+        for item in items {
+            let racer_date = self
+                .anchor_date
+                .checked_add_signed(Duration::days((item_counter-1) * days as i64))
+                .unwrap()
+                .to_rfc2822();
+            // Add to vector of dates
+            self.release_dates.push(RacerEpisode {
+                ep_num: item_counter,
+                title: item.title().unwrap_or("[no title]").to_owned(),
                 date: racer_date,
             });
             item_counter += 1;
@@ -725,12 +806,12 @@ impl FeedRacer {
     //  ARGS:   None
     //  RETURN:
     //
-    fn get_or_create_uuid_str(&mut self) -> &str {
-        if self.uuid == None {
-            self.uuid = Some(uuid::Uuid::new_v4().to_string());
-        }
-        &self.uuid.as_ref().expect("Feed has UUIDv4")
-    }
+    // fn get_or_create_uuid_str(&mut self) -> &str {
+    //     if self.uuid == None {
+    //         self.uuid = Some(uuid::Uuid::new_v4().to_string());
+    //     }
+    //     &self.uuid.as_ref().expect("Feed has UUIDv4")
+    // }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     //  NAME:   FeedRacer::pause_feed
@@ -743,9 +824,12 @@ impl FeedRacer {
         match self.pause_date {
             None => {
                 // Save old rate
-                self.old_rate = Some(self.rate);
+                self.old_rate = Some(self.rate.clone());
                 // Set rate to 0
-                self.rate = 0.0;
+                self.rate = match self.rate {
+                    RacerType::Rate(_) => RacerType::Rate(0.0),
+                    RacerType::Days(_) => RacerType::Days(1000),
+                };
                 // Save current date
                 self.pause_date = Some(chrono::Utc::now());
 
@@ -770,7 +854,7 @@ impl FeedRacer {
         match self.pause_date {
             Some(pause_date) => {
                 // Restore rate
-                self.rate = self.old_rate.expect("Old rate saved");
+                self.rate = self.old_rate.clone().expect("Old rate saved");
 
                 // Set old rate to None
                 self.old_rate = None;
@@ -801,6 +885,44 @@ impl FeedRacer {
                 None
             }
         }
+    }
+
+    fn get_episode_original_pub_date(&self, episode_num: usize) -> DateTime<chrono::Utc> {
+        // Get stored rss file
+        let mut stored_rss_path = self.racer_path.clone();
+        stored_rss_path.push(ORIGINAL_RSS_FILE);
+        let stored_rss_file = match File::open(&stored_rss_path) {
+            Ok(val) => Some(val),
+            Err(e) => {
+                println!("Error opening original rss file ({}): {}", stored_rss_path.display(), e);
+                None
+            }
+        };
+        let stored_rss = if let Some(f) = stored_rss_file {
+            let buf_reader = BufReader::new(f);
+            match rss::Channel::read_from(buf_reader) {
+                Ok(val) => Some(val),
+                Err(e) => {
+                    println!("Error reading rss channel from disk: {}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        // Probably won't need this in the future
+        let mut items = stored_rss.expect("Stored rss exists").items().to_owned();
+        // Sorts ascending order
+        items.sort_by(|a, b| rss_item_cmp(a, b));
+
+        DateTime::parse_from_rfc2822(items[episode_num].pub_date().expect("pub date stringable"))
+            .expect("can parse DateTime")
+            .with_timezone(&chrono::Utc)
+    }
+
+    pub fn update_to_current_schema_version(&mut self) {
+
     }
 }
 
@@ -1260,13 +1382,7 @@ impl fmt::Display for RacerEpisode {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(
-            f,
-            "ep_num: {}, date: {}, title: {}",
-            self.ep_num.as_ref().unwrap_or(&0),
-            self.date,
-            self.title.as_ref().unwrap_or(&"[none]".to_string())
-        )
+        write!(f, "ep_num: {}, date: {}, title: {}", self.ep_num, self.date, self.title)
     }
 }
 impl fmt::Display for FeedRacer {
@@ -1288,5 +1404,19 @@ impl fmt::Display for FeedRacer {
             writeln!(f, "\t{},", entry)?;
         }
         writeln!(f, "}}")
+    }
+}
+impl fmt::Display for RacerType {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        let to_write = match self {
+            RacerType::Rate(rate) => format!("Rate({})", rate),
+            RacerType::Days(days) => format!("Days({})", days),
+        };
+        write!(f, "{}", to_write)
     }
 }
