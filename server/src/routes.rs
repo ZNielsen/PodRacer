@@ -68,6 +68,7 @@ pub struct CreateFeedForm {
 pub enum FeedAction {
     EditFeed,
     EditRate,
+    EditRateDays,
     Pause,
     Unpause,
     FastForward,
@@ -79,7 +80,8 @@ pub enum FeedAction {
 pub struct EditFeedForm {
     pub uuid: Uuid,
     pub racer_action: FeedAction,
-    pub days: Option<usize>,
+    pub slide_days: Option<usize>,
+    pub rate_days: Option<usize>,
     #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
     pub rate: Option<f64>,
     pub next_episode_num: Option<usize>,
@@ -152,7 +154,7 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
             podracer_dir: config.podracer_dir.clone(),
             start_ep: form_data.start_ep,
             host: config.host.clone(),
-            rate: form_data.rate,
+            rate: racer::RacerType::Rate(form_data.rate),
             port: config.port,
             url: form_data.url.clone(),
         },
@@ -211,6 +213,15 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
             let new_rate = racer.get_rate();
             ctx.insert("top_text", &format!("Rate has been changed. Old rate: {}, new rate: {}.", old_rate, new_rate));
         }
+        FeedAction::EditRateDays => {
+            let old_rate = racer.get_rate();
+            match racer.set_rate_days(edit_form.rate_days.expect("Form has rate") as u32).await {
+                Ok(_) => (),
+                Err(e) => println!("Error setting rate: {}", e),
+            }
+            let new_rate = racer.get_rate();
+            ctx.insert("top_text", &format!("Rate has been changed. Old rate: {}, new rate: {}.", old_rate, new_rate));
+        },
         FeedAction::Pause => {
             racer.pause_feed().await;
             ctx.insert("top_text", "Feed has been paused. No new episodes will be published \
@@ -235,16 +246,16 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
             ctx.insert("top_text", "Feed has been fast forwarded to the next episode.");
         }
         FeedAction::Rewind => {
-            racer.rewind_by_days(edit_form.days.expect("Form has days")).await;
-            let pluralization = if edit_form.days.unwrap() == 1 { "day".to_owned() }
+            racer.rewind_by_days(edit_form.slide_days.expect("Form has days")).await;
+            let pluralization = if edit_form.slide_days.unwrap() == 1 { "day".to_owned() }
                                 else { "days".to_owned() };
-            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.days.unwrap(), pluralization));
+            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.slide_days.unwrap(), pluralization));
         }
         FeedAction::FastForward   => {
-            racer.fastforward_by_days(edit_form.days.expect("Form has days")).await;
-            let pluralization = if edit_form.days.unwrap() == 1 { "day".to_owned() }
+            racer.fastforward_by_days(edit_form.slide_days.expect("Form has days")).await;
+            let pluralization = if edit_form.slide_days.unwrap() == 1 { "day".to_owned() }
                                 else { "days".to_owned() };
-            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.days.unwrap(), pluralization));
+            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.slide_days.unwrap(), pluralization));
         }
     }
 
@@ -292,7 +303,7 @@ pub async fn create_feed_cli_handler(
             host: config.host.clone(),
             port: config.port,
             url,
-            rate,
+            rate: racer::RacerType::Rate(rate),
             start_ep: 1,
         },
         &reqwest::Client::new()
@@ -331,7 +342,7 @@ pub async fn create_feed_cli_ep_handler(
             host: config.host.clone(),
             port: config.port,
             url,
-            rate,
+            rate: racer::RacerType::Rate(rate),
             start_ep,
         },
         &reqwest::Client::new()
@@ -536,8 +547,12 @@ async fn create_feed(mut params: racer::RacerCreationParams, client: &reqwest::C
         .signed_duration_since(chrono::Utc::now())
         .num_days()
         .abs();
-    let weeks_to_catch_up = ((weeks_behind as f64) / feed_racer.get_rate()) as u32;
-    let days_to_catch_up = ((days_behind as f64) / feed_racer.get_rate()) as u32;
+    let mut weeks_to_catch_up = 0;
+    let mut days_to_catch_up = 0;
+    if let racer::RacerType::Rate(rate) = feed_racer.get_rate() {
+        weeks_to_catch_up = ((weeks_behind as f64) / rate) as u32;
+        days_to_catch_up = ((days_behind as f64) / rate) as u32;
+    }
     let catch_up_date = chrono::Utc::now() + chrono::Duration::weeks(weeks_to_catch_up as i64);
 
     Ok(FeedFunFacts {
@@ -566,10 +581,8 @@ fn get_feed_by_uuid(config: &State<RocketConfig>, uuid: &Uuid) -> Result<racer::
 
     // Parse into a string to be fed back to curl
     for racer in racers {
-        if let Some(ref racer_uuid) = racer.get_uuid() {
-            if racer_uuid == &&uuid.to_string() {
-                return Ok(racer)
-            }
+        if racer.get_uuid() == uuid.to_string() {
+            return Ok(racer)
         }
     }
     Err(format!("Error: no racer with uuid: {}", uuid))
