@@ -39,7 +39,7 @@ pub const SPACE_CHAR: u8 = 32; // ASCII ' '
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum RacerType {
-    Rate(f64),
+    Ratio(f64),
     Days(u32)
 }
 
@@ -166,7 +166,7 @@ impl FeedRacer {
     pub async fn set_rate(&mut self, new_rate: f64) -> Result<(), String> {
         // Adjust the anchor date to keep the same episode count published
         let current_rate = match self.rate {
-            RacerType::Rate(rate) => rate,
+            RacerType::Ratio(rate) => rate,
             RacerType::Days(_) => {
                 // Using days, need to convert to rate
                 let now = chrono::Utc::now();
@@ -189,7 +189,7 @@ impl FeedRacer {
         };
 
         // Update the rate then adjust the feed
-        self.rate = RacerType::Rate(new_rate);
+        self.rate = RacerType::Ratio(new_rate);
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Error updating feed after setting rate: {}", e)),
@@ -199,7 +199,7 @@ impl FeedRacer {
         // Adjust the anchor date to keep the same episode count published
         let current_days_span = match self.rate {
             RacerType::Days(days) => days as i64,
-            RacerType::Rate(_) => {
+            RacerType::Ratio(_) => {
                 // Get num days from anchor date to today
                 let now = chrono::Utc::now();
                 let anchor_to_now_in_days = now.signed_duration_since(self.anchor_date).num_days();
@@ -478,9 +478,9 @@ impl FeedRacer {
         // the projected release date as if we weren't paused, the actual publishing
         // is run elsewhere.
         match self.rate {
-            RacerType::Rate(rate) => {
+            RacerType::Ratio(rate) => {
                 let protected_rate = if rate == 0.0 {
-                    if let RacerType::Rate(old_rate) = self.old_rate.clone().unwrap_or(RacerType::Rate(1.0)) {
+                    if let RacerType::Ratio(old_rate) = self.old_rate.clone().unwrap_or(RacerType::Ratio(1.0)) {
                         old_rate
                     }
                     else {
@@ -827,7 +827,7 @@ impl FeedRacer {
                 self.old_rate = Some(self.rate.clone());
                 // Set rate to 0
                 self.rate = match self.rate {
-                    RacerType::Rate(_) => RacerType::Rate(0.0),
+                    RacerType::Ratio(_) => RacerType::Ratio(0.0),
                     RacerType::Days(_) => RacerType::Days(1000),
                 };
                 // Save current date
@@ -1223,10 +1223,7 @@ pub fn get_all_racers(base_dir: &str) -> Result<Vec<FeedRacer>, String> {
         let podcast_dir = match podcast_dir_res {
             Ok(val) => val,
             Err(e) => {
-                return Err(format!(
-                    "Error iterating over path from get_all_podcast_dirs: {}",
-                    e
-                ))
+                return Err(format!("Error iterating over path from get_all_podcast_dirs: {}", e))
             }
         };
         let path = podcast_dir.path();
@@ -1414,7 +1411,7 @@ impl fmt::Display for RacerType {
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
         let to_write = match self {
-            RacerType::Rate(rate) => format!("Rate({})", rate),
+            RacerType::Ratio(rate) => format!("Rate({})", rate),
             RacerType::Days(days) => format!("Days({})", days),
         };
         write!(f, "{}", to_write)

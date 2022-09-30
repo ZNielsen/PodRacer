@@ -154,7 +154,7 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
             podracer_dir: config.podracer_dir.clone(),
             start_ep: form_data.start_ep,
             host: config.host.clone(),
-            rate: racer::RacerType::Rate(form_data.rate),
+            rate: racer::RacerType::Ratio(form_data.rate),
             port: config.port,
             url: form_data.url.clone(),
         },
@@ -303,7 +303,7 @@ pub async fn create_feed_cli_handler(
             host: config.host.clone(),
             port: config.port,
             url,
-            rate: racer::RacerType::Rate(rate),
+            rate: racer::RacerType::Ratio(rate),
             start_ep: 1,
         },
         &reqwest::Client::new()
@@ -342,7 +342,7 @@ pub async fn create_feed_cli_ep_handler(
             host: config.host.clone(),
             port: config.port,
             url,
-            rate: racer::RacerType::Rate(rate),
+            rate: racer::RacerType::Ratio(rate),
             start_ep,
         },
         &reqwest::Client::new()
@@ -487,7 +487,8 @@ fn fill_edit_feed_data_from_racer(cx: &mut Context, racer: &racer::FeedRacer) {
     cx.insert("num_episodes",         &racer.get_num_episodes());
     cx.insert("anchor_date",          &racer.get_anchor_date().with_timezone(&chrono_tz::US::Pacific).to_rfc2822());
     cx.insert("source_url",           &racer.get_source_url());
-    cx.insert("rate",                 &format!("{:.2}", racer.get_rate()));
+    cx.insert("rate_ratio",           &format!("{:.2}", racer.get_rate()));
+    cx.insert("rate_days",            &format!("{:.2}", racer.get_rate()));
     cx.insert("uuid",                 &racer.get_uuid_string());
     if let Some(old_rate) = racer.get_old_rate() {
         cx.insert("old_rate", &format!("{:.2}", old_rate));
@@ -549,7 +550,7 @@ async fn create_feed(mut params: racer::RacerCreationParams, client: &reqwest::C
         .abs();
     let mut weeks_to_catch_up = 0;
     let mut days_to_catch_up = 0;
-    if let racer::RacerType::Rate(rate) = feed_racer.get_rate() {
+    if let racer::RacerType::Ratio(rate) = feed_racer.get_rate() {
         weeks_to_catch_up = ((weeks_behind as f64) / rate) as u32;
         days_to_catch_up = ((days_behind as f64) / rate) as u32;
     }
