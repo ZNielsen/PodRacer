@@ -50,7 +50,7 @@
   </tr>
   <tr>
     <td>Current PodRacer Rate</td>
-    <td>{{ rate }}</td>
+    <td>{{ rate_ratio }}</td>
   </tr>
 
   {% if old_rate %}

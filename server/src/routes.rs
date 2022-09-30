@@ -81,9 +81,9 @@ pub struct EditFeedForm {
     pub uuid: Uuid,
     pub racer_action: FeedAction,
     pub slide_days: Option<usize>,
-    pub rate_days: Option<usize>,
+    pub rate_days: Option<u32>,
     #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
-    pub rate: Option<f64>,
+    pub rate_ratio: Option<f64>,
     pub next_episode_num: Option<usize>,
 }
 
@@ -206,7 +206,7 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
         FeedAction::EditFeed => (), // Just requesting page, don't need to do anything else.
         FeedAction::EditRate => {
             let old_rate = racer.get_rate();
-            match racer.set_rate(edit_form.rate.expect("Form has rate")).await {
+            match racer.set_rate_ratio(edit_form.rate_ratio.expect("Form has rate_ratio")).await {
                 Ok(_) => (),
                 Err(e) => println!("Error setting rate: {}", e),
             }
@@ -215,7 +215,7 @@ pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: For
         }
         FeedAction::EditRateDays => {
             let old_rate = racer.get_rate();
-            match racer.set_rate_days(edit_form.rate_days.expect("Form has rate") as u32).await {
+            match racer.set_rate_days(edit_form.rate_days.expect("Form has rate_days") as u32).await {
                 Ok(_) => (),
                 Err(e) => println!("Error setting rate: {}", e),
             }
