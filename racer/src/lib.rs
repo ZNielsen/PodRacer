@@ -154,10 +154,10 @@ impl FeedRacer {
         // }
     }
     pub fn get_current_ep_title(&self) -> String {
-        self.release_dates[self.get_next_episode_num()-1].title.clone().unwrap_or(String::from("MISSING"))
+        self.release_dates[self.get_next_episode_num()-1].title.clone()
     }
     pub fn get_next_ep_title(&self) -> String {
-        self.release_dates[self.get_next_episode_num()].title.clone().unwrap_or(String::from("MISSING"))
+        self.release_dates[self.get_next_episode_num()].title.clone()
     }
 
     ////////////////////////////////////////////////////////////////////////////////
