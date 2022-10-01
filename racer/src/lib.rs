@@ -165,37 +165,24 @@ impl FeedRacer {
     ////////////////////////////////////////////////////////////////////////////////
     pub async fn set_rate_ratio(&mut self, new_rate: f64) -> Result<(), String> {
         // Adjust the anchor date to keep the same episode count published
-        let anchor_adjustment_seconds = match self.rate {
-            RacerType::Ratio(rate) => {
-                let adjust_ratio = (rate / new_rate) as f64;
-                let now = chrono::Utc::now();
-                let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
-                let new_anchor_to_now = anchor_to_now * adjust_ratio;
-                anchor_to_now - new_anchor_to_now
-            },
+        let current_rate = match self.rate {
+            RacerType::Ratio(rate) => rate,
             RacerType::Days(_) => {
-                // Using days, need to convert to rate
-                let now = chrono::Utc::now();
-                let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
+                let current_episode_racer_pub_date = DateTime::parse_from_rfc2822(&self.release_dates[self.get_num_to_publish()].date).expect("date is valid");
+                let anchor_to_now = current_episode_racer_pub_date.signed_duration_since(self.anchor_date).num_seconds() as f64;
                 println!("anchor_to_now: {}", anchor_to_now);
                 let current_episode_original_pub_date = self.get_episode_original_pub_date(self.get_num_to_publish());
                 println!("current_episode_original_pub_date: {}", current_episode_original_pub_date);
                 let first_to_cur = current_episode_original_pub_date.signed_duration_since(self.first_pubdate).num_seconds() as f64;
                 println!("first_to_cur: {}", first_to_cur);
-                let estimated_rate = first_to_cur / anchor_to_now;
-
-                let adjust_ratio = (estimated_rate / new_rate) as f64;
-                let now = chrono::Utc::now();
-                let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
-                let new_anchor_to_now = anchor_to_now * adjust_ratio;
-                anchor_to_now - new_anchor_to_now
-
-                // while not same number of episodes published
-                    // for proposed adjustment, check how many would be published at the new rate
-                    // Adjust
-            }
+                first_to_cur / anchor_to_now
+            },
         };
-
+        let adjust_ratio = (current_rate / new_rate) as f64;
+        let now = chrono::Utc::now();
+        let anchor_to_now = now.signed_duration_since(self.anchor_date).num_seconds() as f64;
+        let new_anchor_to_now = anchor_to_now * adjust_ratio;
+        let anchor_adjustment_seconds = anchor_to_now - new_anchor_to_now;
         let adjust_duration = Duration::seconds(anchor_adjustment_seconds as i64);
         self.anchor_date = match self.anchor_date.checked_add_signed(adjust_duration) {
             Some(val) => val,
