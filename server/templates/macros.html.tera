@@ -71,7 +71,6 @@
         <div class="footer-col footer-col-2w">
             <p>
             This service is running on a Raspberry Pi 3.<br>
-            It is still young, so improvements are coming all the time.<br>
             If you encounter a bug, please file an
                 <a href="https://github.com/ZNielsen/PodRacer/issues/new">issue on github!</a><br>
             </p>
