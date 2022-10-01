@@ -170,11 +170,8 @@ impl FeedRacer {
             RacerType::Days(_) => {
                 let current_episode_racer_pub_date = DateTime::parse_from_rfc2822(&self.release_dates[self.get_num_to_publish()].date).expect("date is valid");
                 let anchor_to_now = current_episode_racer_pub_date.signed_duration_since(self.anchor_date).num_seconds() as f64;
-                println!("anchor_to_now: {}", anchor_to_now);
                 let current_episode_original_pub_date = self.get_episode_original_pub_date(self.get_num_to_publish());
-                println!("current_episode_original_pub_date: {}", current_episode_original_pub_date);
                 let first_to_cur = current_episode_original_pub_date.signed_duration_since(self.first_pubdate).num_seconds() as f64;
-                println!("first_to_cur: {}", first_to_cur);
                 first_to_cur / anchor_to_now
             },
         };
@@ -201,20 +198,16 @@ impl FeedRacer {
         let adjustment_days: i64 = match self.rate {
             RacerType::Days(days) => {
                 let days_span_diff = days as i64 - new_days_span as i64;
-                println!("days_span_diff: {}", days_span_diff);
                 self.get_num_to_publish() as i64 * days_span_diff as i64
             },
             RacerType::Ratio(_) => {
                 let days_needed = self.get_num_to_publish() as i64 * new_days_span as i64;
-                println!("days_needed: {}", days_needed);
                 let now = chrono::Utc::now();
                 let anchor_to_now_days = now.signed_duration_since(self.anchor_date).num_days();
-                println!("anchor_to_now_days: {}", anchor_to_now_days);
                 (anchor_to_now_days - days_needed) + 1
             }
         };
 
-        println!("adjustment_days: {}", adjustment_days);
         let adjustment_duration = Duration::days(adjustment_days);
         self.anchor_date = match self.anchor_date.checked_add_signed(adjustment_duration) {
             Some(val) => val,
