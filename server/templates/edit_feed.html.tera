@@ -63,15 +63,29 @@
     <td>Episodes Published</td>
     <td>{{ num_published }}/{{ num_episodes }}</td>
   </tr>
+  <tr>
+    <td>Current Episode Title</td>
+    <td>{{ current_ep_title }}</td>
+  </tr>
 </table>
 
 {% if pause_date %}
+
 <form action="/edit_feed" method="post">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="Unpause" />
     <input type="submit" value="Resume Feed">
 </form>
+
 {% else %}
+
+<form action="/edit_feed" method="post">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="PublishNextEp" next_episode_num={{ num_published + 1 }}/>
+    <input type="submit" value="Publish Next Episode Now">
+    <span style="color:#808080">Next Episode Title:</span> {{ next_ep_title }}
+</form>
+
 <form action="/edit_feed" method="post">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="Pause" />
@@ -86,12 +100,6 @@
     Rate:
     <input type="number" size="4" id="rate" name="rate" placeholder="{{ rate }}" step=0.0001 required>
     </label><br>
-</form>
-
-<form action="/edit_feed" method="post">
-    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
-    <input type="hidden" id="racer_action" name="racer_action" value="PublishNextEp" next_episode_num={{ num_published + 1 }}/>
-    <input type="submit" value="Publish Next Episode Now">
 </form>
 
 <form action="/edit_feed" method="post">
