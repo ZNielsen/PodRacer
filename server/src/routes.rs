@@ -13,6 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 use super::racer;
 
+use rocket::response::Redirect;
 use rocket::serde::uuid::Uuid;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
@@ -189,7 +190,12 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
 //  RETURN: A result with string information either way. Tailored for a curl response
 //
 #[post("/edit_feed", data = "<edit_form>")]
-pub async fn edit_feed_post_handler(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
+pub async fn edit_feed_post_handler(edit_form: Form<EditFeedForm>) -> Redirect {
+    Redirect::temporary(format!("/edit_feed/{}", &edit_form.uuid))
+}
+
+#[post("/edit_feed/<_>", data = "<edit_form>")]
+pub async fn edit_feed_post_handler_uri(config: &State<RocketConfig>, edit_form: Form<EditFeedForm>) -> Template {
     let mut ctx = Context::new();
 
     let mut racer = match get_feed_by_uuid(&config, &edit_form.uuid) {

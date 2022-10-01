@@ -66,6 +66,7 @@ async fn rocket() -> rocket::Rocket<rocket::Build> {
         .register("/", catchers![invalid_data_range_handler])
         .mount("/", routes![create_feed_form_handler])
         .mount("/", routes![edit_feed_get_handler])
+        .mount("/", routes![edit_feed_post_handler_uri])
         .mount("/", routes![edit_feed_post_handler])
         .mount("/", routes![update_one_handler])
         .mount("/", routes![update_all_handler])
