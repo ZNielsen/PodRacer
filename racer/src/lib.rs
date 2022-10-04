@@ -1409,7 +1409,7 @@ impl fmt::Display for RacerType {
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
         let to_write = match self {
-            RacerType::Ratio(rate) => format!("Rate({})", rate),
+            RacerType::Ratio(rate) => format!("Ratio({})", rate),
             RacerType::Days(days) => format!("Days({})", days),
         };
         write!(f, "{}", to_write)
