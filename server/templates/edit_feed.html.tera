@@ -93,22 +93,22 @@
 </form>
 
 <form action="/edit_feed" method="post">
-    <input type="submit" value="Update Feed Rate, Speed Multiplier">
-    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
-    <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
-    <label for="rate_ratio">
-    Rate (Ratio):
-    <input type="number" size="4" id="rate_ratio" name="rate_ratio" step=0.0001 required>
-    </label><br>
-</form>
-
-<form action="/edit_feed" method="post">
     <input type="submit" value="Update Feed Rate, Days Between Episodes">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="EditRateDays" />
     <label for="rate">
     Rate (Days):
     <input type="number" size="4" id="rate_days" name="rate_days" step=1 required>
+    </label><br>
+</form>
+
+<form action="/edit_feed" method="post">
+    <input type="submit" value="Update Feed Rate, Speed Multiplier">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
+    <label for="rate_ratio">
+    Rate (Ratio):
+    <input type="number" size="4" id="rate_ratio" name="rate_ratio" step=0.0001 required>
     </label><br>
 </form>
 
