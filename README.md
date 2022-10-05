@@ -47,7 +47,7 @@ The binary will end up in `target/armv7-unknown-linux-gnueabihf/release`.
 
 ### Start the server
 ```
-cargo run --release
+cargo run --release --bin podracer
 ```
 
 Podcast clients will need to access the server remotely, so you will have to set up [port forwarding](https://www.howtogeek.com/66214/how-to-forward-ports-on-your-router/) in your router.
