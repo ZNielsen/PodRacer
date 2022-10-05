@@ -108,7 +108,7 @@
     <input type="hidden" id="racer_action" name="racer_action" value="EditRate" />
     <label for="rate_ratio">
     Rate (Ratio):
-    <input type="number" size="4" id="rate_ratio" name="rate_ratio" step=0.0001 required>
+    <input type="number" size="4" id="rate_ratio" name="rate_ratio" step=0.001 required>
     </label><br>
 </form>
 

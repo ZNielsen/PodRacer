@@ -10,13 +10,17 @@ Create a new PodRacer feed:
     URL:
     <input type="text" style="width:90%" id="url" name="url" placeholder="https://atp.fm/rss" required>
     </label><br>
-    <label for="rate">
-    Rate:
-    <input type="number" size="4" id="rate" name="rate" placeholder="1.2" step=0.0001 required>
-    </label><br>
     <label for="start_ep">
     Starting Episode:
     <input type="number" size="4" id="start_ep" name="start_ep" value="1" step=1 required>
+    </label><br>
+    Rate:<br>
+    <label for="rate_ratio">
+    &emsp;Ratio <input type="number" size="4" id="rate_ratio" name="rate_ratio" placeholder="1.2" step=0.001>
+    </label><br>
+    &emsp;or<br>
+    <label for="rate_days">
+    &emsp;Days <input type="number" size="4" id="rate_days" name="rate_days" placeholder="5" step=1>
     </label><br>
     <input type="submit" value="Submit">
 </form>
