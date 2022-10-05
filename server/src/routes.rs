@@ -31,7 +31,7 @@ use tera::Context;
 ////////////////////////////////////////////////////////////////////////////////
 
 const FEED_NOT_FOUND_FILE: &'static str = "feed_not_found";
-// const GENERIC_TEXT_FILE:   &'static str = "generic_text";
+const GENERIC_TEXT_FILE:   &'static str = "generic_text";
 const EDIT_FEED_FILE:      &'static str = "edit_feed";
 const SUCCESS_FILE:        &'static str = "submit_success";
 const FAILURE_FILE:        &'static str = "submit_failure";
@@ -60,8 +60,8 @@ struct FeedFunFacts {
 #[derive(FromForm)]
 pub struct CreateFeedForm {
     pub url: String,
-    #[field(validate = with(|rate| *rate > 0.0, "rate must be > 0"))]
-    pub rate: f64,
+    pub rate_ratio: Option<f64>,
+    pub rate_days: Option<u32>,
     pub start_ep: usize,
 }
 
@@ -147,7 +147,21 @@ pub async fn create_feed_form_handler(config: &State<RocketConfig>) -> NamedFile
 pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<CreateFeedForm>) -> Template {
     let mut context = Context::new();
 
-    println!("in create_feed_handler");
+    match rate_validator(&form_data.rate_ratio, &form_data.rate_days) {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error validating rate: {}", &e);
+            let mut ctx = Context::new();
+            ctx.insert("text", &e);
+            return Template::render(GENERIC_TEXT_FILE, &ctx.into_json());
+        },
+    }
+    let rate = if form_data.rate_ratio.is_some() {
+        racer::RacerType::Ratio(form_data.rate_ratio.unwrap())
+    }
+    else {
+        racer::RacerType::Days(form_data.rate_days.unwrap())
+    };
 
     match create_feed(
         racer::RacerCreationParams {
@@ -155,7 +169,7 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
             podracer_dir: config.podracer_dir.clone(),
             start_ep: form_data.start_ep,
             host: config.host.clone(),
-            rate: racer::RacerType::Ratio(form_data.rate),
+            rate,
             port: config.port,
             url: form_data.url.clone(),
         },
@@ -180,6 +194,26 @@ pub async fn create_feed_handler(config: &State<RocketConfig>, form_data: Form<C
             Template::render(FAILURE_FILE, &context.into_json())
         }
     }
+}
+fn rate_validator(rate_ratio: &Option<f64>, rate_days: &Option<u32>) -> Result<(), String> {
+    if rate_ratio.is_none() && rate_days.is_none() {
+        return Err(format!("Error validating rate: Must specify a Rate in either a Ratio or Days"));
+    }
+    if rate_ratio.is_some() && rate_days.is_some() {
+        return Err(format!("Error validating rate: Must only specify one Rate, in either a Ratio or Days"));
+    }
+    if let Some(rate) = rate_ratio {
+        if *rate <= 0.0 {
+            return Err(format!("Error validating rate: rate must be > 0"));
+        }
+    }
+    if let Some(rate) = rate_days {
+        if *rate <= 0 {
+            return Err(format!("Error validating rate: rate must be > 0"));
+        }
+    }
+
+    Ok(())
 }
 
 ////////////////////////////////////////////////////////////////////////////////
