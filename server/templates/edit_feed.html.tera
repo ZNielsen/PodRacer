@@ -67,6 +67,14 @@
     <td>Current Episode Title</td>
     <td>{{ current_ep_title }}</td>
   </tr>
+
+  {% if pause_date %}
+  <tr>
+    <td>Next Episode Title</td>
+    <td>{{ next_ep_title }}</td>
+  </tr>
+  {% endif %}
+
 </table>
 
 {% if pause_date %}
