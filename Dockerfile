@@ -1,6 +1,9 @@
 FROM rust:slim
 
-RUN apt-get install -y --no-install-recommends pkg-config libssl-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pkg-config libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
