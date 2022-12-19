@@ -1,4 +1,4 @@
-FROM rust:slim
+FROM rust:1.66.0-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends pkg-config libssl-dev \
