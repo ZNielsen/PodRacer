@@ -5,6 +5,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /opt/PodRacer
+
 COPY . .
 
 RUN rustup override set nightly \
