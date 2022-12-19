@@ -31,9 +31,8 @@ There is also a small utility tool `podarch`, used to archive all the episodes o
 
 I run this service on a Raspberry Pi 3.
 
-You will need the rust nightly build for rocket.
 ```
-rustup override set nightly && rustup update && cargo update && cargo build --release
+rustup update && cargo update && cargo build --release
 ```
 It's going to take a very long time to build. That's Rust.
 

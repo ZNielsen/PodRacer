@@ -22,7 +22,7 @@ rss = "1.10.0"
 
 
 [dependencies.rocket]
-version = "0.5.0-rc.1"
+version = "0.5.0-rc.2"
 features = ["uuid"]
 
 [dependencies.rocket_dyn_templates]
