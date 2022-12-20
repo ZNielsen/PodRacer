@@ -14,9 +14,9 @@ I'm running one at [podracer.zachn.me](http://podracer.zachn.me), feel free to t
 
 ## Features
 - **Time shift podcasts** - Have a favorite show that died out and want to relive it? PodRacer lets you experience it anew by creating a feed where the first episode was published _today_.
-- **Two rate-controle modes**
+- **Two rate-control modes**
   - **Variable publishing rate** - Do you want to catch up on serial podcast? Set the rate to be > 1x and PodRacer will scale the shifted publish dates, letting you slowly (or quickly) catch up to real time. Podcasts coming at you too fast? Set the rate to be < 1x to make a bi-weekly show weekly, or a weekly show bi-weekly.
-  - **Publish every <X> days** - For archived podcasts that have all episodes "published" on the same day, PodRacer can set a fixed amount of time between each episode, restoring the periodic publishing feel.
+  - **Publish every X days** - For archived podcasts that have all episodes "published" on the same day, PodRacer can set a fixed amount of time between each episode, restoring the periodic publishing feel.
 - **Integrates new episodes** - Once you catch up, PodRacer integrates the new episodes as they are published, seamlessly transferring you over to the "normal" listening experience.
 - **Self hosted** - complete autonomy over your feeds.
 
@@ -31,9 +31,8 @@ There is also a small utility tool `podarch`, used to archive all the episodes o
 
 I run this service on a Raspberry Pi 3.
 
-You will need the rust nightly build for rocket.
 ```
-rustup override set nightly && rustup update && cargo update && cargo build --release
+rustup update && cargo update && cargo build --release
 ```
 It's going to take a very long time to build. That's Rust.
 
