@@ -9,8 +9,7 @@ WORKDIR /opt/PodRacer
 
 COPY . .
 
-RUN rustup override set nightly \
-    && rustup update \
+RUN rustup update \
     && cargo update \
     && cargo build --release \
     && useradd -ms /bin/bash PodRacer \
