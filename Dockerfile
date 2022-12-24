@@ -29,7 +29,7 @@ FROM rust:1.66.0-slim as builder
 # SSL deps
 RUN apt update && apt install -y libssl-dev
 # PodRacer source
-COPY PodRacer /podracer
+COPY . /podracer
 # Move to dir
 WORKDIR /podracer
 # Building
