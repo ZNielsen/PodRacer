@@ -47,10 +47,10 @@ FROM debian:stable-slim
 ENV ROCKET_PROFILE=docker
 ENV ROCKET_CONFIG=/app/Rocket.toml
 # Again the SSL deps
-RUN sudo apt update && \
-    sudo apt install -y libssl1.1 && \
-    sudo apt clean && \
-    sudo rm -rf /var/lib/apt/lists/*
+RUN apt update && \
+    apt install -y libssl1.1 && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 # Copy from builder the /app, $CONTAINERUSER is a custom user.
 #COPY --from=builder --chown=$CONTAINERUSER:$CONTAINERUSER /app /app
 #COPY --chown=$CONTAINERUSER:$CONTAINERUSER Rocket.toml /app/Rocket.toml
