@@ -27,7 +27,7 @@
 
 FROM rust:1.66.0-slim as builder
 # SSL deps
-RUN apt update && apt install -y libssl-dev
+RUN apt update && apt install -y pkg-config libssl-dev
 # PodRacer source
 COPY . /podracer
 # Move to dir
