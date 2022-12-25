@@ -1,6 +1,6 @@
 [global]
 workers=8
-template_dir = "server/web/templates/"
+template_dir = "server/web/templates"
 #template_dir = "server/templates/"
 
 [debug]
@@ -39,5 +39,5 @@ keep_alive = 5
 limits = { forms = 32768 }
 update_factor = 45
 host = "http://localhost:42609"
-static_file_dir = "server/web/static/"
+static_file_dir = "server/web/static"
 podracer_dir = "podcasts"
