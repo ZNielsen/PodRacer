@@ -1,13 +1,3 @@
-#FROM rust:1.66.0-slim
-#
-#ENV ROCKET_PROFILE=docker
-#ENV ROCKET_CONFIG=/app/Rocket.toml
-#
-#RUN apt-get update \
-#    && apt-get install -y --no-install-recommends pkg-config libssl-dev \
-#    && apt-get clean \
-#    && rm -rf /var/lib/apt/lists/*
-#
 #WORKDIR /opt/PodRacer
 #
 #COPY . .
@@ -27,7 +17,10 @@
 
 FROM rust:1.66.0-slim as builder
 # SSL deps
-RUN apt update && apt install -y pkg-config libssl-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pkg-config libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 # PodRacer source
 COPY . /podracer
 # Move to dir
@@ -57,4 +50,4 @@ RUN apt update && \
 COPY --from=builder /app /app
 COPY Rocket.toml /app/Rocket.toml
 WORKDIR /app
-CMD ["/app/podracer"]
+CMD ["podracer"]
