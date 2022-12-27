@@ -37,4 +37,5 @@ jobs:
             macley/oled_stats:latest
 #            ghcr.io/macley/oled_stats:latest
 #          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7
-          platforms: linux/arm64,linux/arm/v7
+          #platforms: linux/arm/v7 # This one gives problems https://github.com/Macleykun/PodRacer/actions/runs/3786394031/jobs/6437256384
+          platforms: linux/386,linux/amd64,linux/arm64
