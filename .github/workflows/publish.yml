@@ -9,7 +9,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-          # Credit to the workaround: https://github.com/rust-lang/cargo/issues/8719#issuecomment-977690631
+      # Credit to the workaround: https://github.com/rust-lang/cargo/issues/8719#issuecomment-977690631
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@v1.0
         with:
