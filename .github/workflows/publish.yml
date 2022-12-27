@@ -9,6 +9,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+          # Credit to the workaround: https://github.com/rust-lang/cargo/issues/8719#issuecomment-977690631
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@v1.0
         with:
@@ -45,5 +46,4 @@ jobs:
           tags: |
             macley/oled_stats:latest
 #            ghcr.io/macley/oled_stats:latest
-          platforms: linux/arm/v7 # This one gives problems
-          #platforms: linux/386,linux/amd64,linux/arm64 # Works: https://github.com/Macleykun/PodRacer/actions/runs/3786496750/jobs/6437450217
+          platforms: linux/386,linux/amd64,linux/arm/v7,linux/arm64
