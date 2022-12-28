@@ -47,4 +47,5 @@ jobs:
           tags: |
             znielsen/podracer:latest
 #            ghcr.io/znielsen/podracer:latest
-          platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
+          platforms: linux/amd64
+          #platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
