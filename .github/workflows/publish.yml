@@ -45,7 +45,7 @@ jobs:
         with:
           push: true
           tags: |
-            znielsen/podracer:latest
-#            ghcr.io/znielsen/podracer:latest
+            macley/oled_stats:latest
+#            ghcr.io/znielsen/podracer:latest znielsen/podracer:latest
           platforms: linux/amd64
           #platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
