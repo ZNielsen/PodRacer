@@ -1,7 +1,7 @@
 name: Docker-Publish
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Commented below as the CI/CD takes 2 hours
 #  push:
 #    branches:
 #      - 'main'
@@ -15,30 +15,30 @@ jobs:
         uses: pierotofy/set-swap-space@v1.0
         with:
           swap-size-gb: 10
+
       - run: |
           # Workaround for https://github.com/rust-lang/cargo/issues/8719
           sudo mkdir -p /var/lib/docker
           sudo mount -t tmpfs -o size=10G none /var/lib/docker
           sudo systemctl restart docker
-      -
-        name: Set up QEMU
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-      -
-        name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      -
-        name: Login to GitHub Container Registry
+
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Build and push
+
+      - name: Build and push
         uses: docker/build-push-action@v3
         with:
           push: true
           tags: |
-            ghcr.io/macleykun/podracer:latest
-          platforms: linux/amd64
-          #platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
+            ghcr.io/znielsen/podracer:latest
+          platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
