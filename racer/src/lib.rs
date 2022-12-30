@@ -1291,12 +1291,15 @@ pub fn scrub_xml_file(file_name: &PathBuf) {
     let in_buf = std::io::BufReader::new(&file);
     scrub_xml_content_to_file(in_buf, &scrubbed_file);
 
-    // Replace original with scrubbed file
-    std::fs::rename(
+    // Replace original with scrubbed file. Use copy + remove instead of rename so we can span
+    // filesystems (for Docker)
+    std::fs::copy(
         std::path::Path::new(&tmp_file_name),
         std::path::Path::new(&file_name),
     )
-    .expect("Failed to overwrite file");
+        .expect(&format!("Failed to overwrite file (fs::copy {:?} -> {:?})", &tmp_file_name, &file_name));
+    std::fs::remove_file(std::path::Path::new(&tmp_file_name))
+        .expect(&format!("Failed to fs::remove_file {:?}", &tmp_file_name));
 }
 
 trait RssExt {
