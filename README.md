@@ -65,7 +65,7 @@ You can either run in a tmux instance or use `nohup` and send it to the backgrou
 If you wish to run PodRacer using docker, you can use the following run command:
 
 ```bash
-docker run -d -v podracer_podcasts:/app/podcasts/ -p 42069:42069/tcp --name podracer macley/oled_stats:latest
+docker run -d -v podracer_podcasts:/app/podcasts/ -p 42069:42069/tcp --name podracer ghcr.io/znielsen/podracer:latest
 ```
 
 ## Contributing
