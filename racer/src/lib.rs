@@ -1338,7 +1338,7 @@ impl RssExt for rss::Channel {
         let ext = &mut self.extensions;
         match ext.get_mut("atom") {
             Some(atom) => {
-                while let Some(links) = atom.get_mut("link") {
+                if let Some(links) = atom.get_mut("link") {
                     for link in links {
                         match &mut link.attrs.get_mut("rel") {
                             Some(val) => {
