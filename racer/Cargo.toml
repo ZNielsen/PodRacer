@@ -1,6 +1,6 @@
 [package]
 name = "racer"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Zach Nielsen <zach@zachn.me>"]
 edition = "2018"
 
@@ -15,6 +15,7 @@ fail-on-warnings = []
 vendored-openssl = ['openssl/vendored']
 
 [dependencies]
+humantime = "2.1.0"
 reqwest = { version = "0.11" }
 openssl = { version = "*", optional = true }
 futures = "0.3"
@@ -24,5 +25,5 @@ serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1" }
 dirs = "3.0.1"
 uuid = { version = "*", features = ["v4"] }
-rss = "1.10"
+rss = "2.0"
 
