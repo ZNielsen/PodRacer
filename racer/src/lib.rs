@@ -406,6 +406,9 @@ impl FeedRacer {
                 Ok(val) => val.with_timezone(&Local).format("%d %b %Y"),
                 Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             };
+            let human_original_pub_date = humantime::format_duration(
+                std::time::Duration::from_millis((racer_date - item_date).num_milliseconds() as u64)
+            );
             item.set_pub_date(racer_pub_date);
 
             //
@@ -415,15 +418,15 @@ impl FeedRacer {
             let mut new_description = description.replace("\r\n", "\n");
             let feed_uuid_link = format!("<a href=\"http://podracer.zachn.me/edit_feed/{}\">{}</a>",
                                     feed_uuid, feed_uuid);
-            new_description.push_str(&format!("\n\nOriginally published on {}\n\nFeed UUID: {}",
-                    original_pub_date, feed_uuid_link));
+            new_description.push_str(&format!("\n\nOriginally published on {} ({} from PodRacer publish date)\n\nFeed UUID: {}",
+                    original_pub_date, human_original_pub_date, feed_uuid_link));
             item.set_description(new_description);
             // Only do content if it is present
             match item.content() {
                 Some(content) => {
                     let mut new_content = content.replace("\r\n", "\n");
-                    new_content.push_str(&format!("<br>Originally published on {}<br><br>Feed UUID:<br>{}",
-                            original_pub_date, feed_uuid_link));
+                    new_content.push_str(&format!("<br>Originally published on {} ({} from PodRacer publish date)<br><br>Feed UUID:<br>{}",
+                            original_pub_date, human_original_pub_date, feed_uuid_link));
                     item.set_content(new_content);
                 },
                 None => (),
