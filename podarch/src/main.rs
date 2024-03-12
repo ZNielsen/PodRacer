@@ -54,6 +54,7 @@ async fn main() {
                 // Create destination
                 let mut filename = String::from(item.title().unwrap_or("FixMeNoTitle"));
                 filename.push_str(mime_type_map.get(&item.enclosure().unwrap().mime_type).unwrap());
+                filename = filename.replace("/", "-");
 
                 let filepath: PathBuf = [&opt.dir, &filename]
                     .iter()
@@ -72,12 +73,13 @@ async fn main() {
 
                 if opt.get_description {
                     let mut desc_filename = String::from(item.title().unwrap_or("FixMeNoTitle"));
+                    desc_filename = desc_filename.replace("/", "-");
                     desc_filename.push_str("_descripion.html");
 
                     let desc_filepath: PathBuf = [&opt.dir, &desc_filename]
                         .iter()
                         .collect();
-                    let mut fp = fs::File::create(&desc_filepath).unwrap();
+                    let mut fp = fs::File::create(&desc_filepath).expect(&format!("Creating {:#?}", &desc_filepath));
                     fp.write_all(item.description().unwrap().as_bytes()).unwrap();
                 }
             }
