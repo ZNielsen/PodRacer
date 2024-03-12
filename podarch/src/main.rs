@@ -38,6 +38,12 @@ async fn main() {
         Err(e) => panic!("Error getting rss feed (from {}): {}", &opt.url, e),
     };
 
+    // Write RSS file to disk
+    let rss_file_name = std::path::Path::new(&opt.url).file_name().unwrap();
+    let rss_file_path: PathBuf = [&opt.dir, rss_file_name.to_str().unwrap()].iter().collect();
+    let rss_file = fs::File::create(rss_file_path).unwrap();
+    rss.pretty_write_to(rss_file, b' ', 2).unwrap();
+
     let mut mime_type_map = std::collections::HashMap::new();
     mime_type_map.insert(String::from("audio/mpeg"), ".mp3");
     let mime_type_map = mime_type_map;
