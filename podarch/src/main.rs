@@ -65,6 +65,10 @@ async fn main() {
                 let filepath: PathBuf = [&opt.dir, &filename]
                     .iter()
                     .collect();
+                if filepath.as_path().exists() {
+                    println!("File already exists, skipping: [{:?}]", filepath);
+                    return
+                }
                 let mut fp = fs::File::create(&filepath).expect(&format!("Creating {:#?}", &filepath));
 
                 // Download episode to file
