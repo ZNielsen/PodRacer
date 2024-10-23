@@ -418,14 +418,14 @@ impl FeedRacer {
             let mut new_description = description.replace("\r\n", "\n");
             let feed_uuid_link = format!("<a href=\"http://podracer.zachn.me/edit_feed/{}\">{}</a>",
                                     feed_uuid, feed_uuid);
-            new_description.push_str(&format!("\n\nOriginally published on {} ({} from PodRacer publish date)\n\nFeed UUID: {}",
+            new_description.push_str(&format!("\n\n<hr>\n\nOriginally published on {} ({} from PodRacer publish date)\n\nFeed UUID: {}",
                     original_pub_date, human_original_pub_date, feed_uuid_link));
             item.set_description(new_description);
             // Only do content if it is present
             match item.content() {
                 Some(content) => {
                     let mut new_content = content.replace("\r\n", "\n");
-                    new_content.push_str(&format!("<br>Originally published on {} ({} from PodRacer publish date)<br><br>Feed UUID:<br>{}",
+                    new_content.push_str(&format!("<br><hr><br>Originally published on {} ({} from PodRacer publish date)<br><br>Feed UUID:<br>{}",
                             original_pub_date, human_original_pub_date, feed_uuid_link));
                     item.set_content(new_content);
                 },
