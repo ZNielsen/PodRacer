@@ -118,20 +118,40 @@
 <form action="/edit_feed" method="post">
     <input type="submit" value="Fast-Forward # of Days">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
-    <input type="hidden" id="racer_action" name="racer_action" value="FastForward" />
-    <label for="slide_days">
+    <input type="hidden" id="racer_action" name="racer_action" value="FastForwardDays" />
+    <label for="slide_units">
     Days:
-    <input type="number" size="4" id="slide_days" name="slide_days" placeholder="1" step=1 required>
+    <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
     </label>
 </form>
 
 <form action="/edit_feed" method="post">
     <input type="submit" value="Rewind # of Days">
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
-    <input type="hidden" id="racer_action" name="racer_action" value="Rewind" />
-    <label for="slide_days">
+    <input type="hidden" id="racer_action" name="racer_action" value="RewindDays" />
+    <label for="slide_units">
     Days:
-    <input type="number" size="4" id="slide_days" name="slide_days" placeholder="1" step=1 required>
+    <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
+    </label>
+</form>
+
+<form action="/edit_feed" method="post">
+    <input type="submit" value="Fast-Forward # of Episodes">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="FastForwardEps" />
+    <label for="slide_units">
+    Days:
+    <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
+    </label>
+</form>
+
+<form action="/edit_feed" method="post">
+    <input type="submit" value="Rewind # of Episodes">
+    <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
+    <input type="hidden" id="racer_action" name="racer_action" value="RewindEps" />
+    <label for="slide_units">
+    Days:
+    <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
     </label>
 </form>
 

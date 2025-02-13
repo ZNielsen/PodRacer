@@ -72,8 +72,10 @@ pub enum FeedAction {
     EditRateDays,
     Pause,
     Unpause,
-    FastForward,
-    Rewind,
+    FastForwardDays,
+    RewindDays,
+    FastForwardEps,
+    RewindEps,
     PublishNextEp,
 }
 
@@ -81,7 +83,7 @@ pub enum FeedAction {
 pub struct EditFeedForm {
     pub uuid: Uuid,
     pub racer_action: FeedAction,
-    pub slide_days: Option<usize>,
+    pub slide_units: Option<usize>,
     pub rate_days: Option<u32>,
     #[field(validate = with(|rate| rate.unwrap_or(0.0) > 0.0 || *rate == None, "rate must be > 0"))]
     pub rate_ratio: Option<f64>,
@@ -285,17 +287,29 @@ pub async fn edit_feed_post_handler_uri(config: &State<RocketConfig>, edit_form:
             }
             ctx.insert("top_text", "Feed has been fast forwarded to the next episode.");
         }
-        FeedAction::Rewind => {
-            racer.rewind_by_days(edit_form.slide_days.expect("Form has days")).await;
-            let pluralization = if edit_form.slide_days.unwrap() == 1 { "day".to_owned() }
+        FeedAction::RewindDays => {
+            racer.rewind_by_days(edit_form.slide_units.expect("Form has days")).await;
+            let pluralization = if edit_form.slide_units.unwrap() == 1 { "day".to_owned() }
                                 else { "days".to_owned() };
-            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.slide_days.unwrap(), pluralization));
+            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.slide_units.unwrap(), pluralization));
         }
-        FeedAction::FastForward   => {
-            racer.fastforward_by_days(edit_form.slide_days.expect("Form has days")).await;
-            let pluralization = if edit_form.slide_days.unwrap() == 1 { "day".to_owned() }
+        FeedAction::FastForwardDays   => {
+            racer.fastforward_by_days(edit_form.slide_units.expect("Form has days")).await;
+            let pluralization = if edit_form.slide_units.unwrap() == 1 { "day".to_owned() }
                                 else { "days".to_owned() };
-            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.slide_days.unwrap(), pluralization));
+            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.slide_units.unwrap(), pluralization));
+        }
+        FeedAction::RewindEps => {
+            racer.rewind_by_episodes(edit_form.slide_units.expect("Form has episodes")).await;
+            let pluralization = if edit_form.slide_units.unwrap() == 1 { "episode".to_owned() }
+                                else { "episodes".to_owned() };
+            ctx.insert("top_text", &format!("Feed has been rewound {} {}.", edit_form.slide_units.unwrap(), pluralization));
+        }
+        FeedAction::FastForwardEps   => {
+            racer.fastforward_by_episodes(edit_form.slide_units.expect("Form has episodes")).await;
+            let pluralization = if edit_form.slide_units.unwrap() == 1 { "episode".to_owned() }
+                                else { "episodes".to_owned() };
+            ctx.insert("top_text", &format!("Feed has been fast forwarded {} {}.", edit_form.slide_units.unwrap(), pluralization));
         }
     }
 
