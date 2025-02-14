@@ -247,8 +247,8 @@ impl FeedRacer {
 
     pub async fn rewind_by_episodes(&mut self, requested_ep_offset: usize) {
         let current_ep_idx = self.get_next_episode_num()-1;
-        let ep_offset = std::cmp::max(requested_ep_offset, current_ep_idx);
-        let target_ep = &self.release_dates[current_ep_idx - ep_offset];
+        let ep_idx = std::cmp::max(current_ep_idx - requested_ep_offset, 0);
+        let target_ep = &self.release_dates[ep_idx];
         let target_date = match DateTime::parse_from_rfc2822(&target_ep.date) {
             Ok(val) => val,
             Err(e) => {
@@ -257,6 +257,14 @@ impl FeedRacer {
             }
         };
         let adjust_duration = chrono::Utc::now().signed_duration_since(target_date);
+        // Add 1 min to put the time firmly after the publish date
+        let adjust_duration = match adjust_duration.checked_add(&Duration::minutes(1)) {
+            Some(v) => v,
+            None => {
+                println!("Error adding 1m to duration, attempted to move back by {} episodes", requested_ep_offset);
+                return
+            }
+        };
 
         self.anchor_date = match self.anchor_date.checked_add_signed(adjust_duration) {
             Some(val) => val,
@@ -280,6 +288,14 @@ impl FeedRacer {
             }
         };
         let adjust_duration = target_date.signed_duration_since(chrono::Utc::now());
+        // Add 1 min to put the time firmly after the publish date
+        let adjust_duration = match adjust_duration.checked_add(&Duration::minutes(1)) {
+            Some(v) => v,
+            None => {
+                println!("Error adding 1m to duration, attempted to move forward by {} episodes", requested_ep_offset);
+                return
+            }
+        };
 
         self.anchor_date = match self.anchor_date.checked_sub_signed(adjust_duration) {
             Some(val) => val,
