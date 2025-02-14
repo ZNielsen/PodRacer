@@ -289,7 +289,7 @@ impl FeedRacer {
         };
         let adjust_duration = target_date.signed_duration_since(chrono::Utc::now());
         // Add 1 min to put the time firmly after the publish date
-        let adjust_duration = match adjust_duration.checked_add(&Duration::minutes(1)) {
+        let adjust_duration = match adjust_duration.checked_sub(&Duration::minutes(1)) {
             Some(v) => v,
             None => {
                 println!("Error adding 1m to duration, attempted to move forward by {} episodes", requested_ep_offset);
