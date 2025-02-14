@@ -140,7 +140,7 @@
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="FastForwardEps" />
     <label for="slide_units">
-    Days:
+    Episodes:
     <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
     </label>
 </form>
@@ -150,7 +150,7 @@
     <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
     <input type="hidden" id="racer_action" name="racer_action" value="RewindEps" />
     <label for="slide_units">
-    Days:
+    Episodes:
     <input type="number" size="4" id="slide_units" name="slide_units" placeholder="1" step=1 min="0" required>
     </label>
 </form>
