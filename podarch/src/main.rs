@@ -50,15 +50,18 @@ async fn main() {
 
     // Download episode to file
     let parallel_gets = 5;
-    let results = stream::iter(rss.items())
-        .map(|item| {
+    let numbered_items: Vec<_> = rss.items().iter().rev().enumerate().collect();
+    let results = stream::iter(numbered_items)
+        .map(|(index, item)| {
             // println!("item: {:#?}", item);
             let client = &client;
             let opt = &opt;
             let mime_type_map = &mime_type_map;
             async move {
                 // Create destination
-                let mut filename = String::from(item.title().unwrap_or("FixMeNoTitle"));
+                let mut filename = format!("{:03} - {}",
+                    index + 1,
+                    String::from(item.title().unwrap_or("FixMeNoTitle")));
                 filename.push_str(mime_type_map.get(&item.enclosure().unwrap().mime_type).unwrap());
                 filename = filename.replace("/", "-");
 
