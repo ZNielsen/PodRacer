@@ -85,9 +85,10 @@ async fn main() {
                 }
 
                 if opt.get_description {
-                    let mut desc_filename = String::from(item.title().unwrap_or("FixMeNoTitle"));
+                    let mut desc_filename = format!("{:03} - {}_description.html",
+                        index + 1,
+                        String::from(item.title().unwrap_or("FixMeNoTitle")));
                     desc_filename = desc_filename.replace("/", "-");
-                    desc_filename.push_str("_descripion.html");
 
                     let desc_filepath: PathBuf = [&opt.dir, &desc_filename]
                         .iter()
