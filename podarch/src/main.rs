@@ -82,7 +82,7 @@ async fn main() {
 
                 // Download episode to file
                 let link = &item.enclosure().unwrap().url;
-                println!("Getting from link: {}", link);
+                println!("Creating           [{:?}]\nGetting from link: [{}]", &filepath, link);
                 let mut stream = client.get(link).send().await.unwrap()
                     .bytes_stream();
                 while let Some(stuff) = stream.next().await {
