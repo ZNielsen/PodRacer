@@ -38,6 +38,12 @@ async fn main() {
         Err(e) => panic!("Error getting rss feed (from {}): {}", &opt.url, e),
     };
 
+    // Save the input RSS link
+    let file_name = std::path::Path::new("input_url.txt").file_name().unwrap();
+    let file_path: PathBuf = [&opt.dir, file_name.to_str().unwrap()].iter().collect();
+    let mut file = fs::File::create(file_path).unwrap();
+    file.write_all(opt.url.as_bytes()).unwrap();
+
     // Write RSS file to disk
     let rss_file_name = std::path::Path::new(&opt.url).file_name().unwrap();
     let rss_file_path: PathBuf = [&opt.dir, rss_file_name.to_str().unwrap()].iter().collect();
