@@ -607,13 +607,7 @@ impl FeedRacer {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::write_to_file
-    //
-    //  NOTES:  Writes the racer to a file in JSON format
-    //  ARGS:   None
-    //  RETURN: Result - I/O successful or not
-    //
+    // Writes the racer to a file in JSON format
     fn write_to_file(&self) -> std::io::Result<()> {
         let json = serde_json::to_string_pretty(&self)?;
 
@@ -755,24 +749,10 @@ impl FeedRacer {
         ret
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::get_num_episodes
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN: The total number of items in the
-    //
     pub fn get_num_episodes(&self) -> usize {
         self.release_dates.len()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::get_next_episode_pub_date
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN:
-    //
     pub fn get_next_episode_pub_date(&self) -> DateTime<chrono::Utc> {
         let now = chrono::Utc::now();
         for release_date in &self.release_dates {
@@ -784,13 +764,6 @@ impl FeedRacer {
         now
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::get_next_episode_pub_date
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN:
-    //
     pub fn get_next_episode_num(&self) -> usize {
         let now = chrono::Utc::now();
         let mut count: usize = 0;
@@ -804,13 +777,6 @@ impl FeedRacer {
         self.release_dates.len()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::get_episode_pub_date
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN:
-    //
     pub fn get_episode_pub_date(&self, num: usize) -> DateTime<chrono::Utc> {
         let now = chrono::Utc::now();
         let date = chrono::DateTime::parse_from_rfc2822(&self.release_dates[num].date).unwrap();
@@ -820,13 +786,7 @@ impl FeedRacer {
         now
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::publish_episode_num
-    //
-    //  NOTES:  Publish next episode by moving the Anchor Date back
-    //  ARGS:   The episode number to set the publish date to (1 indexed)
-    //  RETURN:
-    //
+    // Publish next episode by moving the Anchor Date back. Takes the episode number to set the publish date to (1 indexed)
     pub async fn publish_episode_num(&mut self, num: usize) {
         // Get the date for the next episode to publish
         let now = chrono::Utc::now();
@@ -850,13 +810,7 @@ impl FeedRacer {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::publish_next_ep_now
-    //
-    //  NOTES:  Publish next episode by moving the Anchor Date back
-    //  ARGS:   None
-    //  RETURN:
-    //
+    // Publish next episode by moving the Anchor Date back
     pub async fn publish_next_ep_now(&mut self) {
         let next_ep_num = self.get_next_episode_num();
         self.publish_episode_num(next_ep_num).await;
@@ -876,13 +830,6 @@ impl FeedRacer {
     //     &self.uuid.as_ref().expect("Feed has UUIDv4")
     // }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::pause_feed
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN:
-    //
     pub async fn pause_feed(&mut self) {
         match self.pause_date {
             None => {
@@ -906,13 +853,6 @@ impl FeedRacer {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   FeedRacer::unpause_feed
-    //
-    //  NOTES:
-    //  ARGS:   None
-    //  RETURN:
-    //
     pub async fn unpause_feed(&mut self) -> Option<chrono::Duration> {
         match self.pause_date {
             Some(pause_date) => {
@@ -1264,13 +1204,7 @@ pub fn get_by_url(base_dir: &str, url: &str) -> Option<FeedRacer> {
     None
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//  NAME:   get_all_racers
-//
-//  NOTES:  Gets all the racers on this server.
-//  ARGS:   None
-//  RETURN: A vector of the racers on this server, or an error.
-//
+// Gets all the racers on this server.
 pub fn get_all_racers(base_dir: &str) -> Result<Vec<FeedRacer>, String> {
     let mut racers = Vec::new();
 
@@ -1372,13 +1306,7 @@ trait RssExt {
     fn correct_known_rss_issues(&mut self, url: &str);
 }
 impl RssExt for rss::Channel {
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  NAME:   correct_known_rss_issues
-    //
-    //  NOTES:  Attempt to fix things that I know are wrong in the feeds that I use.
-    //  ARGS:   rss - The rss channel to edit
-    //  RETURN: None
-    //
+    // Attempt to fix things that I know are wrong in the feeds that I use.
     fn correct_known_rss_issues(&mut self, url: &str) {
         //// Check  for itunes:owner element itunes:email
         //match &mut self.itunes_ext {
