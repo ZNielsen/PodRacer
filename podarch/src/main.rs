@@ -100,7 +100,7 @@ async fn main() {
                         .iter()
                         .collect();
                     let mut fp = fs::File::create(&desc_filepath).expect(&format!("Creating {:#?}", &desc_filepath));
-                    fp.write_all(item.description().unwrap().as_bytes()).unwrap();
+                    fp.write_all(item.description().unwrap_or("").as_bytes()).unwrap();
                 }
             }
         })
