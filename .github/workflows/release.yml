@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-rpi:
+    name: Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: armv7-unknown-linux-gnueabihf
+            suffix: armv7
+          - target: aarch64-unknown-linux-gnu
+            suffix: aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@cross
+
+      - name: Build
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Collect binaries
+        run: |
+          cp target/${{ matrix.target }}/release/podracer podracer-${{ matrix.suffix }}
+          cp target/${{ matrix.target }}/release/podarch  podarch-${{ matrix.suffix }}
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            podracer-${{ matrix.suffix }}
+            podarch-${{ matrix.suffix }}
