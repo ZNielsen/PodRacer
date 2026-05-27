@@ -349,7 +349,8 @@ impl FeedRacer {
             .to_lowercase()
             .replace(" ", "-")
             .replace("/", "-")
-            .replace(":", "");
+            .replace(":", "")
+            .replace("?", "");
         let podcast_dir_base = format!("{}_{}", scrubbed_pod_name, uuid);
         let mut podcast_dir_path = String::from(&params.podracer_dir);
         podcast_dir_path.push_str("/");

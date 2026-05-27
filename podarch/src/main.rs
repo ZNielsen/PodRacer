@@ -69,7 +69,7 @@ async fn main() {
                     index + 1,
                     String::from(item.title().unwrap_or("FixMeNoTitle")));
                 filename.push_str(mime_type_map.get(&item.enclosure().unwrap().mime_type).unwrap());
-                filename = filename.replace("/", "-");
+                filename = filename.replace("/", "-").replace("?", "");
 
                 let filepath: PathBuf = [&opt.dir, &filename]
                     .iter()
@@ -94,7 +94,7 @@ async fn main() {
                     let mut desc_filename = format!("{:03} - {}_description.html",
                         index + 1,
                         String::from(item.title().unwrap_or("FixMeNoTitle")));
-                    desc_filename = desc_filename.replace("/", "-");
+                    desc_filename = desc_filename.replace("/", "-").replace("?", "");
 
                     let desc_filepath: PathBuf = [&opt.dir, &desc_filename]
                         .iter()
