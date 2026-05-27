@@ -222,10 +222,12 @@ impl FeedRacer {
     }
     pub async fn rewind_by_days(&mut self, days: usize) {
         let adjust_duration = Duration::days(days as i64);
-        self.anchor_date = match self.anchor_date.checked_add_signed(adjust_duration) {
+        let new_anchor = match self.anchor_date.checked_add_signed(adjust_duration) {
             Some(val) => val,
             None => return,
         };
+        // Clamp: anchor_date past now puts all episodes in the future → get_next_episode_num() == 0 → panic
+        self.anchor_date = new_anchor.min(chrono::Utc::now());
 
         match self.update(&RssFile::FromStorage, &reqwest::Client::new()).await {
             Ok(_) => (),
@@ -246,8 +248,11 @@ impl FeedRacer {
     }
 
     pub async fn rewind_by_episodes(&mut self, requested_ep_offset: usize) {
-        let current_ep_idx = self.get_next_episode_num()-1;
-        let ep_idx = std::cmp::max(current_ep_idx - requested_ep_offset, 0);
+        let current_ep_num = self.get_next_episode_num();
+        if current_ep_num == 0 {
+            return;
+        }
+        let ep_idx = (current_ep_num - 1).saturating_sub(requested_ep_offset);
         let target_ep = &self.release_dates[ep_idx];
         let target_date = match DateTime::parse_from_rfc2822(&target_ep.date) {
             Ok(val) => val,
