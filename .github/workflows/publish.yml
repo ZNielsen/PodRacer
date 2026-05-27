@@ -9,7 +9,12 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
+      - uses: actions/checkout@v6
+
       # Credit to the workaround: https://github.com/rust-lang/cargo/issues/8719#issuecomment-977690631
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@v1.0
@@ -22,23 +27,21 @@ jobs:
           sudo mount -t tmpfs -o size=10G none /var/lib/docker
           sudo systemctl restart docker
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
+          platforms: linux/arm/v7,linux/amd64,linux/arm64
           tags: |
             ghcr.io/znielsen/podracer:latest
-          platforms: linux/arm/v7,linux/amd64,linux/arm64 #linux/386
