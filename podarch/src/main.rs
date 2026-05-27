@@ -33,10 +33,18 @@ async fn main() {
     fs::create_dir(&dir).unwrap_or(());
     // Get the rss file
     let client = reqwest::Client::new();
-    let rss = match racer::download_rss_channel(&client, &opt.url).await {
+    let mut rss = match racer::download_rss_channel(&client, &opt.url).await {
         Ok(feed) => feed,
         Err(e) => panic!("Error getting rss feed (from {}): {}", &opt.url, e),
     };
+
+    // Prepend episode numbers to titles (items are newest-first in RSS)
+    let total = rss.items().len();
+    for (i, item) in rss.items_mut().iter_mut().enumerate() {
+        let ep_num = total - i;
+        let new_title = format!("{:03} - {}", ep_num, item.title().unwrap_or("[no title]"));
+        item.set_title(new_title);
+    }
 
     // Save the input RSS link
     let file_name = std::path::Path::new("input_url.txt").file_name().unwrap();
