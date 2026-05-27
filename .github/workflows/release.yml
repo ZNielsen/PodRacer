@@ -4,9 +4,6 @@ on:
   release:
     types: [published]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build-rpi:
     name: Build (${{ matrix.target }})
@@ -20,7 +17,7 @@ jobs:
             suffix: aarch64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -37,7 +34,7 @@ jobs:
           cp target/${{ matrix.target }}/release/podarch  podarch-${{ matrix.suffix }}
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             podracer-${{ matrix.suffix }}
