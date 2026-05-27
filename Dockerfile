@@ -1,4 +1,4 @@
-FROM rust:1.66.0-slim as builder
+FROM rust:1.82-slim as builder
 RUN apt-get update \
     && apt-get install -y --no-install-recommends pkg-config libssl-dev \
     && apt-get clean \
@@ -21,7 +21,7 @@ ENV ROCKET_PROFILE=docker \
     ROCKET_CONFIG=/app/Rocket.toml \
     CONTAINERUSER=PodRacer
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates libssl1.1 && \
+    apt-get install -y --no-install-recommends ca-certificates libssl3 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -ms /bin/bash PodRacer
