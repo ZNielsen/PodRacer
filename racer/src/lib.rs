@@ -156,7 +156,12 @@ impl FeedRacer {
         self.release_dates[self.get_next_episode_num()-1].title.clone()
     }
     pub fn get_next_ep_title(&self) -> String {
-        self.release_dates[self.get_next_episode_num()].title.clone()
+        let next_ep_num = self.get_next_episode_num();
+        if next_ep_num < self.release_dates.len() {
+            self.release_dates[next_ep_num].title.clone()
+        } else {
+            "none".to_string()
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
